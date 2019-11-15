@@ -1,0 +1,226 @@
+{
+  "content": [
+    {
+      "$schema": "https://vega.github.io/schema/vega-lite/v3.json", 
+      "encoding": {
+        "y": {
+          "aggregate": "count", 
+          "type": "quantitative"
+        }, 
+        "x": {
+          "bin": true, 
+          "field": "efficiency", 
+          "type": "quantitative"
+        }
+      }, 
+      "data": {
+        "name": "data1"
+      }, 
+      "mark": "bar"
+    }, 
+    {
+      "$schema": "https://vega.github.io/schema/vega-lite/v3.json", 
+      "encoding": {
+        "y": {
+          "field": "final_yield", 
+          "type": "quantitative"
+        }, 
+        "x": {
+          "field": "efficiency", 
+          "type": "quantitative"
+        }, 
+        "color": {
+          "field": "disposed_batch", 
+          "type": "nominal"
+        }
+      }, 
+      "data": {
+        "name": "data1"
+      }, 
+      "mark": "point"
+    }
+  ], 
+  "datasets": {
+    "data1": {
+      "data": [
+        {
+          "index": 0, 
+          "efficiency": 0.3015773228772801, 
+          "break_point": 1.0, 
+          "final_yield": 0.1138927221466588, 
+          "break_point2": 1, 
+          "gain": -2.405861175930616, 
+          "disposed_batch": "e", 
+          "correlation": 1, 
+          "axial_disp": 1
+        }, 
+        {
+          "index": 1, 
+          "efficiency": -0.1905858332485584, 
+          "break_point": 2.0, 
+          "final_yield": 0.002935689638752201, 
+          "break_point2": 1, 
+          "gain": 0.9982101284035856, 
+          "disposed_batch": "c", 
+          "correlation": 2, 
+          "axial_disp": 2
+        }, 
+        {
+          "index": 2, 
+          "efficiency": -0.7997223587758648, 
+          "break_point": 3.0, 
+          "final_yield": 0.5267193836589835, 
+          "break_point2": 1, 
+          "gain": -0.9438038309163193, 
+          "disposed_batch": "c", 
+          "correlation": 3, 
+          "axial_disp": 3
+        }, 
+        {
+          "index": 3, 
+          "efficiency": 0.41877629211609496, 
+          "break_point": 4.0, 
+          "final_yield": 0.20496164750127574, 
+          "break_point2": 1, 
+          "gain": -0.6869331094551141, 
+          "disposed_batch": "d", 
+          "correlation": 4, 
+          "axial_disp": 4
+        }, 
+        {
+          "index": 4, 
+          "efficiency": -0.21333954540298497, 
+          "break_point": 1.0, 
+          "final_yield": 0.015865588853473698, 
+          "break_point2": 2, 
+          "gain": 1.1834787408388783, 
+          "disposed_batch": "b", 
+          "correlation": 5, 
+          "axial_disp": 1
+        }, 
+        {
+          "index": 5, 
+          "efficiency": 0.35278990840166813, 
+          "break_point": 2.0, 
+          "final_yield": -1.9170024054763941, 
+          "break_point2": 2, 
+          "gain": 0.06720500530861269, 
+          "disposed_batch": "e", 
+          "correlation": 6, 
+          "axial_disp": 2
+        }, 
+        {
+          "index": 6, 
+          "efficiency": 0.6589989730088267, 
+          "break_point": 3.0, 
+          "final_yield": 0.6095188729840528, 
+          "break_point2": 2, 
+          "gain": 0.3370640786191423, 
+          "disposed_batch": "b", 
+          "correlation": 7, 
+          "axial_disp": 3
+        }, 
+        {
+          "index": 7, 
+          "efficiency": -0.5101388393688634, 
+          "break_point": 4.0, 
+          "final_yield": -1.9921835054576018, 
+          "break_point2": 2, 
+          "gain": 0.00017413440870280204, 
+          "disposed_batch": "d", 
+          "correlation": 8, 
+          "axial_disp": 4
+        }, 
+        {
+          "index": 8, 
+          "efficiency": -0.1628367305394238, 
+          "break_point": 1.0, 
+          "final_yield": -0.7775781070935249, 
+          "break_point2": 3, 
+          "gain": -0.6895065921357708, 
+          "disposed_batch": "e", 
+          "correlation": 9, 
+          "axial_disp": 1
+        }, 
+        {
+          "index": 9, 
+          "efficiency": 1.001645868499405, 
+          "break_point": 2.0, 
+          "final_yield": -0.5054550045009873, 
+          "break_point2": 3, 
+          "gain": -0.37747136416524313, 
+          "disposed_batch": "b", 
+          "correlation": 10, 
+          "axial_disp": 2
+        }, 
+        {
+          "index": 10, 
+          "efficiency": 0.3688700287867717, 
+          "break_point": 3.0, 
+          "final_yield": -0.36998868171899907, 
+          "break_point2": 3, 
+          "gain": -0.9869478850370277, 
+          "disposed_batch": "e", 
+          "correlation": 11, 
+          "axial_disp": 3
+        }, 
+        {
+          "index": 11, 
+          "efficiency": 0.401091784939679, 
+          "break_point": 4.0, 
+          "final_yield": -0.5190692161866116, 
+          "break_point2": 3, 
+          "gain": -1.6181540310144118, 
+          "disposed_batch": "d", 
+          "correlation": 12, 
+          "axial_disp": 4
+        }, 
+        {
+          "index": 12, 
+          "efficiency": 1.1945789231665602, 
+          "break_point": 1.0, 
+          "final_yield": -0.3807595334329033, 
+          "break_point2": 4, 
+          "gain": 1.6302121907130898, 
+          "disposed_batch": "d", 
+          "correlation": 13, 
+          "axial_disp": 1
+        }, 
+        {
+          "index": 13, 
+          "efficiency": 0.443253426848587, 
+          "break_point": 2.0, 
+          "final_yield": -2.0018490450964506, 
+          "break_point2": 4, 
+          "gain": -0.6550639882353015, 
+          "disposed_batch": "e", 
+          "correlation": 14, 
+          "axial_disp": 2
+        }, 
+        {
+          "index": 14, 
+          "efficiency": -2.0371817205301417, 
+          "break_point": 3.0, 
+          "final_yield": -0.23827456895642424, 
+          "break_point2": 4, 
+          "gain": -0.8350958523648689, 
+          "disposed_batch": "b", 
+          "correlation": 15, 
+          "axial_disp": 3
+        }, 
+        {
+          "index": 15, 
+          "efficiency": -1.1073023871520227, 
+          "break_point": 4.0, 
+          "final_yield": 0.2116510914276348, 
+          "break_point2": 4, 
+          "gain": -0.6950113425829311, 
+          "disposed_batch": "a", 
+          "correlation": 16, 
+          "axial_disp": 4
+        }
+      ], 
+      "df_index_name": "index"
+    }
+  }
+}

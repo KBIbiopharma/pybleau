@@ -1,0 +1,13 @@
+
+
+Version 0.4.5
+=============
+* First public release.
+* Includes `app` sub-package with ETS components to embed DataFrame visualization 
+  tools into an ETS application.
+* Includes a `plotly_api` sub-package for a seaborn like API to plotly. Will be 
+  deprecated in favor of `plotly_express`, which was released after the creation 
+  of this package.
+* Includes a `reporting` sub-package (WIP) containing tools for exporting plot 
+  canvases from 1 framework to another. Currently includes partial support for 
+  Chaco and plotly.

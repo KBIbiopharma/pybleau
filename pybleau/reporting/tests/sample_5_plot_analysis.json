@@ -1,0 +1,32 @@
+{"content": [
+	{"$schema": "https://vega.github.io/schema/vega-lite/v3.json", 
+	 "encoding": {"y": {"aggregate": "count", "type": "quantitative"}, 
+				  "x": {"bin": true, "field": "efficiency", "type": "quantitative"}}, 
+		"data": {"name": "data1"}, "mark": "bar"}, 
+	{"$schema": "https://vega.github.io/schema/vega-lite/v3.json", 
+	 "encoding": {"y": {"field": "final_yield", "type": "quantitative"}, 
+	 			  "x": {"field": "efficiency", "type": "quantitative"}}, 
+	 "data": {"name": "data1"}, "mark": "line"}, 
+	{"$schema": "https://vega.github.io/schema/vega-lite/v3.json", 
+	 "encoding": {"y": {"field": "final_yield", "type": "quantitative"}, 
+	 			  "x": {"field": "efficiency", "type": "quantitative"}}, 
+	 "data": {"name": "data1"}, "mark": "point"}, 
+	{"$schema": "https://vega.github.io/schema/vega-lite/v3.json", 
+	 "encoding": {"y": {"field": "gain", "type": "quantitative"}, 
+	 			  "x": {"field": "efficiency", "type": "quantitative"}, 
+	 			  "color": {"field": "disposed_batch", "type": "nominal"}}, 
+	 "data": {"name": "data1"}, "mark": "point"}, 
+	{"$schema": "https://vega.github.io/schema/vega-lite/v3.json", 
+	 "encoding": {"y": {"field": "final_yield", "type": "quantitative"}, 
+	 			  "x": {"field": "efficiency", "type": "quantitative"}, 
+	 			  "color": {"field": "gain", "type": "quantitative"}}, 
+	 "data": {"name": "data1"}, "mark": "point"}], 
+"datasets": {
+	"data1": {
+		"data": [
+			{"index": 0, "efficiency": 1.9172223744355534, "break_point": 1.0, "final_yield": 0.8859341803357914, "break_point2": 1, "gain": -1.0836365529386465, "disposed_batch": "a", "correlation": 1, "axial_disp": 1}, {"index": 1, "efficiency": 1.41538658592252, "break_point": 2.0, "final_yield": 0.16061755138963177, "break_point2": 1, "gain": 0.6401580393727726, "disposed_batch": "b", "correlation": 2, "axial_disp": 2}, {"index": 2, "efficiency": -0.9535869454798303, "break_point": 3.0, "final_yield": 0.5286691087385282, "break_point2": 1, "gain": -1.730399031310341, "disposed_batch": "a", "correlation": 3, "axial_disp": 3}, {"index": 3, "efficiency": 1.2147633013254522, "break_point": 4.0, "final_yield": -0.567482113070172, "break_point2": 1, "gain": 1.1353436801076997, "disposed_batch": "b", "correlation": 4, "axial_disp": 4}, {"index": 4, "efficiency": 0.1632200411115629, "break_point": 1.0, "final_yield": 0.46810821906032396, "break_point2": 2, "gain": -0.2501858615183768, "disposed_batch": "c", "correlation": 5, "axial_disp": 1}, {"index": 5, "efficiency": 0.8883802297297206, "break_point": 2.0, "final_yield": 0.9055558624578196, "break_point2": 2, "gain": 0.05187438815549725, "disposed_batch": "a", "correlation": 6, "axial_disp": 2}, {"index": 6, "efficiency": 0.02568196800868029, "break_point": 3.0, "final_yield": -0.7739203172266764, "break_point2": 2, "gain": 0.7168193174455132, "disposed_batch": "b", "correlation": 7, "axial_disp": 3}, {"index": 7, "efficiency": 0.47763126375394416, "break_point": 4.0, "final_yield": 0.8685405037433325, "break_point2": 2, "gain": -1.4077766232917939, "disposed_batch": "c", "correlation": 8, "axial_disp": 4}, {"index": 8, "efficiency": 1.090242539316791, "break_point": 1.0, "final_yield": -0.5694436647189278, "break_point2": 3, "gain": -0.040908908107381584, "disposed_batch": "d", "correlation": 9, "axial_disp": 1}, {"index": 9, "efficiency": -0.8326296479002341, "break_point": 2.0, "final_yield": 1.0418604325353598, "break_point2": 3, "gain": 0.7894869163069395, "disposed_batch": "a", "correlation": 10, "axial_disp": 2}, {"index": 10, "efficiency": 0.2996957096614298, "break_point": 3.0, "final_yield": 0.9621049893542526, "break_point2": 3, "gain": 1.3387075657058807, "disposed_batch": "b", "correlation": 11, "axial_disp": 3}, {"index": 11, "efficiency": -0.8158081919665312, "break_point": 4.0, "final_yield": 0.945040342475826, "break_point2": 3, "gain": 1.120895435148966, "disposed_batch": "c", "correlation": 12, "axial_disp": 4}, {"index": 12, "efficiency": 0.4951736693073282, "break_point": 1.0, "final_yield": 0.13780193388090425, "break_point2": 4, "gain": 2.4261473667930344, "disposed_batch": "d", "correlation": 13, "axial_disp": 1}, {"index": 13, "efficiency": -0.7890057460696758, "break_point": 2.0, "final_yield": -0.5715822678216377, "break_point2": 4, "gain": -1.1103675223889655, "disposed_batch": "e", "correlation": 14, "axial_disp": 2}, {"index": 14, "efficiency": 0.3271384579424605, "break_point": 3.0, "final_yield": -0.0059697697526465195, "break_point2": 4, "gain": -1.062355328583215, "disposed_batch": "a", "correlation": 15, "axial_disp": 3}, {"index": 15, "efficiency": 1.2950955736410263, "break_point": NaN, "final_yield": -0.41910971517973533, "break_point2": 4, "gain": 1.070160649181439, "disposed_batch": "b", "correlation": 16, "axial_disp": 4}
+		],
+		"df_index_name": "index"
+	}
+ }
+}
