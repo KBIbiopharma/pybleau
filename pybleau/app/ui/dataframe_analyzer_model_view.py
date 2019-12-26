@@ -136,6 +136,8 @@ class DataFrameAnalyzerView(ModelView):
     #: Button to shuffle the order of the filtered data
     shuffle_button = Button("Shuffle")
 
+    show_shuffle_button = Bool(True)
+
     #: Button to display more rows in the data table
     show_more_button = Button
 
@@ -162,6 +164,8 @@ class DataFrameAnalyzerView(ModelView):
 
     #: Show the bottom panel with the summary of the data:
     _show_summary = Bool(True)
+
+    allow_show_summary = Bool(True)
 
     #: Button to export the analyzed data to a CSV file
     data_exporter = Button("Export Data to CSV")
@@ -339,7 +343,8 @@ class DataFrameAnalyzerView(ModelView):
                                     include_blank_spaces=False),
             HGroup(
                 Item("model.sort_by_col", label="Sort by"),
-                Item("shuffle_button", show_label=False),
+                Item("shuffle_button", show_label=False,
+                     visible_when="show_shuffle_button"),
                 Spring(),
                 filter_group
             ),
@@ -353,10 +358,10 @@ class DataFrameAnalyzerView(ModelView):
                 Item("open_column_controls", show_label=False,
                      visible_when="_many_columns"),
                 Spring(),
-                Item("_show_summary", label=u'\u2193 Show summary'),
+                Item("_show_summary", label=u'\u2193 Show summary',
+                     visible_when="allow_show_summary"),
                 Spring(),
                 display_control_group
-
             ),
             show_border=True
         )
