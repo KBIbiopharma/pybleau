@@ -33,6 +33,7 @@ The project provides 2 entry-points for high-level tools it contains:
 
 For all components:
   - Python 2.7 and 3.6+
+  - pandas (> 0.20 recommended)
   - app_common 0.10.1+
 
 For ETS app tools:
