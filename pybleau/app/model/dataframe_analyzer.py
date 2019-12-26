@@ -9,8 +9,11 @@ from traits.api import Bool, Callable, Enum, Event, Instance,\
 from app_common.std_lib.str_utils import add_suffix_if_exists, sanitize_string
 from app_common.model_tools.data_element import DataElement
 
-from .dataframe_plot_manager import DataFramePlotManager
 from ..tools.filter_expression_manager import FilterExpression
+try:
+    from .dataframe_plot_manager import DataFramePlotManager
+except ImportError:
+    DataFramePlotManager = object
 
 logger = logging.getLogger(__name__)
 
@@ -269,7 +272,16 @@ class DataFrameAnalyzer(DataElement):
                 values_df = DataFrame({entry: values}).transpose()
                 all_summaries.append(values_df)
 
-        summary = concat(all_summaries, sort=True)
+        try:
+            summary = concat(all_summaries, sort=True)
+        except TypeError:
+            # For pandas <= 0.20
+            import warnings
+            msg = "Pandas version 0.20 and before will not be supported long" \
+                  " term: it is recommended to update."
+            warnings.warn(msg)
+            summary = concat(all_summaries)
+
         self.summary_df = summary.reindex(list(self.summary_index))
         return self.summary_df
 

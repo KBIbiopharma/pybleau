@@ -33,13 +33,15 @@ The project provides 2 entry-points for high-level tools it contains:
 
 For all components:
   - Python 2.7 and 3.6+
-  - seaborn 0.9
   - app_common 0.10.1+
 
 For ETS app tools:
-  - chaco 4.7, enable, kiwisolver,
   - traitsUI 6.0, traits, pyface,
   - a UI toolkit (qt or wx) if wanting to run standalone app.
+
+For the plotting portion of the ETS app tools:
+  - chaco 4.7, enable, kiwisolver.
+  - seaborn 0.9
 
 For plotly/dash tools:
   - plotly 3.10
