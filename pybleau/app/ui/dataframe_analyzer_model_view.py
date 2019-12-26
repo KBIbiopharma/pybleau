@@ -17,8 +17,13 @@ from app_common.pyface.ui.extra_file_dialogs import request_csv_file
 from app_common.std_lib.filepath_utils import open_file
 
 from ..model.dataframe_analyzer import DataFrameAnalyzer
-from .dataframe_plot_manager_view import DataFramePlotManager, \
-    DataFramePlotManagerView
+try:
+    from .dataframe_plot_manager_view import DataFramePlotManager, \
+        DataFramePlotManagerView
+except ImportError:
+    DataFramePlotManager = object
+    DataFramePlotManagerView = object
+
 from ..tools.filter_expression_manager import FilterExpression, \
     FilterExpressionManager
 
