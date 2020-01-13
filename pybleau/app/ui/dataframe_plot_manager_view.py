@@ -3,7 +3,8 @@
 import logging
 
 from pyface.api import warning
-from traits.api import Any, Bool, Button, Enum, HasStrictTraits, Instance, Int
+from traits.api import Any, Bool, Button, Enum, HasStrictTraits, Instance, \
+    Int, List
 from traitsui.api import EnumEditor, HGroup, Item, Label, ModelView, \
     OKCancelButtons, Spring, TableEditor, VGroup, View, VSplit
 from traitsui.table_column import ObjectColumn
@@ -27,6 +28,9 @@ AUTO_TARGET_CONTAINER = "auto"
 class DataFramePlotManagerView(ModelView):
     """ View for a DataFramePlotManager.
 
+    This UI allows to manipulate the manager, add new plots to it, export them,
+    and expose its contained_plots list for user interaction.
+
     TODO: Allow to change the layout of the container after creation.
     """
     #: Plot manager being visualized
@@ -43,6 +47,9 @@ class DataFramePlotManagerView(ModelView):
 
     #: Button to export plot list
     export_plots_button = Button("Export plots")
+
+    #: List of column names to display in the plot controls
+    plot_control_cols = List
 
     def traits_view(self):
         self.raise_dlg_if_failed_plots()
@@ -98,34 +105,47 @@ class DataFramePlotManagerView(ModelView):
         container_idx_vals = list(range(num_containers)) + [
             CONTAINER_IDX_REMOVAL]
 
+        name_to_col = {
+            "id": ObjectColumn(name='id', style="readonly",
+                               cell_color="lightgrey"),
+            "plot_title": ObjectColumn(name="plot_title"),
+            # The format_func is called with an argument, the object to
+            # display, therefore the x argument placeholder:
+            'edit_plot_style': ObjectColumn(name='edit_plot_style',
+                                            label="Edit Style",
+                                            format_func=lambda x: "Edit"),
+            "visible": CheckboxColumn(name='visible'),
+            "frozen": CheckboxColumn(
+                name='frozen', tooltip="Freeze the plot and skip updates when "
+                "source data changes"),
+            "plot_type": ObjectColumn(name='plot_type', style="readonly",
+                                      cell_color="lightgrey"),
+            "x_col_name": ObjectColumn(name='x_col_name', style="readonly",
+                                       cell_color="lightgrey",
+                                       label="X column"),
+            'x_axis_title': ObjectColumn(name='x_axis_title'),
+            "y_col_name": ObjectColumn(name='y_col_name', style="readonly",
+                                       cell_color="lightgrey",
+                                       label="Y column"),
+            'y_axis_title': ObjectColumn(name='y_axis_title'),
+            "z_col_name": ObjectColumn(name='z_col_name', style="readonly",
+                                       cell_color="lightgrey",
+                                       label="Z column (color)"),
+            'z_axis_title': ObjectColumn(name='z_axis_title'),
+            "data_filter": ObjectColumn(name='data_filter',
+                                        label="Analyzer data filter",
+                                        style="readonly"),
+            'container_idx': ObjectColumn(
+                name='container_idx',
+                editor=EnumEditor(values=container_idx_vals),
+                label="Move/Delete"
+            )
+        }
+
+        columns = [name_to_col[col] for col in self.plot_control_cols]
+
         plot_list_editor = TableEditor(
-            columns=[
-                ObjectColumn(name='id', style="readonly",
-                             cell_color="lightgrey"),
-                ObjectColumn(name="plot_title"),
-                ObjectColumn(name='edit_plot_style', label="Edit Style",
-                             format_func=lambda x: "Edit"),
-                CheckboxColumn(name='visible'),
-                CheckboxColumn(name='frozen',
-                               tooltip="Freeze the plot and skip updates when "
-                                       "source data changes"),
-                ObjectColumn(name='plot_type', style="readonly",
-                             cell_color="lightgrey"),
-                ObjectColumn(name='x_col_name', style="readonly",
-                             cell_color="lightgrey", label="X column"),
-                ObjectColumn(name='x_axis_title'),
-                ObjectColumn(name='y_col_name', style="readonly",
-                             cell_color="lightgrey", label="Y column"),
-                ObjectColumn(name='y_axis_title'),
-                ObjectColumn(name='z_col_name', style="readonly",
-                             cell_color="lightgrey", label="Z column (color)"),
-                ObjectColumn(name='z_axis_title'),
-                ObjectColumn(name='data_filter', label="Analyzer data filter",
-                             style="readonly"),
-                ObjectColumn(name='container_idx',
-                             editor=EnumEditor(values=container_idx_vals),
-                             label="Move/Delete"),
-            ],
+            columns=columns,
             auto_size=True,
             sortable=True,
             h_size_policy="expanding",
@@ -225,6 +245,14 @@ class DataFramePlotManagerView(ModelView):
         exporter = DataFramePlotManagerExporter(df_plotter=self.model,
                                                 view_klass=self.view_klass)
         exporter.export()
+
+    # Traits initializers -----------------------------------------------------
+
+    def _plot_control_cols_default(self):
+        return ["id", "plot_title", 'edit_plot_style', "visible", "frozen",
+                "plot_type", "x_col_name", 'x_axis_title', "y_col_name",
+                'y_axis_title', "z_col_name", 'z_axis_title', "data_filter",
+                'container_idx']
 
 
 class PlotTypeSelector(HasStrictTraits):

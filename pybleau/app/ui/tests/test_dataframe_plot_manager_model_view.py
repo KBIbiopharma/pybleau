@@ -11,7 +11,7 @@ except ImportError:
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
 if KIWI_AVAILABLE and BACKEND_AVAILABLE:
-    from app_common.apptools.testing_utils import temp_bringup_ui_for
+    from app_common.apptools.testing_utils import assert_obj_gui_works
     from pybleau.app.api import DataFrameAnalyzer, DataFramePlotManager
     from pybleau.app.ui.dataframe_plot_manager_view import \
         DataFramePlotManagerView, PlotTypeSelector
@@ -30,8 +30,7 @@ class TestDataFramePlotManagerView(TestCase):
 
     def test_bring_up_plot_manager_view(self):
         view = DataFramePlotManagerView(model=self.plotter)
-        with temp_bringup_ui_for(view):
-            pass
+        assert_obj_gui_works(view)
 
     def test_bring_up_plot_manager_view_non_default_num_containers(self):
         model = DataFramePlotManager(
@@ -39,8 +38,12 @@ class TestDataFramePlotManagerView(TestCase):
             canvas_manager=MultiCanvasManager(num_container_managers=5)
         )
         view = DataFramePlotManagerView(model=model)
-        with temp_bringup_ui_for(view):
-            pass
+        assert_obj_gui_works(view)
+
+    def test_bring_up_custom_columns(self):
+        view = DataFramePlotManagerView(model=self.plotter,
+                                        plot_control_cols=["x_col_name"])
+        assert_obj_gui_works(view)
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
@@ -48,5 +51,4 @@ class TestPlotTypePopup(TestCase):
 
     def test_bring_up_plot_type_popup(self):
         selector = PlotTypeSelector()
-        with temp_bringup_ui_for(selector):
-            pass
+        assert_obj_gui_works(selector)
