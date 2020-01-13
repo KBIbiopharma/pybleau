@@ -149,10 +149,11 @@ class DataFramePlotManagerView(ModelView):
             auto_size=True,
             sortable=True,
             h_size_policy="expanding",
-            deletable=True,
             editable=True,
             edit_on_first_click=False,
-            reorderable=True,
+            reorderable=False,
+            row_factory=None,
+            deletable=False
         )
         return plot_list_editor
 
