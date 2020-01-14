@@ -45,7 +45,8 @@ def title_slide(presentation=None, title_text="", sub_title_text=""):
 
 
 def df_to_slide(presentation, data, slide_title="", left=None, top=None,
-                width=None, height=None):
+                width=None, height=None, include_column_names=True,
+                include_index=False):
     """ Add slide to specified presentation with table containing the data.
 
     Parameters
@@ -72,6 +73,12 @@ def df_to_slide(presentation, data, slide_title="", left=None, top=None,
 
     height : Inches, float, int, optional
         Height (in inches) of the table element.
+
+    include_column_names : bool, optional
+        Whether to include a row for the column names.
+
+    include_index : bool, optional
+        Whether to include a column for the index values.
     """
     from pptx.presentation import Presentation
 
@@ -108,23 +115,46 @@ def df_to_slide(presentation, data, slide_title="", left=None, top=None,
     elif isinstance(height, (float, int)):
         height = Inches(height)
 
-    table = shapes.add_table(data.shape[0] + 1, data.shape[1], left, top,
+    num_rows = data.shape[0]
+    if include_column_names:
+        num_rows += 1
+
+    num_cols = data.shape[1]
+    if include_index:
+        num_cols += 1
+
+    table = shapes.add_table(num_rows, num_cols, left, top,
                              width, height).table
 
-    # write column headings
-    for i, col in enumerate(data.columns):
-        table.cell(0, i).text = col
+    if include_column_names:
+        # write column headings
+        for i, col in enumerate(data.columns):
+            table.cell(0, i).text = str(col)
 
-    # write body cells
+        row_shift = 1
+    else:
+        row_shift = 0
+
+    # write row headings
+    if include_index:
+        for i, ind_val in enumerate(data.index):
+            table.cell(i, 0).text = str(ind_val)
+
+        col_shift = 1
+    else:
+        col_shift = 0
+
+        # write body cells
     for i, col in enumerate(data.columns):
         for j in range(data.shape[0]):
-            table.cell(j + 1, i).text = str(data.iloc[j, i])
+            val = data.iloc[j, i]
+            table.cell(j + row_shift, i + col_shift).text = str(val)
 
     return slide, table
 
 
 def image_to_slide(presentation, img_path, slide_title="", left=None,
-                   top=None):
+                   top=None, width=None, height=None):
     """ Add slide to specified presentation with provided image.
 
     Parameters
@@ -145,6 +175,12 @@ def image_to_slide(presentation, img_path, slide_title="", left=None,
     top : Inches, float, int, optional
         Distance (in inches) from the top of the new slide and the top of the
         image.
+
+    width : Inches, float, int, optional
+        Width, in inches, of the image to be inserted in the slide.
+
+    height : Inches, float, int, optional
+        Height, in inches, of the image to be inserted in the slide.
     """
     from pptx.presentation import Presentation
 
@@ -171,5 +207,16 @@ def image_to_slide(presentation, img_path, slide_title="", left=None,
     elif isinstance(top, (float, int)):
         top = Inches(top)
 
-    pic = slide.shapes.add_picture(img_path, left=left, top=top)
-    return pic
+    if height is None:
+        height = Inches(5)
+    elif isinstance(height, (float, int)):
+        height = Inches(height)
+
+    if width is None:
+        width = Inches(6.5)
+    elif isinstance(width, (float, int)):
+        width = Inches(width)
+
+    img = slide.shapes.add_picture(img_path, left=left, top=top, width=width,
+                                   height=height)
+    return img
