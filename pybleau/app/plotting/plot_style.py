@@ -185,9 +185,13 @@ class BasePlotStyle(HasStrictTraits):
                     ),
                     show_border=True, label="Title font controls",
                 ),
-                HGroup(
-                    Item('x_axis_label_rotation',
-                         editor=RangeEditor(low=0, high=360)),
+                VGroup(
+                    HGroup(
+                        Item('x_axis_label_rotation',
+                             editor=RangeEditor(low=0, high=360)),
+                        Item('show_all_x_ticks',
+                             label="Force all ticks/labels"),
+                    ),
                     Item('y_axis_label_rotation',
                          editor=RangeEditor(low=0, high=360)),
                     show_border=True, label="Axis label controls (str only)",
@@ -291,10 +295,6 @@ class BarPlotStyle(BasePlotStyle):
     def traits_view(self):
         allow_errors = "data_duplicate != '{}'".format(IGNORE_DATA_DUPLICATES)
 
-        # FIXME: find a way to insert that extra entry into the Axis group:
-        general_view_elements = list(self.general_view_elements) + \
-            [Item('show_all_x_ticks')]
-
         view = self.view_klass(
             VGroup(
                 VGroup(
@@ -310,7 +310,7 @@ class BarPlotStyle(BasePlotStyle):
                     ),
                     show_border=True, label=SPECIFIC_CONFIG_CONTROL_LABEL
                 ),
-                *general_view_elements
+                *self.general_view_elements
             ),
             **self.view_kw,
         )
