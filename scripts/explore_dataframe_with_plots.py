@@ -13,9 +13,10 @@ from pybleau.app.plotting.api import BarPlotConfigurator, \
 
 initialize_logging(logging_level="DEBUG")
 
-TEST_DF = DataFrame({"Col_1": [1, 2, 3, 4],
-                     "Col_2": np.array([1, 2, 3, 4])[::-1],
-                     "Col_3": list("abab"),
+TEST_DF = DataFrame({"Col_1": [1, 2, 3, 4, 5, 6, 7, 8],
+                     "Col_2": np.array([1, 2, 3, 4, 5, 6, 7, 8])[::-1],
+                     "Col_3": ["aa_aaa", "bb_bbb", "aa_aaa", "cc_ccc",
+                               "ee_eee", "dd_ddd", "ff_fff", "gg_ggg"],
 })
 
 config = HistogramPlotConfigurator(data_source=TEST_DF)
@@ -55,10 +56,16 @@ cust_plot1.title = "Blah"
 cust_plot1.x_axis.title = "x"
 cust_plot1.y_axis.title = "y"
 
+config6 = BarPlotConfigurator(data_source=TEST_DF)
+config6.x_col_name = "Col_3"
+config6.y_col_name = "Col_1"
+desc6 = PlotDescriptor(x_col_name="Col_3", y_col_name="Col_1",
+                       plot_config=config6, plot_title="Plot 6")
+
 analyzer = DataFrameAnalyzer(source_df=TEST_DF)
 
 plot_manager = DataFramePlotManager(
-    contained_plots=[desc, desc2, desc3, desc4, desc5, cust_plot1],
+    contained_plots=[desc, desc2, desc3, desc4, desc5, cust_plot1, desc6],
     data_source=TEST_DF, source_analyzer=analyzer
 )
 
