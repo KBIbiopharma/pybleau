@@ -312,7 +312,7 @@ class BarPlotStyle(BasePlotStyle):
                 ),
                 *self.general_view_elements
             ),
-            **self.view_kw,
+            **self.view_kw
         )
         return view
 
