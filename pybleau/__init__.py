@@ -3,7 +3,7 @@ from subprocess import check_output
 from collections import namedtuple
 
 
-__version__ = "0.4.7.dev0"
+__version__ = "0.4.7"
 
 
 try:
