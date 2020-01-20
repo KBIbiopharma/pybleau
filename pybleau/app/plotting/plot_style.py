@@ -76,6 +76,10 @@ class BasePlotStyle(HasStrictTraits):
     #: Angle to rotate the Y axis labels (string x values only)
     y_axis_label_rotation = Int
 
+    #: Whether to force display of all values along X axis or allow decimation
+    # (ONLY USED with string labels)
+    show_all_x_ticks = Bool
+
     #: Low value of the x-axis range
     x_axis_range_low = Float(-1)
 
@@ -133,7 +137,7 @@ class BasePlotStyle(HasStrictTraits):
                 "x_axis_label_rotation", "y_axis_label_rotation",
                 "title_font_name", "index_scale", "value_scale",
                 "x_axis_range_low", "x_axis_range_high", "y_axis_range_low",
-                "y_axis_range_high"]
+                "y_axis_range_high", "show_all_x_ticks"]
 
     def _get_general_view_elements(self):
         elemens = (
@@ -280,8 +284,16 @@ class BarPlotStyle(BasePlotStyle):
     #: Whether to display error bars when multiple values contribute to a bar
     show_error_bars = Bool
 
+    #: Whether to force display of all values along X axis or allow decimation
+    # (ONLY USED with string labels)
+    show_all_x_ticks = Bool(True)
+
     def traits_view(self):
         allow_errors = "data_duplicate != '{}'".format(IGNORE_DATA_DUPLICATES)
+
+        # FIXME: find a way to insert that extra entry into the Axis group:
+        general_view_elements = list(self.general_view_elements) + \
+            [Item('show_all_x_ticks')]
 
         view = self.view_klass(
             VGroup(
@@ -298,9 +310,9 @@ class BarPlotStyle(BasePlotStyle):
                     ),
                     show_border=True, label=SPECIFIC_CONFIG_CONTROL_LABEL
                 ),
-                *self.general_view_elements
+                *general_view_elements
             ),
-            **self.view_kw
+            **self.view_kw,
         )
         return view
 
