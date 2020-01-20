@@ -8,8 +8,8 @@ from numpy.testing import assert_array_almost_equal
 from traits.testing.unittest_tools import UnittestTools
 
 try:
-    from chaco.api import BarPlot, LinePlot, Plot, ScatterInspectorOverlay, \
-        ScatterPlot
+    from chaco.api import BarPlot, LinePlot, Plot, PlotGraphicsContext, \
+        ScatterInspectorOverlay, ScatterPlot
     from chaco.plot_containers import HPlotContainer
     from chaco.color_bar import ColorBar
     from chaco.cmap_image_plot import CMapImagePlot
@@ -17,7 +17,7 @@ try:
     from chaco.tools.api import LegendTool, LegendHighlighter, PanTool
     from chaco.colormapped_selection_overlay import ColormappedSelectionOverlay
     from chaco.colormapped_scatterplot import ColormappedScatterPlot
-    from chaco.api import PlotGraphicsContext
+    from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 
     from app_common.chaco.scatter_position_tool import \
         DataframeScatterInspector
@@ -180,10 +180,13 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
     """ Tests for the scatter and line plots.
     """
     def setUp(self):
+        # Mocking the generation of the style dictionary generated when
+        # exporting a configurator to dict:
         style = {'z_title_font_size': 18, 'color': 'blue',
                  "color_palette": "hsv", 'y_title_font_size': 18,
                  'title_font_name': 'modern', 'title_font_size': 18,
-                 'alpha': 1.0, 'x_title_font_size': 18}
+                 'alpha': 1.0, 'x_title_font_size': 18,
+                 "show_all_x_ticks": False}
 
         self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
                         'plot_style': style}
@@ -743,6 +746,36 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                   array([nan, TEST_DF["c"][::2].mean()]))
         assert_array_almost_equal(plot.data.arrays["cT"],
                                   array([TEST_DF["c"][1::2].mean(), nan]))
+
+    def test_str_index_dont_force_all_ticks(self):
+        """ String index ticks are decimated w/ show_all_x_ticks=False.
+        """
+        self.plot_kw['plot_style']['show_all_x_ticks'] = False
+
+        factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
+                                          y_col_name="a", y_arr=TEST_DF["a"],
+                                          **self.plot_kw)
+        plot, desc = factory.generate_plot()
+        self.assert_valid_plot(plot, desc)
+        self.force_plot_rendering(plot)
+        self.assertIsInstance(plot.x_axis.tick_generator, DefaultTickGenerator)
+        # Ticks are decimated: every other label isn't displayed:
+        self.assertEqual(set(plot.x_axis._tick_label_list),
+                         set(TEST_DF["e"][::2]))
+
+    def test_str_index_do_force_all_ticks(self):
+        """ String index ticks are NOT decimated w/ show_all_x_ticks=True.
+        """
+        self.plot_kw['plot_style']['show_all_x_ticks'] = True
+
+        factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
+                                          y_col_name="a", y_arr=TEST_DF["a"],
+                                          **self.plot_kw)
+        plot, desc = factory.generate_plot()
+        self.assert_valid_plot(plot, desc)
+        self.force_plot_rendering(plot)
+        self.assertIsInstance(plot.x_axis.tick_generator, ShowAllTickGenerator)
+        self.assertEqual(set(plot.x_axis._tick_label_list), set(TEST_DF["e"]))
 
     # utilities ---------------------------------------------------------------
 

@@ -24,6 +24,7 @@ from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
     Str
 from chaco.api import ArrayPlotData, LabelAxis, Plot
 from chaco.tools.api import BetterSelectingZoom, LegendTool, PanTool
+from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 
 from app_common.chaco.legend import Legend, LegendHighlighter
 
@@ -95,15 +96,30 @@ class BasePlotFactory(HasStrictTraits):
         plot : chaco.plot.Plot
             Instance of a chaco Plot to set the axis and title labels of.
         """
-        if self.x_labels:
+        self._set_x_axis_labels(plot)
+        self._set_y_axis_labels(plot)
+        self._set_title_label(plot)
+
+    def _set_x_axis_labels(self, plot):
+        x_labels = self.x_labels
+        if x_labels:
             # if x_labels set, axis labels shouldn't be generated from the
             # numerical values but by the values stored in x_labels (for e.g.
             # when x_axis_col contains strings)
             label_rotation = self.plot_style["x_axis_label_rotation"]
+            if self.plot_style["show_all_x_ticks"]:
+                label_positions = range(len(x_labels))
+                tick_generator = ShowAllTickGenerator(
+                    positions=label_positions
+                )
+            else:
+                tick_generator = DefaultTickGenerator()
+
             bottom_axis = LabelAxis(plot, orientation="bottom",
-                                    labels=[str(x) for x in self.x_labels],
-                                    positions=np.arange(len(self.x_labels)),
-                                    label_rotation=label_rotation)
+                                    labels=[str(x) for x in x_labels],
+                                    positions=np.arange(len(x_labels)),
+                                    label_rotation=label_rotation,
+                                    tick_generator=tick_generator)
             plot.underlays.remove(plot.index_axis)
             plot.index_axis = bottom_axis
             plot.underlays.append(bottom_axis)
@@ -113,12 +129,16 @@ class BasePlotFactory(HasStrictTraits):
         font_name = self.plot_style["title_font_name"]
         plot.index_axis.title_font = '{} {}'.format(font_name, font_size)
 
+    def _set_y_axis_labels(self, plot):
         plot.value_axis.title = self.y_axis_title
         font_size = self.plot_style["y_title_font_size"]
+        font_name = self.plot_style["title_font_name"]
         plot.value_axis.title_font = '{} {}'.format(font_name, font_size)
 
+    def _set_title_label(self, plot):
         plot.title = self.plot_title
         font_size = self.plot_style["title_font_size"]
+        font_name = self.plot_style["title_font_name"]
         plot._title.font = '{} {}'.format(font_name, font_size)
 
 
