@@ -4,7 +4,7 @@ from numpy import array, nan, random
 
 from app_common.std_lib.logging_utils import initialize_logging
 
-from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView
+from pybleau.app.api import main
 
 LEN = 16
 
@@ -30,12 +30,5 @@ TEST_DF = DataFrame({"axial disp": [1, 2, 3, 4]*(LEN//4),
 
 TEST_DF.iloc[-1, 1] = nan
 
-print(TEST_DF["disposed batch"])
-
-analyzer = DataFrameAnalyzer(source_df=TEST_DF)
-view = DataFrameAnalyzerView(
-    model=analyzer, include_plotter=True, plotter_layout="HSplit",
-    plotter_kw={"container_layout_type": "horizontal",
-                "num_container_managers": 5, "multi_container_mode": 2}
-)
-view.configure_traits()
+view_kw = dict(include_plotter=True, plotter_layout="HSplit")
+main(TEST_DF, **view_kw)
