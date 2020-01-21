@@ -70,7 +70,7 @@ plot_manager = DataFramePlotManager(
 )
 
 view = DataFrameAnalyzerView(
-    model=analyzer, include_plotter=True, plotter_layout="HSplit",
+    model=analyzer, include_plotter=True, plotter_layout="Tabbed",
     plotter_kw={"container_layout_type": "horizontal",
                 "num_container_managers": 5, "multi_container_mode": 0}
 )
