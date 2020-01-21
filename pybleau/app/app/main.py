@@ -3,7 +3,7 @@ import logging
 from six import string_types
 
 from pybleau.app.ui.dataframe_analyzer_model_view import DataFrameAnalyzer, \
-    DataFrameAnalyzerView, DataFramePlotManager
+    DataFrameAnalyzerView
 from pybleau.utils.pandas_utils import pd_read_any
 
 logger = logging.getLogger(__name__)
