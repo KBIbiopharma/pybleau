@@ -13,9 +13,14 @@ from traits.api import Any, Bool, cached_property, Constant, Dict, \
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 
-from .plot_style import ALL_CHACO_PALETTES, ALL_MPL_PALETTES, BarPlotStyle, \
-    BasePlotStyle, DEFAULT_DIVERG_PALETTE, DEFAULT_CONTIN_PALETTE, \
-    HeatmapPlotStyle, HistogramPlotStyle, LinePlotStyle, ScatterPlotStyle
+from .plot_style import ALL_CHACO_PALETTES, ALL_MPL_PALETTES, \
+    BaseXYPlotStyle, DEFAULT_DIVERG_PALETTE, DEFAULT_CONTIN_PALETTE, \
+    SingleLinePlotStyle, SingleScatterPlotStyle
+
+from .bar_plot_style import BarPlotStyle
+from .heatmap_plot_style import HeatmapPlotStyle
+from .histogram_plot_style import HistogramPlotStyle
+
 
 HIST_PLOT_TYPE = "Histogram Plot"
 
@@ -46,7 +51,7 @@ class BasePlotConfigurator(HasStrictTraits):
     transformed_data = Property
 
     #: Grouped plot style information
-    plot_style = Instance(BasePlotStyle)
+    plot_style = Instance(BaseXYPlotStyle)
 
     #: Title of the future plot, or plot pattern for MultiConfigurators
     plot_title = Str
@@ -121,7 +126,7 @@ class BasePlotConfigurator(HasStrictTraits):
                 name, target_name = key
                 out[target_name] = getattr(self, name)
 
-        out["plot_style"] = self.plot_style.to_dict()
+        out["plot_style"] = self.plot_style
         return out
 
     def df_column2array(self, col_name, df=None):
@@ -479,7 +484,7 @@ class LinePlotConfigurator(BaseSingleXYPlotConfigurator):
     """
     plot_type = Str(LINE_PLOT_TYPE)
 
-    plot_style = Instance(LinePlotStyle, ())
+    plot_style = Instance(SingleLinePlotStyle, ())
 
 
 class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
@@ -487,7 +492,7 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     """
     plot_type = Property(Str, depends_on="z_col_name")
 
-    plot_style = Instance(ScatterPlotStyle, ())
+    plot_style = Instance(SingleScatterPlotStyle, ())
 
     _support_hover = Bool(True)
 
@@ -632,7 +637,7 @@ DEFAULT_CONFIGS = {HIST_PLOT_TYPE: HistogramPlotConfigurator,
 
 DEFAULT_STYLES = {HIST_PLOT_TYPE: HistogramPlotStyle,
                   BAR_PLOT_TYPE: BarPlotStyle,
-                  LINE_PLOT_TYPE: LinePlotStyle,
-                  SCATTER_PLOT_TYPE: ScatterPlotStyle,
-                  CMAP_SCATTER_PLOT_TYPE: ScatterPlotStyle,
+                  LINE_PLOT_TYPE: SingleLinePlotStyle,
+                  SCATTER_PLOT_TYPE: SingleScatterPlotStyle,
+                  CMAP_SCATTER_PLOT_TYPE: SingleScatterPlotStyle,
                   HEATMAP_PLOT_TYPE: HeatmapPlotStyle}

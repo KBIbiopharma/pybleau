@@ -57,10 +57,10 @@ class ScatterPlotFactory(StdXYPlotFactory):
         return plot, desc
 
     def add_click_selector_tool(self, plot):
-        for renderer_name in plot.plots:
+        for i, renderer_name in enumerate(plot.plots):
             renderer = plot.plots[renderer_name][0]
-            marker_size = self.plot_style["marker_size"]
-            marker = self.plot_style["marker"]
+            marker_size = self.plot_style.renderer_styles[i].marker_size
+            marker = self.plot_style.renderer_styles[i].marker
             inspector_tool = DataframeScatterInspector(
                 renderer, selection_metadata_name=SELECTION_METADATA_NAME,
                 selection_mode="toggle", persistent_hover=False

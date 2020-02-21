@@ -12,7 +12,7 @@ from traits.api import Bool, Constant, Instance, List, Str
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, Item, VGroup
 
 from .plot_config import BasePlotConfigurator, HistogramPlotConfigurator, \
-    HistogramPlotStyle, LinePlotConfigurator, LinePlotStyle, X_COL_NAME_LABEL
+    HistogramPlotStyle, LinePlotConfigurator, SingleLinePlotStyle, X_COL_NAME_LABEL
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class MultiLinePlotConfigurator(BaseMultiPlotConfigurator):
     plot_type = Constant(MULTI_LINE_PLOT_TYPE)
 
     #: Styling of the plots created
-    plot_style = Instance(LinePlotStyle, ())
+    plot_style = Instance(SingleLinePlotStyle, ())
 
     #: Column name to display along the x-axis
     x_col_name = Str

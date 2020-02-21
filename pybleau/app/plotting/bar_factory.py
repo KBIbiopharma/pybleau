@@ -8,7 +8,7 @@ import logging
 
 from traits.api import Any, Constant
 from .plot_config import BAR_PLOT_TYPE
-from .plot_style import IGNORE_DATA_DUPLICATES
+from .bar_plot_style import IGNORE_DATA_DUPLICATES
 from .base_factories import StdXYPlotFactory
 
 BAR_SQUEEZE_FACTOR = 0.8
@@ -37,14 +37,10 @@ class BarPlotFactory(StdXYPlotFactory):
         """
         # Now that the x_values have been laid out, compute the appropriate bar
         # width:
-        if not self.plot_style["bar_width"]:
-            self.plot_style["bar_width"] = self._compute_bar_width()
+        if not self.plot_style.bar_width:
+            self.plot_style.bar_width = self._compute_bar_width()
 
-        for desc in self.renderer_desc:
-            # For bar plots, apply the color value to the fill_color keyword:
-            plot.plot((desc["x"], desc["y"]), type=self.plot_type_name,
-                      fill_color=desc["color"], name=desc["name"],
-                      **self.plot_style)
+        super(BarPlotFactory, self).add_renderers(plot)
 
         if self.error_bars is not None and len(self.error_bars):
             self._draw_error_bars(plot)

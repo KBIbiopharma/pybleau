@@ -29,6 +29,7 @@ from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 from app_common.chaco.legend import Legend, LegendHighlighter
 
 from ..utils.chaco_colors import generate_chaco_colors
+from .plot_style import BaseXYPlotStyle
 
 SELECTION_COLOR = "red"
 
@@ -44,7 +45,7 @@ class BasePlotFactory(HasStrictTraits):
     plot_data = Instance(ArrayPlotData)
 
     #: Styling of the ** renderer **. Passed to renderer creation method
-    plot_style = Dict
+    plot_style = Instance(BaseXYPlotStyle)
 
     #: Title of the generated plot
     plot_title = Str
@@ -106,8 +107,8 @@ class BasePlotFactory(HasStrictTraits):
             # if x_labels set, axis labels shouldn't be generated from the
             # numerical values but by the values stored in x_labels (for e.g.
             # when x_axis_col contains strings)
-            label_rotation = self.plot_style["x_axis_label_rotation"]
-            if self.plot_style["show_all_x_ticks"]:
+            label_rotation = self.plot_style.x_axis.label_rotation
+            if self.plot_style.x_axis.show_all_x_ticks:
                 label_positions = range(len(x_labels))
                 tick_generator = ShowAllTickGenerator(
                     positions=label_positions
@@ -125,20 +126,20 @@ class BasePlotFactory(HasStrictTraits):
             plot.underlays.append(bottom_axis)
 
         plot.index_axis.title = self.x_axis_title
-        font_size = self.plot_style["x_title_font_size"]
-        font_name = self.plot_style["title_font_name"]
+        font_size = self.plot_style.x_axis_style.title_style.font_size
+        font_name = self.plot_style.x_axis_style.title_style.font_name
         plot.index_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_y_axis_labels(self, plot):
         plot.value_axis.title = self.y_axis_title
-        font_size = self.plot_style["y_title_font_size"]
-        font_name = self.plot_style["title_font_name"]
+        font_size = self.plot_style.y_axis_style.title_style.font_size
+        font_name = self.plot_style.y_axis_style.title_style.font_name
         plot.value_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_title_label(self, plot):
         plot.title = self.plot_title
-        font_size = self.plot_style["title_font_size"]
-        font_name = self.plot_style["title_font_name"]
+        font_size = self.plot_style.title_style.font_size
+        font_name = self.plot_style.title_style.font_name
         plot._title.font = '{} {}'.format(font_name, font_size)
 
 
@@ -221,7 +222,7 @@ class StdXYPlotFactory(BasePlotFactory):
         """
         data_map = {self.x_col_name: x_arr, self.y_col_name: y_arr}
         data_map.update(adtl_arrays)
-        color = self.plot_style.pop("color")
+        color = self.plot_style.renderer_styles[0].color
         renderer_data = {"x": self.x_col_name, "y": self.y_col_name,
                          "color": color, "name": DEFAULT_RENDERER_NAME}
         self.renderer_desc = [renderer_data]
@@ -230,10 +231,12 @@ class StdXYPlotFactory(BasePlotFactory):
     def _plot_data_multi_renderer(self, x_arr=None, y_arr=None, z_arr=None,
                                   **adtl_arrays):
         """ Built the data_map to build the plot data for multiple renderers.
+
+        Colors are auto-generated from the color palette specified in the
+        plot_style.
         """
-        # Generate colors for all z_values: color style keyword ignored
-        self.plot_style.pop("color", None)
-        color_palette = self.plot_style.pop("color_palette")
+        # Generate colors for all z_values: color style attribute ignored:
+        color_palette = self.plot_style.color_palette
         n_colors = len(x_arr)
         if isinstance(color_palette, string_types):
             colors = generate_chaco_colors(n_colors, palette=color_palette)
@@ -257,6 +260,7 @@ class StdXYPlotFactory(BasePlotFactory):
                              "color": color, "name": hue_name}
             self._hue_values.append(hue_name)
             self.renderer_desc.append(renderer_data)
+            self.plot_style.renderer_styles[i].color = color
 
         return data_map
 
@@ -324,10 +328,10 @@ class StdXYPlotFactory(BasePlotFactory):
             plot.overlays.append(zoom_tool)
 
     def add_renderers(self, plot):
-        for desc in self.renderer_desc:
-            plot.plot((desc["x"], desc["y"]), type=self.plot_type_name,
-                      color=desc["color"], name=desc["name"],
-                      **self.plot_style)
+        renderer_styles = self.plot_style.renderer_styles
+        for desc, style in zip(self.renderer_desc, renderer_styles):
+            plot.plot((desc["x"], desc["y"]), type=style.renderer_type,
+                      name=desc["name"], **style.to_plot_kwargs())
 
     def set_legend(self, plot, align="ur", padding=10, drag_button="right"):
         """ Add legend and make it relocatable & clickable.

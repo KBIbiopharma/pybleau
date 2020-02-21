@@ -6,7 +6,7 @@ from app_common.apptools.testing_utils import temp_bringup_ui_for
 try:
     from chaco.api import ArrayPlotData, Plot
     from pybleau.app.plotting.plot_style import BarPlotStyle, \
-        HistogramPlotStyle, LinePlotStyle, ScatterPlotStyle, HeatmapPlotStyle
+        HistogramPlotStyle, SingleLinePlotStyle, SingleScatterPlotStyle, HeatmapPlotStyle
 except ImportError:
     pass
 
@@ -28,11 +28,11 @@ class TestPlotStyleAsView(TestCase):
             pass
 
     def test_open_line_style_as_view(self):
-        with temp_bringup_ui_for(LinePlotStyle()):
+        with temp_bringup_ui_for(SingleLinePlotStyle()):
             pass
 
     def test_open_scatter_style_as_view(self):
-        with temp_bringup_ui_for(ScatterPlotStyle()):
+        with temp_bringup_ui_for(SingleScatterPlotStyle()):
             pass
 
     def test_open_heatmap_style_as_view(self):
@@ -43,7 +43,7 @@ class TestPlotStyleAsView(TestCase):
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestPlotStyleBehaviors(TestCase):
     def test_initialize_range(self):
-        style = LinePlotStyle()
+        style = SingleLinePlotStyle()
         plot = Plot(ArrayPlotData(x=[1, 2], y=[3, 4]))
         plot.plot(("x", "y"))
 
@@ -70,7 +70,7 @@ class TestPlotStyleBehaviors(TestCase):
         self.assertEqual(style.auto_y_axis_range_high, 4)
 
     def test_initialize_range_with_transform(self):
-        style = LinePlotStyle()
+        style = SingleLinePlotStyle()
         plot = Plot(ArrayPlotData(x=[1.1, 2.1], y=[3.1, 4.1]))
         plot.plot(("x", "y"))
 
@@ -110,7 +110,7 @@ class TestPlotStyleBehaviors(TestCase):
         self.assertEqual(style.auto_y_axis_range_high, 4)
 
     def test_change_plot_range_and_reset(self):
-        style = LinePlotStyle()
+        style = SingleLinePlotStyle()
         # Initial state:
         self.assertEqual(style.x_axis_range_low, style.auto_x_axis_range_low)
         self.assertEqual(style.y_axis_range_low, style.auto_y_axis_range_low)

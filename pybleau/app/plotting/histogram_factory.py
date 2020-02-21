@@ -10,7 +10,7 @@ from traits.api import Array, Constant, Int, Str
 from chaco.api import ArrayPlotData
 
 from .plot_config import HIST_PLOT_TYPE
-from .plot_style import HistogramPlotStyle
+from .histogram_plot_style import HistogramPlotStyle
 from .base_factories import StdXYPlotFactory
 
 HISTOGRAM_Y_LABEL = "Frequency"
@@ -68,9 +68,9 @@ class HistogramPlotFactory(StdXYPlotFactory):
         """ Build a factory from a data array, its name, and some styling info.
         """
         if not traits or "plot_style" not in traits:
-            traits["plot_style"] = HistogramPlotStyle().to_dict()
+            traits["plot_style"] = HistogramPlotStyle()
         elif isinstance(traits["plot_style"], HistogramPlotStyle):
-            traits["plot_style"] = traits["plot_style"].to_dict()
+            traits["plot_style"] = traits["plot_style"]
 
         traits["y_col_name"] = HISTOGRAM_Y_LABEL
         super(HistogramPlotFactory, self).__init__(x_arr=x_arr, **traits)
@@ -78,28 +78,26 @@ class HistogramPlotFactory(StdXYPlotFactory):
     def adjust_plot_style(self):
         """ Translate general plotting style information into histogram params.
         """
-        self.plot_style["fill_color"] = self.plot_style.pop("color")
-
         # Adjust the bar width
-        bar_width_factor = self.plot_style.pop("bar_width_factor", 1.)
-        num_bins = self.plot_style["num_bins"]
+        bar_width_factor = self.plot_style.bar_width_factor
+        num_bins = self.plot_style.num_bins
         bar_width = self.compute_bar_width(self.bin_edges, num_bins,
                                            bar_width_factor=bar_width_factor)
-        self.plot_style["bar_width"] = bar_width
+        self.plot_style.bar_width = bar_width
 
     def initialize_plot_data(self, x_arr=None, y_arr=None, z_arr=None,
                              **adtl_arrays):
         """ Set the plot_data and the list of renderer descriptions.
         """
         # Compute the bin edges and probabilities and create the PlotData:
-        bin_lims = self.plot_style["bin_limits"]
-        num_bins = self.plot_style["num_bins"]
+        bin_lims = self.plot_style.bin_limits
+        num_bins = self.plot_style.num_bins
         data_map, self.bin_edges = self.build_hist_data(
             self.x_col_name, x_arr, num_bins, bin_lims=bin_lims
         )
         self.plot_data = ArrayPlotData(**data_map)
 
-        color = self.plot_style["color"]
+        color = self.plot_style.renderer_styles[0].color
         renderer_data = {"x": self.x_col_name, "y": HISTOGRAM_Y_LABEL,
                          "color": color, "name": None}
         self.renderer_desc = [renderer_data]

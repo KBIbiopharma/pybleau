@@ -26,8 +26,8 @@ class scatterPlotConfiguratorDeSerializer(dataElementDeSerializer):
 
 class scatterPlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
-        from pybleau.app.plotting.plot_style import ScatterPlotStyle
-        return ScatterPlotStyle
+        from pybleau.app.plotting.plot_style import SingleScatterPlotStyle
+        return SingleScatterPlotStyle
 
 
 class linePlotConfiguratorDeSerializer(dataElementDeSerializer):
@@ -38,8 +38,8 @@ class linePlotConfiguratorDeSerializer(dataElementDeSerializer):
 
 class linePlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
-        from pybleau.app.plotting.plot_style import LinePlotStyle
-        return LinePlotStyle
+        from pybleau.app.plotting.plot_style import SingleLinePlotStyle
+        return SingleLinePlotStyle
 
 
 class barPlotConfiguratorDeSerializer(dataElementDeSerializer):
@@ -50,7 +50,7 @@ class barPlotConfiguratorDeSerializer(dataElementDeSerializer):
 
 class barPlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
-        from pybleau.app.plotting.plot_style import BarPlotStyle
+        from pybleau.app.plotting.bar_plot_style import BarPlotStyle
         return BarPlotStyle
 
 
@@ -62,7 +62,8 @@ class histogramPlotConfiguratorDeSerializer(dataElementDeSerializer):
 
 class histogramPlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
-        from pybleau.app.plotting.plot_style import HistogramPlotStyle
+        from pybleau.app.plotting.histogram_plot_style import \
+            HistogramPlotStyle
         return HistogramPlotStyle
 
 
@@ -74,5 +75,5 @@ class heatmapPlotConfiguratorDeSerializer(dataElementDeSerializer):
 
 class heatmapPlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
-        from pybleau.app.plotting.plot_style import HeatmapPlotStyle
+        from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
         return HeatmapPlotStyle
