@@ -212,7 +212,8 @@ class BasePlotStyle(HasStrictTraits):
         self.y_axis_range_low = self.auto_y_axis_range_low
         self.y_axis_range_high = self.auto_y_axis_range_high
 
-    def initialize_axis_ranges(self, plot, transform=None):
+    def initialize_axis_ranges(self, plot, transform=None, x_mapper=None,
+                               y_mapper=None):
         """ Initialize the axis ranges from proviuded Plot or renderer.
         """
         if transform is None:
@@ -224,14 +225,20 @@ class BasePlotStyle(HasStrictTraits):
             def transform(x):
                 return round(x, ndigits)
 
+        if x_mapper is None:
+            x_mapper = plot.x_axis.mapper
+
+        if y_mapper is None:
+            y_mapper = plot.y_axis.mapper
+
         # Avoid UI polluting with non-sensical digits
-        self.x_axis_range_low = transform(plot.x_axis.mapper.range.low)
+        self.x_axis_range_low = transform(x_mapper.range.low)
         self.auto_x_axis_range_low = self.x_axis_range_low
-        self.x_axis_range_high = transform(plot.x_axis.mapper.range.high)
+        self.x_axis_range_high = transform(x_mapper.range.high)
         self.auto_x_axis_range_high = self.x_axis_range_high
-        self.y_axis_range_low = transform(plot.y_axis.mapper.range.low)
+        self.y_axis_range_low = transform(y_mapper.range.low)
         self.auto_y_axis_range_low = self.y_axis_range_low
-        self.y_axis_range_high = transform(plot.y_axis.mapper.range.high)
+        self.y_axis_range_high = transform(y_mapper.range.high)
         self.auto_y_axis_range_high = self.y_axis_range_high
 
     def _view_kw_default(self):
