@@ -14,8 +14,8 @@ from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 
 from .plot_style import ALL_CHACO_PALETTES, ALL_MPL_PALETTES, \
-    BaseXYPlotStyle, DEFAULT_DIVERG_PALETTE, DEFAULT_CONTIN_PALETTE, \
-    SingleLinePlotStyle, SingleScatterPlotStyle
+    BaseColorXYPlotStyle, BaseXYPlotStyle, DEFAULT_DIVERG_PALETTE, \
+    DEFAULT_CONTIN_PALETTE, SingleLinePlotStyle, SingleScatterPlotStyle
 
 from .bar_plot_style import BarPlotStyle
 from .heatmap_plot_style import HeatmapPlotStyle
@@ -232,6 +232,8 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     #: Whether this configuration will lead to 1 or multiple renderers
     _single_renderer = Property(Bool)
 
+    plot_style = Instance(BaseXYPlotStyle)
+
     # Traits property getters/setters -----------------------------------------
 
     def _get_x_arr(self):
@@ -378,7 +380,7 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
     plot_type = Str(BAR_PLOT_TYPE)
 
     #: Plot style
-    plot_style = Instance(BarPlotStyle, ())
+    plot_style = Instance(BarPlotStyle)
 
     #: Whether to "melt" (in the Pandas' sense) the DF to build the bar plot
     melt_source_data = Bool
@@ -470,6 +472,16 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
 
     # Traits initialization methods -------------------------------------------
 
+    def _plot_style_default(self):
+        from .bar_plot_style import BarRendererStyle
+        # FIXME: Replace the 1 by the number of renderers:
+        if self.transformed_data is self.data_source:
+            num_renderer = 1
+        else:
+            raise NotImplementedError()
+
+        return BarPlotStyle(renderer_styles=[BarRendererStyle()]*num_renderer)
+
     def __dict_keys_default(self):
         # Attributes to serialize to pass to factory or serialization for file
         # storage (serialization code adds plot_style to the list):
@@ -492,11 +504,13 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     """
     plot_type = Property(Str, depends_on="z_col_name")
 
-    plot_style = Instance(SingleScatterPlotStyle, ())
+    plot_style = Property(Instance(BaseXYPlotStyle), depends_on="z_col_name")
 
     _support_hover = Bool(True)
 
     colorize_by_float = Property(Bool)
+
+    # Traits property getters/setters -----------------------------------------
 
     def _get_plot_type(self):
         if self.colorize_by_float:
@@ -519,6 +533,21 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         if self.plot_type == CMAP_SCATTER_PLOT_TYPE:
             return self.data_source[self.z_col_name].values
 
+    @cached_property
+    def _get_plot_style(self):
+        from .renderer_style import ScatterRendererStyle
+
+        if not self.z_col_name or self.plot_type == CMAP_SCATTER_PLOT_TYPE:
+            num_renderer = 1
+        else:
+            num_renderer = len(self.data_source[self.z_col_name].unique())
+
+        # Always use a color styler to support cmap scatters and multi-scatters
+        renderer_styles = [ScatterRendererStyle() for _ in range(num_renderer)]
+        return BaseColorXYPlotStyle(renderer_styles=renderer_styles)
+
+    # Traits listeners --------------------------------------------------------
+
     def _z_col_name_changed(self, new):
         super(ScatterPlotConfigurator, self)._z_col_name_changed(new)
 
@@ -526,6 +555,10 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
             # Interpolating any MPL palettes in a regular scatter
             self.plot_style._all_palettes = ALL_MPL_PALETTES
             self.plot_style.color_palette = DEFAULT_DIVERG_PALETTE
+
+            # TODO: set the names and colors for each renderer in the styling
+            #  object!
+
         else:
             # Using chaco palettes in a CMAP scatter
             self.plot_style._all_palettes = ALL_CHACO_PALETTES

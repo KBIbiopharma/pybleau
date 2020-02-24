@@ -333,10 +333,10 @@ class DataFramePlotManager(DataElement):
         """ Apply the styler's range attributes to the created plot.
         """
         style = config.plot_style
-        plot.index_mapper.range.low = style.x_axis_range_low
-        plot.index_mapper.range.high = style.x_axis_range_high
-        plot.value_mapper.range.low = style.y_axis_range_low
-        plot.value_mapper.range.high = style.y_axis_range_high
+        plot.index_mapper.range.low = style.x_axis_style.range_low
+        plot.index_mapper.range.high = style.x_axis_style.range_high
+        plot.value_mapper.range.low = style.y_axis_style.range_low
+        plot.value_mapper.range.high = style.y_axis_style.range_high
 
     def _factory_from_config(self, config):
         """ Return plot factory capable of building a plot described by config.

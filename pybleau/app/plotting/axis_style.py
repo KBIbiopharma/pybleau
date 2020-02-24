@@ -37,6 +37,7 @@ class AxisStyle(Serializable):
     #: Button to reset the x-axis range to automatic values
     reset_range = Button("Reset")
 
+    #: Selector for the scaling of the axis: log or linear?
     scaling = Enum("linear", "log")
 
     #: View klass. Override to customize the views, for example their icon

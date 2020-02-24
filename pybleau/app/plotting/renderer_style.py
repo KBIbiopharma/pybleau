@@ -112,12 +112,11 @@ class LineRendererStyle(BaseXYRendererStyle):
         return view
 
     def _dict_keys_default(self):
-        general_items = super(BaseXYRendererStyle, self)._dict_keys_default()
+        general_items = super(LineRendererStyle, self)._dict_keys_default()
         return general_items + ["line_width", "line_style"]
 
 
 class BarRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing line renderers.
     """
-
     renderer_type = "bar"

@@ -1,7 +1,7 @@
 """ These are styling objects to control and view styling entire chaco plots
 (`Plot` and `OverlayPlotContainer` instances)
 """
-from traits.api import Any, Dict, Enum, Float, Instance, List, Property
+from traits.api import Any, Bool, Dict, Enum, Float, Instance, List, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
 from chaco.api import LinePlot, Plot
@@ -211,13 +211,25 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
     #: High value described by the colorbar
     colorbar_high = Float(1.0)
 
+    colorbar_present = Bool
+
     def _get_specific_view_elements(self):
-        return [VGroup(
-            Item("color_palette"),
-            Item("color_dim_title_style"),
-            HGroup(Item('colormap_str'),
-                   Item('colorbar_low'),
-                   Item('colorbar_high'), show_border=True))]
+        return [
+            VGroup(
+                Item("color_palette"),
+                VGroup(
+                    Item("color_dim_title_style", editor=InstanceEditor(),
+                         style="custom", show_label=False),
+                    show_border=True, label="Color dim title"
+                ),
+                HGroup(
+                    Item('colormap_str'),
+                    Item('colorbar_low'),
+                    Item('colorbar_high'),
+                    show_border=True, label="colorbar",
+                    visible_when="colorbar_present"),
+            )
+        ]
 
     def _dict_keys_default(self):
         general_items = super(BaseColorXYPlotStyle, self)._dict_keys_default()

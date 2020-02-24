@@ -107,8 +107,8 @@ class BasePlotFactory(HasStrictTraits):
             # if x_labels set, axis labels shouldn't be generated from the
             # numerical values but by the values stored in x_labels (for e.g.
             # when x_axis_col contains strings)
-            label_rotation = self.plot_style.x_axis.label_rotation
-            if self.plot_style.x_axis.show_all_x_ticks:
+            label_rotation = self.plot_style.x_axis_style.label_rotation
+            if self.plot_style.x_axis_style.show_all_labels:
                 label_positions = range(len(x_labels))
                 tick_generator = ShowAllTickGenerator(
                     positions=label_positions

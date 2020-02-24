@@ -160,8 +160,7 @@ class BarPlotFactory(StdXYPlotFactory):
         # Collect all labels and reset x_arr as an int list
         if x_arr.dtype in [object, bool]:
             duplicates_present = len(set(x_arr)) != len(x_arr)
-            data_duplicate = self.plot_style.pop("data_duplicate",
-                                                 IGNORE_DATA_DUPLICATES)
+            data_duplicate = self.plot_style.data_duplicate
             handle_duplicates = data_duplicate != IGNORE_DATA_DUPLICATES
             if duplicates_present and handle_duplicates:
                 if self.x_labels:

@@ -22,7 +22,7 @@ class BarPlotStyle(BaseXYPlotStyle):
     bar_style = Enum(["group"])  # , "stack"
 
     #: How to handle multiple values contributing to a single bar?
-    data_duplicate = Enum(["mean", IGNORE_DATA_DUPLICATES])
+    data_duplicate = Enum([IGNORE_DATA_DUPLICATES, "mean"])
 
     #: Whether to display error bars when multiple values contribute to a bar
     show_error_bars = Bool

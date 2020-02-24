@@ -17,11 +17,12 @@ TEST_DF = DataFrame({"Col_1": [1, 2, 3, 4, 5, 6, 7, 8],
                      "Col_2": np.array([1, 2, 3, 4, 5, 6, 7, 8])[::-1],
                      "Col_3": ["aa_aaa", "bb_bbb", "aa_aaa", "cc_ccc",
                                "ee_eee", "dd_ddd", "ff_fff", "gg_ggg"],
-})
+                     "Col_4": np.random.randn(8),
+                     })
 
 config = HistogramPlotConfigurator(data_source=TEST_DF)
-config.x_col_name = "Col_1"
-desc = PlotDescriptor(x_col_name="Col_1", plot_config=config,
+config.x_col_name = "Col_4"
+desc = PlotDescriptor(x_col_name="Col_4", plot_config=config,
                       plot_title="Plot 1")
 
 config2 = BarPlotConfigurator(data_source=TEST_DF)
