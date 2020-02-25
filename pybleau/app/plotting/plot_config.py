@@ -543,8 +543,11 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
             num_renderer = len(self.data_source[self.z_col_name].unique())
 
         # Always use a color styler to support cmap scatters and multi-scatters
-        renderer_styles = [ScatterRendererStyle() for _ in range(num_renderer)]
-        return BaseColorXYPlotStyle(renderer_styles=renderer_styles)
+        style = BaseColorXYPlotStyle()
+        style.renderer_styles = [ScatterRendererStyle()
+                                 for _ in range(num_renderer)]
+        style.update_renderer_colors()
+        return style
 
     # Traits listeners --------------------------------------------------------
 
@@ -555,10 +558,6 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
             # Interpolating any MPL palettes in a regular scatter
             self.plot_style._all_palettes = ALL_MPL_PALETTES
             self.plot_style.color_palette = DEFAULT_DIVERG_PALETTE
-
-            # TODO: set the names and colors for each renderer in the styling
-            #  object!
-
         else:
             # Using chaco palettes in a CMAP scatter
             self.plot_style._all_palettes = ALL_CHACO_PALETTES

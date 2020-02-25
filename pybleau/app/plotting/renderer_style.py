@@ -1,9 +1,10 @@
-from traits.api import Any, Enum, Float, Int, List, Property, Range, Trait
+
+from traits.api import Any, Enum, Float, Int, List, Property, Range, Str, Trait
 from traitsui.api import EnumEditor, HGroup, Item, RangeEditor, VGroup, View
 from enable.markers import MarkerNameDict, marker_names
 from enable.api import ColorTrait, LineStyle
 
-from .serializable import Serializable
+from .exportable import Exportable
 
 DEFAULT_COLOR = "blue"
 
@@ -12,7 +13,7 @@ DEFAULT_MARKER_SIZE = 6
 DEFAULT_LINE_WIDTH = 1.3
 
 
-class BaseXYRendererStyle(Serializable):
+class BaseXYRendererStyle(Exportable):
     """ Styling object for customizing scatter renderers.
     """
     #: Color of the renderer
@@ -25,6 +26,10 @@ class BaseXYRendererStyle(Serializable):
     orientation = Enum(["left", "right"])
 
     renderer_type = ""
+
+    #: Name of the renderer as referenced in the plot container.
+    # Used by the PlotStyle to frame views.
+    renderer_name = Str
 
     #: View elements for users to control these parameters
     general_view_elements = Property(List)
@@ -73,11 +78,10 @@ class ScatterRendererStyle(BaseXYRendererStyle):
     def traits_view(self):
         view = self.view_klass(
             VGroup(
-                VGroup(
+                HGroup(
                     Item('marker', label="Marker"),
                     Item('marker_size',
                          editor=RangeEditor(low=1, high=20)),
-                    show_border=True
                 ),
                 *self.general_view_elements
             ),
@@ -101,10 +105,9 @@ class LineRendererStyle(BaseXYRendererStyle):
     def traits_view(self):
         view = self.view_klass(
             VGroup(
-                VGroup(
+                HGroup(
                     Item('line_width'),
                     Item('line_style', style="custom"),
-                    show_border=True
                 ),
                 *self.general_view_elements
             ),
@@ -120,3 +123,18 @@ class BarRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing line renderers.
     """
     renderer_type = "bar"
+
+    #: Color of the contours of the bars
+    line_color = ColorTrait(DEFAULT_COLOR)
+
+    #: Color of the inside of the bars
+    fill_color = ColorTrait(DEFAULT_COLOR)
+
+    def _color_changed(self):
+        # Bar renderers have 2 different color traits for the line and the
+        # inside of the bar:
+        self.line_color = self.color
+        self.fill_color = self.color
+
+    def _dict_keys_default(self):
+        return ["line_color", "fill_color", "alpha"]

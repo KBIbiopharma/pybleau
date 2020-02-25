@@ -2,7 +2,7 @@
 from traits.api import HasTraits, List
 
 
-class Serializable(HasTraits):
+class Exportable(HasTraits):
     """ Object that can be converted to a dictionary.
     """
     #: List of attribute names to export to dictionary
@@ -12,7 +12,7 @@ class Serializable(HasTraits):
         serialized = {}
         for key in self.dict_keys:
             attr = getattr(self, key)
-            if isinstance(attr, Serializable):
+            if isinstance(attr, Exportable):
                 serialized[key] = attr.to_dict()
             else:
                 serialized[key] = attr

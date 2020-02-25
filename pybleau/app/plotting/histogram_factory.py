@@ -6,7 +6,7 @@ from __future__ import print_function, division
 import numpy as np
 import logging
 
-from traits.api import Array, Constant, Int, Str
+from traits.api import Array, Constant, Instance, Int, Str
 from chaco.api import ArrayPlotData
 
 from .plot_config import HIST_PLOT_TYPE
@@ -48,6 +48,8 @@ class HistogramPlotFactory(StdXYPlotFactory):
      {'ndim': 1,
       'plot': <chaco.plot.Plot at 0x12278a590>,
       ...})
+
+    FIXME: Make this class a subclass of the BarPlotFactory!
     """
     #: Label to display along the y-axis
     y_axis_title = Str(HISTOGRAM_Y_LABEL)
@@ -64,14 +66,11 @@ class HistogramPlotFactory(StdXYPlotFactory):
     #: Edges of the histogram bars
     bin_edges = Array
 
+    plot_style = Instance(HistogramPlotStyle, ())
+
     def __init__(self, x_arr=None, **traits):
         """ Build a factory from a data array, its name, and some styling info.
         """
-        if not traits or "plot_style" not in traits:
-            traits["plot_style"] = HistogramPlotStyle()
-        elif isinstance(traits["plot_style"], HistogramPlotStyle):
-            traits["plot_style"] = traits["plot_style"]
-
         traits["y_col_name"] = HISTOGRAM_Y_LABEL
         super(HistogramPlotFactory, self).__init__(x_arr=x_arr, **traits)
 
@@ -79,11 +78,13 @@ class HistogramPlotFactory(StdXYPlotFactory):
         """ Translate general plotting style information into histogram params.
         """
         # Adjust the bar width
-        bar_width_factor = self.plot_style.bar_width_factor
-        num_bins = self.plot_style.num_bins
-        bar_width = self.compute_bar_width(self.bin_edges, num_bins,
-                                           bar_width_factor=bar_width_factor)
-        self.plot_style.bar_width = bar_width
+        if not self.plot_style.bar_width:
+            bar_width_factor = self.plot_style.bar_width_factor
+            num_bins = self.plot_style.num_bins
+            bar_width = self.compute_bar_width(
+                self.bin_edges, num_bins, bar_width_factor=bar_width_factor
+            )
+            self.plot_style.bar_width = bar_width
 
     def initialize_plot_data(self, x_arr=None, y_arr=None, z_arr=None,
                              **adtl_arrays):
@@ -97,9 +98,8 @@ class HistogramPlotFactory(StdXYPlotFactory):
         )
         self.plot_data = ArrayPlotData(**data_map)
 
-        color = self.plot_style.renderer_styles[0].color
         renderer_data = {"x": self.x_col_name, "y": HISTOGRAM_Y_LABEL,
-                         "color": color, "name": None}
+                         "name": ""}
         self.renderer_desc = [renderer_data]
         return data_map
 

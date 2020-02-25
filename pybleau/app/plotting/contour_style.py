@@ -1,9 +1,9 @@
 from traits.api import Bool, Enum, Float, Int
 from traitsui.api import HGroup, Item, RangeEditor
-from .serializable import Serializable
+from .exportable import Exportable
 
 
-class ContourStyle(Serializable):
+class ContourStyle(Exportable):
     """ Styling object to customize contours on a heatmap.
     """
     add_contours = Bool(False)

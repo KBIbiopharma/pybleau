@@ -1,6 +1,9 @@
 """ These are styling objects to control and view styling entire chaco plots
 (`Plot` and `OverlayPlotContainer` instances)
 """
+from six import string_types
+import logging
+
 from traits.api import Any, Bool, Dict, Enum, Float, Instance, List, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
@@ -10,9 +13,10 @@ from pybleau.app.utils.chaco_colors import ALL_CHACO_PALETTES, ALL_MPL_PALETTES
 from pybleau.app.plotting.axis_style import AxisStyle
 from pybleau.app.plotting.title_style import TitleStyle
 from pybleau.app.plotting.renderer_style import BaseXYRendererStyle
-from pybleau.app.plotting.serializable import Serializable
+from pybleau.app.plotting.exportable import Exportable
 from pybleau.app.plotting.renderer_style import LineRendererStyle, \
     ScatterRendererStyle
+from ..utils.chaco_colors import generate_chaco_colors
 
 DEFAULT_DIVERG_PALETTE = "hsv"
 
@@ -20,8 +24,10 @@ DEFAULT_CONTIN_PALETTE = "cool"
 
 SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
 
+logger = logging.getLogger(__name__)
 
-class BaseXYPlotStyle(Serializable):
+
+class BaseXYPlotStyle(Exportable):
     """ Styling parameters for building X-Y Chaco plots.
 
     These objects are designed to be used by PlotFactories to control the
@@ -110,8 +116,9 @@ class BaseXYPlotStyle(Serializable):
                            for i, style in enumerate(self.renderer_styles)}
         self.trait_set(**renderer_traits)
 
-        items = [self._make_group_for_renderer(name)
-                 for name in renderer_traits.keys()]
+        rend_names = [style.renderer_name for style in self.renderer_styles]
+        items = [self._make_group_for_renderer(trait, name)
+                 for trait, name in zip(renderer_traits.keys(), rend_names)]
 
         elemens = [
             Tabbed(
@@ -230,6 +237,29 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
                     visible_when="colorbar_present"),
             )
         ]
+
+    def update_renderer_colors(self):
+        """ Based on number of renderers & palette, initialize renderer colors.
+        """
+        num_renderer = len(self.renderer_styles)
+        if num_renderer == 1:
+            return
+
+        color_palette = self.color_palette
+        if isinstance(color_palette, string_types):
+            colors = generate_chaco_colors(num_renderer, palette=color_palette)
+        else:
+            msg = "color_palette should be a Matplotlib palette name " \
+                  "(string) but {} ({}) was provided."
+            msg = msg.format(color_palette, type(color_palette))
+            logger.exception(msg)
+            raise ValueError(msg)
+
+        for i, color in enumerate(colors):
+            self.renderer_styles[i].color = color
+
+    def _color_palette_changed(self):
+        self.update_renderer_colors()
 
     def _dict_keys_default(self):
         general_items = super(BaseColorXYPlotStyle, self)._dict_keys_default()

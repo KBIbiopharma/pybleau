@@ -4,10 +4,10 @@ from traitsui.api import HGroup, InstanceEditor, Item, RangeEditor, VGroup, \
     View
 
 from pybleau.app.plotting.title_style import TitleStyle
-from pybleau.app.plotting.serializable import Serializable
+from pybleau.app.plotting.exportable import Exportable
 
 
-class AxisStyle(Serializable):
+class AxisStyle(Exportable):
 
     #: Name of the axis, to use in view labels
     axis_name = Str

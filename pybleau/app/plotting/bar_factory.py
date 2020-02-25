@@ -59,14 +59,14 @@ class BarPlotFactory(StdXYPlotFactory):
             _, y, errors = _split_avg_for_bar_heights(
                 x, y, force_index=self.x_labels
             )
-            show_error_bars = self.plot_style["show_error_bars"]
+            show_error_bars = self.plot_style.show_error_bars
             if show_error_bars:
                 self.error_bars[hue_name] = errors
 
             # Strings along x: replace with equi-distant positions...
             x = np.arange(len(self.x_labels), dtype="float64")
             # shifted so the bars are side by side if that's the chosen style:
-            if self.plot_style["bar_style"] == "group":
+            if self.plot_style.bar_style == "group":
                 bar_width = BAR_SQUEEZE_FACTOR / len(x_arr)
                 x = x + hue_val_idx * bar_width
             else:
@@ -171,7 +171,7 @@ class BarPlotFactory(StdXYPlotFactory):
                     x_arr, y_arr, errors = _split_avg_for_bar_heights(
                         x_arr, y_arr
                     )
-                show_error_bars = self.plot_style.pop("show_error_bars", False)
+                show_error_bars = self.plot_style.show_error_bars
                 if show_error_bars:
                     self.error_bars = errors
 

@@ -21,6 +21,9 @@ class HistogramPlotStyle(BaseXYPlotStyle):
     #: Factor to apply to the default bar width. Set to 1 for bars to touch.
     bar_width_factor = Float(1.0)
 
+    #: Width of the bars to draw: leave at 0 to be computed.
+    bar_width = Float
+
     # Extra parameters not needed in the view ---------------------------------
 
     #: Meaning of the parameter above: data space or screen space?
@@ -31,7 +34,7 @@ class HistogramPlotStyle(BaseXYPlotStyle):
     def _dict_keys_default(self):
         general_items = super(HistogramPlotStyle, self)._dict_keys_default()
         return general_items + ["num_bins", "bin_limits", "bar_width_factor",
-                                "bar_width_type"]
+                                "bar_width_type", "bar_width"]
 
     def _get_specific_view_elements(self):
         return [

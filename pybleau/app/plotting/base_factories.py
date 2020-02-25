@@ -18,7 +18,6 @@ from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 import logging
-from six import string_types
 
 from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
     Str
@@ -28,7 +27,6 @@ from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 
 from app_common.chaco.legend import Legend, LegendHighlighter
 
-from ..utils.chaco_colors import generate_chaco_colors
 from .plot_style import BaseXYPlotStyle
 
 SELECTION_COLOR = "red"
@@ -222,45 +220,23 @@ class StdXYPlotFactory(BasePlotFactory):
         """
         data_map = {self.x_col_name: x_arr, self.y_col_name: y_arr}
         data_map.update(adtl_arrays)
-        color = self.plot_style.renderer_styles[0].color
         renderer_data = {"x": self.x_col_name, "y": self.y_col_name,
-                         "color": color, "name": DEFAULT_RENDERER_NAME}
+                         "name": DEFAULT_RENDERER_NAME}
         self.renderer_desc = [renderer_data]
         return data_map
 
     def _plot_data_multi_renderer(self, x_arr=None, y_arr=None, z_arr=None,
                                   **adtl_arrays):
         """ Built the data_map to build the plot data for multiple renderers.
-
-        Colors are auto-generated from the color palette specified in the
-        plot_style.
         """
-        # Generate colors for all z_values: color style attribute ignored:
-        color_palette = self.plot_style.color_palette
-        n_colors = len(x_arr)
-        if isinstance(color_palette, string_types):
-            colors = generate_chaco_colors(n_colors, palette=color_palette)
-        elif isinstance(color_palette, dict):
-            colors = [color_palette[key] for key in x_arr.keys()]
-        else:
-            msg = "color_palette should be a Matplotlib palette name " \
-                  "(string) or a dictionary mapping values to a colors, " \
-                  "but {} ({}) was provided."
-            msg = msg.format(color_palette, type(color_palette))
-            logger.exception(msg)
-            raise ValueError(msg)
-
         data_map = {}
         for i, hue_val in enumerate(sorted(x_arr.keys())):
-            color = colors[i]
             hue_name, x_name, y_name = self._add_arrays_for_hue(
                 data_map, x_arr, y_arr, hue_val, i, adtl_arrays
             )
-            renderer_data = {"x": x_name, "y": y_name,
-                             "color": color, "name": hue_name}
+            renderer_data = {"x": x_name, "y": y_name, "name": hue_name}
             self._hue_values.append(hue_name)
             self.renderer_desc.append(renderer_data)
-            self.plot_style.renderer_styles[i].color = color
 
         return data_map
 
@@ -324,12 +300,15 @@ class StdXYPlotFactory(BasePlotFactory):
             plot.tools.append(pan_tool)
 
         if "zoom" in self.plot_tools:
-            zoom_tool = BetterSelectingZoom(component=plot)
+            zoom_tool = BetterSelectingZoom(component=plot, zoom_factor=1.2)
             plot.overlays.append(zoom_tool)
 
     def add_renderers(self, plot):
         renderer_styles = self.plot_style.renderer_styles
+        assert len(renderer_styles) == len(self.renderer_desc)
+
         for desc, style in zip(self.renderer_desc, renderer_styles):
+            style.renderer_name = desc["name"]
             plot.plot((desc["x"], desc["y"]), type=style.renderer_type,
                       name=desc["name"], **style.to_plot_kwargs())
 

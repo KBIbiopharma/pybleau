@@ -4,7 +4,7 @@ from traits.api import Any, Enum, Int, List
 from traitsui.api import HGroup, Item, RangeEditor, View
 from kiva.trait_defs.kiva_font_trait import font_families
 
-from .serializable import Serializable
+from .exportable import Exportable
 
 DEFAULT_AXIS_LABEL_FONT_SIZE = 18
 
@@ -13,7 +13,7 @@ DEFAULT_TITLE_FONT_SIZE = 18
 DEFAULT_TITLE_FONT = "modern"
 
 
-class TitleStyle(Serializable):
+class TitleStyle(Exportable):
 
     #: Font used to draw the title
     font_name = Enum(DEFAULT_TITLE_FONT, values="_all_fonts")
