@@ -1,5 +1,7 @@
-from traits.api import Bool, Enum, Float, Int
-from traitsui.api import HGroup, Item, RangeEditor
+
+from traits.api import Any, Bool, Enum, Float, Int
+from traitsui.api import HGroup, Item, RangeEditor, View
+
 from .exportable import Exportable
 
 
@@ -15,6 +17,9 @@ class ContourStyle(Exportable):
     contour_alpha = Float(0.9)
 
     contour_widths = Float(0.85)
+
+    #: View klass. Override to customize the view, for example its icon
+    view_klass = Any(default_value=View)
 
     def traits_view(self):
         view = self.view_klass(
