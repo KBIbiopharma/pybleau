@@ -1,4 +1,5 @@
-
+""" Test exporting data and plots in a DFPlotManager
+"""
 from unittest import TestCase, skipIf
 from pandas import DataFrame, read_csv, read_excel, read_hdf
 import os
@@ -153,6 +154,7 @@ class BasePlotManagerExportTester(object):
         if ext == ".xlsx":
             reader = read_excel
             kw["sheet_name"] = DEFAULT_DATASET_NAME
+            kw["index_col"] = 0
         elif ext == ".csv":
             reader = read_csv
             kw["index_col"] = 0
@@ -161,7 +163,7 @@ class BasePlotManagerExportTester(object):
             kw["key"] = DEFAULT_DATASET_NAME
 
         df_back = reader(data_file, **kw)
-        # FIXME: anyway to avoid Excel messing up the dtypes?
+        # FIXME: is there any way to avoid Excel messing up the dtypes?
         if ext == ".xlsx":
             assert_frame_equal(df_back, TEST_DF, check_dtype=False)
         else:

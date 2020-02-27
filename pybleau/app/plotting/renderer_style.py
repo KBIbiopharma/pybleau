@@ -8,7 +8,7 @@ from enable.api import ColorTrait, LineStyle
 
 from .exportable import Exportable
 
-DEFAULT_COLOR = "blue"
+DEFAULT_RENDERER_COLOR = "blue"
 
 DEFAULT_MARKER_SIZE = 6
 
@@ -18,16 +18,17 @@ DEFAULT_LINE_WIDTH = 1.3
 class BaseXYRendererStyle(Exportable):
     """ Styling object for customizing scatter renderers.
     """
+    #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
+    renderer_type = ""
+
     #: Color of the renderer
-    color = ColorTrait(DEFAULT_COLOR)
+    color = ColorTrait(DEFAULT_RENDERER_COLOR)
 
     #: Transparency of the renderer
     alpha = Range(value=1., low=0., high=1.)
 
     #: Which y-axis to be displayed along
     orientation = Enum(["left", "right"])
-
-    renderer_type = ""
 
     #: Name of the renderer as referenced in the plot container.
     # Used by the PlotStyle to frame views.
@@ -68,14 +69,15 @@ class BaseXYRendererStyle(Exportable):
 class ScatterRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing scatter renderers.
     """
+    #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
+    renderer_type = "scatter"
+
     #: The type of marker to use
     marker = Trait("circle", MarkerNameDict,
                    editor=EnumEditor(values=marker_names))
 
     #: The size of the marker
     marker_size = Int(DEFAULT_MARKER_SIZE)
-
-    renderer_type = "scatter"
 
     def traits_view(self):
         view = self.view_klass(
@@ -96,6 +98,9 @@ class ScatterRendererStyle(BaseXYRendererStyle):
 
 
 class CmapScatterRendererStyle(ScatterRendererStyle):
+
+    #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
+    renderer_type = "cmap_scatter"
 
     #: Name of the palette to pick colors from in z direction
     color_palette = Str
@@ -135,11 +140,11 @@ class CmapScatterRendererStyle(ScatterRendererStyle):
 class LineRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing line renderers.
     """
+    renderer_type = "line"
+
     line_width = Float(DEFAULT_LINE_WIDTH)
 
     line_style = LineStyle("solid")
-
-    renderer_type = "line"
 
     def traits_view(self):
         view = self.view_klass(
@@ -161,16 +166,17 @@ class LineRendererStyle(BaseXYRendererStyle):
 class BarRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing line renderers.
     """
+    #: Name of the
     renderer_type = "bar"
 
     #: Width of each bar. Leave as 0 to have it computed programmatically.
     bar_width = Float
 
     #: Color of the contours of the bars
-    line_color = ColorTrait(DEFAULT_COLOR)
+    line_color = ColorTrait(DEFAULT_RENDERER_COLOR)
 
     #: Color of the inside of the bars
-    fill_color = ColorTrait(DEFAULT_COLOR)
+    fill_color = ColorTrait(DEFAULT_RENDERER_COLOR)
 
     def traits_view(self):
         view = self.view_klass(

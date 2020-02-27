@@ -13,7 +13,7 @@ from chaco.api import LinePlot, Plot
 from ..utils.chaco_colors import ALL_CHACO_PALETTES, ALL_MPL_PALETTES
 from .axis_style import AxisStyle
 from .title_style import TitleStyle
-from .renderer_style import BaseXYRendererStyle, CmapScatterRendererStyle, \
+from .renderer_style import BaseXYRendererStyle, DEFAULT_RENDERER_COLOR, \
     LineRendererStyle, ScatterRendererStyle
 from .exportable import Exportable
 from ..utils.chaco_colors import generate_chaco_colors
@@ -251,14 +251,17 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
         For colormapped renderers, pass the palette straight.
         """
         num_renderer = len(self.renderer_styles)
-        color_palette = self.color_palette
-        colors = generate_chaco_colors(num_renderer, palette=color_palette)
-        for i, color in enumerate(colors):
-            renderer = self.renderer_styles[i]
-            if hasattr(renderer, "color_palette"):
-                renderer.color_palette = self.color_palette
-            else:
-                renderer.color = color
+        if num_renderer == 1 and not self.colorize_by_float:
+            self.renderer_styles[0].color = DEFAULT_RENDERER_COLOR
+        else:
+            color_palette = self.color_palette
+            colors = generate_chaco_colors(num_renderer, palette=color_palette)
+            for i, color in enumerate(colors):
+                renderer = self.renderer_styles[i]
+                if hasattr(renderer, "color_palette"):
+                    renderer.color_palette = self.color_palette
+                else:
+                    renderer.color = color
 
     def __all_palettes_changed(self):
         self.color_palette = self._color_palette_default()

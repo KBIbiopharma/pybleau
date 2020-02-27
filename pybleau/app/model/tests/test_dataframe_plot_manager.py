@@ -36,6 +36,7 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.plotting.scatter_factories import \
         SELECTION_METADATA_NAME, DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR
     from pybleau.app.plotting.base_factories import DEFAULT_RENDERER_NAME
+    from pybleau.app.plotting.renderer_style import DEFAULT_RENDERER_COLOR
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
 
 
@@ -175,9 +176,9 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         plot_desc = self.model.contained_plots[0]
         style = plot_desc.plot_config.plot_style
         self.assertEqual(plot_desc.plot.plots[DEFAULT_RENDERER_NAME][0].color,
-                         "blue")
+                         DEFAULT_RENDERER_COLOR)
 
-        style.color = "red"
+        style.renderer_styles[0].color = "red"
         with self.assertTraitChanges(self.model, "contained_plots[]"):
             plot_desc.style_edited = True
 
@@ -196,25 +197,31 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         plot_desc2 = self.model.contained_plots[1]
 
         style = plot_desc2.plot_config.plot_style
-        self.assertEqual(plot_desc2.plot.plots["plot0"][0].color, "blue")
+        bar_renderer2 = plot_desc2.plot.plots[DEFAULT_RENDERER_NAME][0]
+        self.assertEqual(bar_renderer2.fill_color, DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc2.plot.data.arrays["a"]), 10)
-        self.assertEqual(plot_desc1.plot.plots["plot0"][0].color, "blue")
+        bar_renderer1 = plot_desc1.plot.plots[DEFAULT_RENDERER_NAME][0]
+        self.assertEqual(bar_renderer1.fill_color, DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc1.plot.data.arrays["a"]), 10)
 
-        style.color = "red"
+        # Set the renderer color to red:
+        style.renderer_styles[0].color = "red"
         style.num_bins = 20
         with self.assertTraitChanges(self.model, "contained_plots[]"):
             plot_desc2.style_edited = True
 
         self.assertIn(plot_desc1, self.model.contained_plots)
-        self.assertEqual(plot_desc1.plot.plots["plot0"][0].color, "blue")
+        bar_renderer1 = plot_desc1.plot.plots[DEFAULT_RENDERER_NAME][0]
+        self.assertEqual(bar_renderer1.fill_color,
+                         DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc1.plot.data.arrays["a"]), 10)
 
         # The old plot_desc2 has been removed from the contained plots:
         self.assertNotIn(plot_desc2, self.model.contained_plots)
         # and the new one that replaced it has the new properties requested:
         new_plot_desc2 = self.model.contained_plots[1]
-        self.assertEqual(new_plot_desc2.plot.plots["plot0"][0].color, "red")
+        bar_renderer2 = new_plot_desc2.plot.plots[DEFAULT_RENDERER_NAME][0]
+        self.assertEqual(bar_renderer2.fill_color, "red")
         self.assertEqual(len(new_plot_desc2.plot.data.arrays["a"]), 20)
 
     def test_change_style_doesnt_loose_desc_attrs(self):
@@ -246,14 +253,15 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
 
         plot = self.model.contained_plots[0].plot
         plot_high = plot.index_mapper.range.high
-        self.assertEqual(self.config.plot_style.x_axis_range_high, plot_high)
-        self.assertEqual(self.config.plot_style.auto_x_axis_range_high,
+        self.assertEqual(self.config.plot_style.x_axis_style.range_high,
+                         plot_high)
+        self.assertEqual(self.config.plot_style.x_axis_style.auto_range_high,
                          plot_high)
 
         plot_desc1 = self.model.contained_plots[0]
         plot_desc1.container_idx = 1
         self.assertNotAlmostEqual(plot_high, 6.5)
-        plot_desc1.plot_config.plot_style.x_axis_range_high = 6.5
+        plot_desc1.plot_config.plot_style.x_axis_style.range_high = 6.5
 
         # Trigger a regeneration of the plot (normally done by clicking OK in
         # GUI):

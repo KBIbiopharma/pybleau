@@ -11,7 +11,7 @@ from chaco.api import ArrayPlotData
 
 from .plot_config import HIST_PLOT_TYPE
 from .histogram_plot_style import HistogramPlotStyle
-from .base_factories import StdXYPlotFactory
+from .base_factories import StdXYPlotFactory, DEFAULT_RENDERER_NAME
 
 HISTOGRAM_Y_LABEL = "Frequency"
 
@@ -99,7 +99,7 @@ class HistogramPlotFactory(StdXYPlotFactory):
         self.plot_data = ArrayPlotData(**data_map)
 
         renderer_data = {"x": self.x_col_name, "y": HISTOGRAM_Y_LABEL,
-                         "name": ""}
+                         "name": DEFAULT_RENDERER_NAME}
         self.renderer_desc = [renderer_data]
         return data_map
 
