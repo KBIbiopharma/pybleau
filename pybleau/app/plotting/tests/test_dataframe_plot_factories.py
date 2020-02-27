@@ -32,8 +32,6 @@ try:
         ERROR_BAR_DATA_KEY_PREFIX
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
     from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
-    from pybleau.app.plotting.plot_style import SingleLinePlotStyle, \
-        SingleScatterPlotStyle
     from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HeatmapPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
 
