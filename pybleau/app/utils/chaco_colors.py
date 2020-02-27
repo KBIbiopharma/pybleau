@@ -8,7 +8,7 @@ from matplotlib import cm as mpl_cm
 from chaco.default_colormaps import color_map_name_dict
 from enable.colors import color_table
 
-# Translations of standard matpltolib colors:
+# Translations of standard matplotlib colors:
 BLACK = color_table["black"]  # We could also use "black"
 
 BLUE = color_table["blue"]  # We could also use "blue"

@@ -4,18 +4,18 @@
 from six import string_types
 import logging
 
-from traits.api import Any, Bool, Dict, Enum, Float, Instance, List, Property
+from traits.api import Any, Bool, Dict, Enum, Float, Instance, List, \
+    on_trait_change, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
 from chaco.api import LinePlot, Plot
 
-from pybleau.app.utils.chaco_colors import ALL_CHACO_PALETTES, ALL_MPL_PALETTES
-from pybleau.app.plotting.axis_style import AxisStyle
-from pybleau.app.plotting.title_style import TitleStyle
-from pybleau.app.plotting.renderer_style import BaseXYRendererStyle
-from pybleau.app.plotting.exportable import Exportable
-from pybleau.app.plotting.renderer_style import LineRendererStyle, \
-    ScatterRendererStyle
+from ..utils.chaco_colors import ALL_CHACO_PALETTES, ALL_MPL_PALETTES
+from .axis_style import AxisStyle
+from .title_style import TitleStyle
+from .renderer_style import BaseXYRendererStyle, CmapScatterRendererStyle, \
+    LineRendererStyle, ScatterRendererStyle
+from .exportable import Exportable
 from ..utils.chaco_colors import generate_chaco_colors
 
 DEFAULT_DIVERG_PALETTE = "hsv"
@@ -201,16 +201,12 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
     color_palette = Enum(values="_all_palettes")
 
     #: List of available color palettes
-    _all_palettes = List(ALL_MPL_PALETTES)
+    _all_palettes = Property(List, depends_on="colorize_by_float")
 
-    #: Font used to draw the z (color) dimension title
-    color_dim_title_style = Instance(TitleStyle, ())
+    colormap = Any
 
-    #: Number of bins: the bar width computed from that and the data range
-    colormap_str = Enum(DEFAULT_CONTIN_PALETTE, values="_colormap_list")
-
-    #: List of available colormaps
-    _colormap_list = List(ALL_CHACO_PALETTES)
+    #: Font used to draw the color dimension title
+    color_axis_title_style = Instance(TitleStyle, ())
 
     #: Low value described by the colorbar
     colorbar_low = Float
@@ -218,52 +214,66 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
     #: High value described by the colorbar
     colorbar_high = Float(1.0)
 
-    colorbar_present = Bool
+    #: Color-mapped plot or independent renderers? To be set programmatically.
+    colorize_by_float = Bool
+
+    # Traits property getters/setters -----------------------------------------
+
+    def _get__all_palettes(self):
+        if self.colorize_by_float:
+            return ALL_CHACO_PALETTES
+        else:
+            return ALL_MPL_PALETTES
 
     def _get_specific_view_elements(self):
         return [
             VGroup(
                 Item("color_palette"),
                 VGroup(
-                    Item("color_dim_title_style", editor=InstanceEditor(),
+                    Item("color_axis_title_style", editor=InstanceEditor(),
                          style="custom", show_label=False),
                     show_border=True, label="Color dim title"
                 ),
                 HGroup(
-                    Item('colormap_str'),
                     Item('colorbar_low'),
                     Item('colorbar_high'),
                     show_border=True, label="colorbar",
-                    visible_when="colorbar_present"),
+                    visible_when="colorize_by_float"),
             )
         ]
 
+    # Traits listener methods -------------------------------------------------
+
+    @on_trait_change("color_palette, renderer_styles[]")
     def update_renderer_colors(self):
         """ Based on number of renderers & palette, initialize renderer colors.
+
+        For colormapped renderers, pass the palette straight.
         """
         num_renderer = len(self.renderer_styles)
-        if num_renderer == 1:
-            return
-
         color_palette = self.color_palette
-        if isinstance(color_palette, string_types):
-            colors = generate_chaco_colors(num_renderer, palette=color_palette)
-        else:
-            msg = "color_palette should be a Matplotlib palette name " \
-                  "(string) but {} ({}) was provided."
-            msg = msg.format(color_palette, type(color_palette))
-            logger.exception(msg)
-            raise ValueError(msg)
-
+        colors = generate_chaco_colors(num_renderer, palette=color_palette)
         for i, color in enumerate(colors):
-            self.renderer_styles[i].color = color
+            renderer = self.renderer_styles[i]
+            if hasattr(renderer, "color_palette"):
+                renderer.color_palette = self.color_palette
+            else:
+                renderer.color = color
 
-    def _color_palette_changed(self):
-        self.update_renderer_colors()
+    def __all_palettes_changed(self):
+        self.color_palette = self._color_palette_default()
+
+    # Traits initialization methods -------------------------------------------
+
+    def _color_palette_default(self):
+        if self._all_palettes == ALL_CHACO_PALETTES:
+            return DEFAULT_CONTIN_PALETTE
+        else:
+            return DEFAULT_DIVERG_PALETTE
 
     def _dict_keys_default(self):
         general_items = super(BaseColorXYPlotStyle, self)._dict_keys_default()
-        return general_items + ["color_palette", "color_dim_title_style",
+        return general_items + ["color_palette", "color_axis_title_style",
                                 "colormap_str", "colorbar_low",
                                 "colorbar_high"]
 

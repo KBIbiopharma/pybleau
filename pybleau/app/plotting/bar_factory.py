@@ -37,7 +37,7 @@ class BarPlotFactory(StdXYPlotFactory):
         """
         # Now that the x_values have been laid out, compute the appropriate bar
         # width:
-        if not self.plot_style.bar_width:
+        if self.plot_style.bar_width == 0:
             self.plot_style.bar_width = self._compute_bar_width()
 
         super(BarPlotFactory, self).add_renderers(plot)
@@ -78,10 +78,10 @@ class BarPlotFactory(StdXYPlotFactory):
     def _draw_error_bars(self, plot):
         """ Add data and renderers for drawing error bars around bar heights.
         """
-        if not self.z_col_name:
-            self._draw_error_bars_single_renderer(plot)
-        else:
+        if self.z_col_name:
             self._draw_error_bars_multi_renderer(plot)
+        else:
+            self._draw_error_bars_single_renderer(plot)
 
     def _draw_error_bars_single_renderer(self, plot):
         """ Add data and renderers for drawing error bars around bar heights.
@@ -188,6 +188,7 @@ class BarPlotFactory(StdXYPlotFactory):
                                   **adtl_arrays):
         """ Built the data_map to build the plot data for multiple renderers.
         """
+        # Error bar dict initialization:
         self.error_bars = {}
 
         # Collect all possible labels

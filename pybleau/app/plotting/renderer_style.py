@@ -1,6 +1,8 @@
 
-from traits.api import Any, Enum, Float, Int, List, Property, Range, Str, Trait
+from traits.api import Any, Button, Enum, Float, Int, List, Property, Range, \
+    Str, Trait, Tuple
 from traitsui.api import EnumEditor, HGroup, Item, RangeEditor, VGroup, View
+from chaco.default_colormaps import color_map_name_dict
 from enable.markers import MarkerNameDict, marker_names
 from enable.api import ColorTrait, LineStyle
 
@@ -93,6 +95,43 @@ class ScatterRendererStyle(BaseXYRendererStyle):
         return general_items + ["marker", "marker_size"]
 
 
+class CmapScatterRendererStyle(ScatterRendererStyle):
+
+    #: Name of the palette to pick colors from in z direction
+    color_palette = Str
+
+    #: Transparency of the marker coloring
+    fill_alpha = Range(value=1., low=0., high=1.)
+
+    #: Chaco color mapper to provide to plot.plot for a cmap_scatter type
+    color_mapper = Any
+
+    def traits_view(self):
+        view = self.view_klass(
+            VGroup(
+                HGroup(
+                    Item('marker', label="Marker"),
+                    Item('marker_size',
+                         editor=RangeEditor(low=1, high=20)),
+                ),
+                HGroup(
+                    Item('fill_alpha', label="Transparency"),
+                ),
+            ),
+        )
+        return view
+
+    def _color_palette_changed(self):
+        self.color_mapper = self._color_mapper_default()
+
+    def _color_mapper_default(self):
+        if self.color_palette in color_map_name_dict:
+            return color_map_name_dict[self.color_palette]
+
+    def _dict_keys_default(self):
+        return ["fill_alpha", "color_mapper", "marker", "marker_size"]
+
+
 class LineRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing line renderers.
     """
@@ -124,17 +163,92 @@ class BarRendererStyle(BaseXYRendererStyle):
     """
     renderer_type = "bar"
 
+    #: Width of each bar. Leave as 0 to have it computed programmatically.
+    bar_width = Float
+
     #: Color of the contours of the bars
     line_color = ColorTrait(DEFAULT_COLOR)
 
     #: Color of the inside of the bars
     fill_color = ColorTrait(DEFAULT_COLOR)
 
-    def _color_changed(self):
+    def traits_view(self):
+        view = self.view_klass(
+            VGroup(
+                Item('bar_width'),
+                HGroup(
+                    Item('line_color'),
+                    Item('fill_color'),
+                ),
+                *self.general_view_elements
+            ),
+        )
+        return view
+
+    def _color_changed(self, new):
         # Bar renderers have 2 different color traits for the line and the
         # inside of the bar:
-        self.line_color = self.color
-        self.fill_color = self.color
+        self.line_color = new
+        self.fill_color = new
 
     def _dict_keys_default(self):
-        return ["line_color", "fill_color", "alpha"]
+        return ["bar_width", "line_color", "fill_color", "alpha"]
+
+
+class CmapHeatmapRendererStyle(BaseXYRendererStyle):
+    """ Styling class for heatmap renderers (cmapped image plot).
+    """
+    #: Name of the palette to pick colors from in color direction
+    color_palette = Str
+
+    #: Chaco color mapper to provide to plot.plot for a cmap_scatter type
+    colormap = Any
+
+    # Note: this count be encoded in an AxisStyle
+    xbounds = Tuple((0, 1))
+
+    auto_xbound = Tuple((0, 1))
+
+    ybounds = Tuple((0, 1))
+
+    auto_ybound = Tuple((0, 1))
+
+    reset_xbounds = Button("Reset")
+
+    reset_ybounds = Button("Reset")
+
+    def traits_view(self):
+        view = self.view_klass(
+            VGroup(
+                HGroup(
+                    Item('xbounds'),
+                    Item('reset_xbounds', show_label=False),
+                ),
+                HGroup(
+                    Item('ybounds'),
+                    Item('reset_ybounds', show_label=False),
+                ),
+                *self.general_view_elements
+            ),
+        )
+        return view
+
+    # Traits listener methods -------------------------------------------------
+
+    def _color_palette_changed(self):
+        self.colormap = self._colormap_default()
+
+    def _reset_xbounds_fired(self):
+        self.xbounds = self.auto_xbound
+
+    def _reset_ybounds_fired(self):
+        self.ybounds = self.auto_ybound
+
+    # Traits initialization methods -------------------------------------------
+
+    def _colormap_default(self):
+        if self.color_palette in color_map_name_dict:
+            return color_map_name_dict[self.color_palette]
+
+    def _dict_keys_default(self):
+        return ["colormap", "xbounds", "ybounds"]

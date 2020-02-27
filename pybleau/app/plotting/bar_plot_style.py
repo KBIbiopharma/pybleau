@@ -2,17 +2,17 @@
 from traits.api import Bool, Enum, Float
 from traitsui.api import HGroup, Item, VGroup
 
-from .plot_style import BaseXYPlotStyle, SPECIFIC_CONFIG_CONTROL_LABEL
+from .plot_style import BaseColorXYPlotStyle, SPECIFIC_CONFIG_CONTROL_LABEL
 from .renderer_style import BarRendererStyle
 
 IGNORE_DATA_DUPLICATES = "ignore"
 
 
-class BarPlotStyle(BaseXYPlotStyle):
+class BarPlotStyle(BaseColorXYPlotStyle):
     """ Styling object for customizing bar plots.
 
     FIXME: Maybe this becomes a renderer style rather than a plot style, so we
-    can support merging lines and bar renderers within the same plot?
+     can support merging lines and bar renderers within the same plot?
     """
     #: Width of each bar. Leave as 0 to have it computed programmatically.
     bar_width = Float
@@ -53,5 +53,9 @@ class BarPlotStyle(BaseXYPlotStyle):
         return general_items + ["bar_width", "bar_style", "show_error_bars",
                                 "data_duplicate"]
 
+    def _bar_width_changed(self):
+        for rend in self.renderer_styles:
+            rend.bar_width = self.bar_width
+
     def _renderer_styles_default(self):
-        return [BarRendererStyle()]
+        return [BarRendererStyle(bar_width=self.bar_width)]

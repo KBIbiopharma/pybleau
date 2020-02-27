@@ -13,7 +13,7 @@ class Exportable(HasTraits):
         for key in self.dict_keys:
             attr = getattr(self, key)
             if isinstance(attr, Exportable):
-                serialized[key] = attr.to_dict()
+                serialized[key] = attr.to_plot_kwargs()
             else:
                 serialized[key] = attr
 

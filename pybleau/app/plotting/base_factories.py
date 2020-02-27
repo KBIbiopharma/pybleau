@@ -21,7 +21,7 @@ import logging
 
 from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
     Str
-from chaco.api import ArrayPlotData, LabelAxis, Plot
+from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, Plot
 from chaco.tools.api import BetterSelectingZoom, LegendTool, PanTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 
@@ -150,6 +150,9 @@ class StdXYPlotFactory(BasePlotFactory):
     #: List of plot_data keys to plot in pairs, one pair per renderer
     renderer_desc = List(Dict)
 
+    #: Colorbar built to describe the data's z dimension (for select types)
+    colorbar = Instance(ColorBar)
+
     def __init__(self, x_arr=None, y_arr=None, z_arr=None, hover_data=None,
                  **traits):
         super(StdXYPlotFactory, self).__init__(**traits)
@@ -175,9 +178,9 @@ class StdXYPlotFactory(BasePlotFactory):
         else:
             self.ndim = 2
 
-        self.adjust_plot_style()
+        self.adjust_plot_style(x_arr=x_arr, y_arr=y_arr, z_arr=z_arr)
 
-    def adjust_plot_style(self):
+    def adjust_plot_style(self, x_arr=None, y_arr=None, z_arr=None):
         """ Translate general plotting style info into xy plot parameters.
         """
         pass
@@ -283,6 +286,18 @@ class StdXYPlotFactory(BasePlotFactory):
             self.set_legend(plot)
 
         self.add_tools(plot)
+
+        if self.colorbar:
+            # Make more room for labels
+            plot.padding_right = 5
+            plot.padding_top = 25
+
+            container = HPlotContainer(padding=0)
+            container.add(plot, self.colorbar)
+            container.padding_right = sum([comp.padding_right
+                                           for comp in container.components])
+            container.bgcolor = "transparent"
+            plot = container
 
         # Build a description of the plot to build a PlotDescriptor
         desc = dict(plot_type=self.plot_type, plot=plot, visible=True,
