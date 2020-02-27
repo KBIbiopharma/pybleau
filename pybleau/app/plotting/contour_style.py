@@ -1,11 +1,9 @@
 
-from traits.api import Any, Bool, Enum, Float, Int
+from traits.api import Any, Bool, Enum, Float, HasStrictTraits, Int
 from traitsui.api import HGroup, Item, RangeEditor, View
 
-from .exportable import Exportable
 
-
-class ContourStyle(Exportable):
+class ContourStyle(HasStrictTraits):
     """ Styling object to customize contours on a heatmap.
     """
     add_contours = Bool(False)

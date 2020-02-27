@@ -2,10 +2,9 @@
 """
 
 from __future__ import print_function, division
-
 import logging
 
-from traits.api import Constant, Float, Instance, Tuple
+from traits.api import Constant
 from chaco.api import ColorBar, DataRange1D, LinearMapper
 
 from .plot_config import HEATMAP_PLOT_TYPE
@@ -23,7 +22,7 @@ class HeatmapPlotFactory(StdXYPlotFactory):
 
     def _plot_data_single_renderer(self, x_arr=None, y_arr=None, z_arr=None,
                                    **adtl_arrays):
-        """ Build the data_map to build the plot data.
+        """ Build plot data when single renderer is present.
         """
         data_map = {self.x_col_name: x_arr, self.y_col_name: y_arr}
         data_map.update(adtl_arrays)
@@ -36,6 +35,8 @@ class HeatmapPlotFactory(StdXYPlotFactory):
 
     def _plot_data_multi_renderer(self, x_arr=None, y_arr=None, z_arr=None,
                                   **adtl_arrays):
+        """ Build plot data when multiple renderer are overlaid.
+        """
         msg = "Multi-renderer not supported for Heatmap plots."
         logger.exception(msg)
         raise ValueError(msg)
@@ -47,14 +48,13 @@ class HeatmapPlotFactory(StdXYPlotFactory):
             raise NotImplementedError(msg)
 
         renderer_style = self.plot_style.renderer_styles[0]
-        renderer_style.auto_xbound = (x_arr.min(), x_arr.max())
-        renderer_style.auto_ybound = (y_arr.min(), y_arr.max())
-        renderer_style.reset_xbound = True
-        renderer_style.reset_ybound = True
+        renderer_style.auto_xbounds = (x_arr.min(), x_arr.max())
+        renderer_style.auto_ybounds = (y_arr.min(), y_arr.max())
+        renderer_style.reset_xbounds = True
+        renderer_style.reset_ybounds = True
 
-        renderer_style = self.plot_style.renderer_styles[0]
-        renderer_style.colorbar_low = z_arr.min()
-        renderer_style.colorbar_high = z_arr.max()
+        self.plot_style.colorbar_low = z_arr.min()
+        self.plot_style.colorbar_high = z_arr.max()
 
     def add_renderers(self, plot):
         renderer_style = self.plot_style.renderer_styles[0]
@@ -65,12 +65,13 @@ class HeatmapPlotFactory(StdXYPlotFactory):
             self.generate_contours(plot)
 
     def generate_colorbar(self, renderer, plot):
+        """ Generate the colorbar to be displayed along side the main plot.
+        """
         colormap = renderer.color_mapper
         # Constant mapper for the color bar so that the colors stay the same
         # even when data changes
-        renderer_style = self.plot_style.renderer_styles[0]
-        colorbar_range = DataRange1D(low=renderer_style.colorbar_low,
-                                     high=renderer_style.colorbar_high)
+        colorbar_range = DataRange1D(low=self.plot_style.colorbar_low,
+                                     high=self.plot_style.colorbar_high)
         index_mapper = LinearMapper(range=colorbar_range)
         self.colorbar = ColorBar(index_mapper=index_mapper,
                                  color_mapper=colormap,

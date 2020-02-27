@@ -1,11 +1,10 @@
 """ These are styling objects to control and view styling entire chaco plots
 (`Plot` and `OverlayPlotContainer` instances)
 """
-from six import string_types
 import logging
 
-from traits.api import Any, Bool, Dict, Enum, Float, Instance, List, \
-    on_trait_change, Property
+from traits.api import Any, Bool, Dict, Enum, Float, HasTraits, Instance, \
+    List, on_trait_change, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
 from chaco.api import LinePlot, Plot
@@ -15,7 +14,6 @@ from .axis_style import AxisStyle
 from .title_style import TitleStyle
 from .renderer_style import BaseXYRendererStyle, DEFAULT_RENDERER_COLOR, \
     LineRendererStyle, ScatterRendererStyle
-from .exportable import Exportable
 from ..utils.chaco_colors import generate_chaco_colors
 
 DEFAULT_DIVERG_PALETTE = "hsv"
@@ -27,7 +25,7 @@ SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
 logger = logging.getLogger(__name__)
 
 
-class BaseXYPlotStyle(Exportable):
+class BaseXYPlotStyle(HasTraits):
     """ Styling parameters for building X-Y Chaco plots.
 
     These objects are designed to be used by PlotFactories to control the
@@ -188,10 +186,6 @@ class BaseXYPlotStyle(Exportable):
             title="Plot Styling",
         )
 
-    def _dict_keys_default(self):
-        return ["x_axis_style", "y_axis_style", "title_style",
-                "renderer_styles"]
-
 
 class BaseColorXYPlotStyle(BaseXYPlotStyle):
     """ Styling class for X-Y plots that have a color dimension (heatmap,
@@ -273,12 +267,6 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
             return DEFAULT_CONTIN_PALETTE
         else:
             return DEFAULT_DIVERG_PALETTE
-
-    def _dict_keys_default(self):
-        general_items = super(BaseColorXYPlotStyle, self)._dict_keys_default()
-        return general_items + ["color_palette", "color_axis_title_style",
-                                "colormap_str", "colorbar_low",
-                                "colorbar_high"]
 
 
 # Single renderer implementations ---------------------------------------------

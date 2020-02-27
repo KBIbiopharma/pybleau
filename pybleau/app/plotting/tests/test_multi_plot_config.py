@@ -50,6 +50,13 @@ class BaseMultiPlotConfig(object):
         config_list = config.to_config_list()
         self.assertIsInstance(config_list, list)
 
+    def test_styles_are_distinct(self):
+        multi_config = self.configurator(data_source=TEST_DF,
+                                         **self.config_params)
+        config_list = multi_config.to_config_list()
+        styles = [config.plot_style for config in config_list]
+        self.assertEqual(len(styles), len(set(styles)))
+
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestMultiHistogramPlotConfig(TestCase, BaseMultiPlotConfig):

@@ -1,13 +1,13 @@
 
-from traits.api import Any, Bool, Button, Enum, Float, Instance, Int, Str
+from traits.api import Any, Bool, Button, Enum, Float, HasStrictTraits, \
+    Instance, Int, Str
 from traitsui.api import HGroup, InstanceEditor, Item, RangeEditor, VGroup, \
     View
 
-from pybleau.app.plotting.title_style import TitleStyle
-from pybleau.app.plotting.exportable import Exportable
+from .title_style import TitleStyle
 
 
-class AxisStyle(Exportable):
+class AxisStyle(HasStrictTraits):
 
     #: Name of the axis, to use in view labels
     axis_name = Str
@@ -47,6 +47,15 @@ class AxisStyle(Exportable):
     # If so, it will be possible to force the appearance of all of them.
     _finite_labels = Bool
 
+    def __init__(self, **traits):
+        if "range_low" in traits and "auto_range_low" not in traits:
+            traits["auto_range_low"] = traits["range_low"]
+
+        if "range_high" in traits and "auto_range_high" not in traits:
+            traits["auto_range_high"] = traits["range_high"]
+
+        super(AxisStyle, self).__init__(**traits)
+
     def traits_view(self):
         return self.view_klass(
             VGroup(
@@ -79,16 +88,9 @@ class AxisStyle(Exportable):
 
     # Traits listener methods -------------------------------------------------
 
-    def _reset_range_changed(self):
+    def _reset_range_fired(self):
         self.range_low = self.auto_range_low
         self.range_high = self.auto_range_high
-
-    # Traits initialization methods -------------------------------------------
-
-    def _dict_keys_default(self):
-        return ["axis_name", "title_style", "label_rotation",
-                "show_all_labels", "range_low", "range_high", "auto_range_low",
-                "auto_range_high", "scaling", "_finite_labels"]
 
 
 if __name__ == "__main__":

@@ -50,6 +50,23 @@ class TestComponentStyleAsView(TestCase):
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
+class TestAxisStyle(TestCase):
+    def test_auto_set_auto_range(self):
+        axis_style = AxisStyle(range_low=2, range_high=17)
+        self.assertEqual(axis_style.range_low, axis_style.auto_range_low)
+        self.assertEqual(axis_style.range_high, axis_style.auto_range_high)
+
+    def test_reset_range(self):
+        axis_style = AxisStyle(range_low=0, range_high=1, auto_range_low=0,
+                               auto_range_high=10)
+        axis_style.reset_range = True
+        self.assertEqual(axis_style.range_low, axis_style.auto_range_low)
+        self.assertEqual(axis_style.range_low, 0)
+        self.assertEqual(axis_style.range_high, axis_style.auto_range_high)
+        self.assertEqual(axis_style.range_high, 10)
+
+
+@skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestPlotStyleAsView(TestCase):
     """ Make sure any styling object can be brought up as a standalone view.
 

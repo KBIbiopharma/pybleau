@@ -9,13 +9,12 @@ import logging
 import pandas as pd
 
 from traits.api import Any, Bool, cached_property, Constant, Dict, \
-    HasStrictTraits, Instance, Int, List, on_trait_change, Property, Str
+    HasStrictTraits, Instance, Int, List, Property, Str
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 
-from .plot_style import ALL_CHACO_PALETTES, ALL_MPL_PALETTES, \
-    BaseColorXYPlotStyle, BaseXYPlotStyle, DEFAULT_DIVERG_PALETTE, \
-    DEFAULT_CONTIN_PALETTE, SingleLinePlotStyle, SingleScatterPlotStyle
+from .plot_style import BaseColorXYPlotStyle, BaseXYPlotStyle, \
+    SingleLinePlotStyle, SingleScatterPlotStyle
 
 from .bar_plot_style import BarPlotStyle
 from .renderer_style import BarRendererStyle, CmapScatterRendererStyle, \

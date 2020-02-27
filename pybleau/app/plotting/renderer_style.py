@@ -1,12 +1,10 @@
 
-from traits.api import Any, Button, Enum, Float, Int, List, Property, Range, \
-    Str, Trait, Tuple
+from traits.api import Any, Button, Enum, Float, HasStrictTraits, Int, List, \
+    Property, Range, Str, Trait, Tuple
 from traitsui.api import EnumEditor, HGroup, Item, RangeEditor, VGroup, View
 from chaco.default_colormaps import color_map_name_dict
 from enable.markers import MarkerNameDict, marker_names
 from enable.api import ColorTrait, LineStyle
-
-from .exportable import Exportable
 
 DEFAULT_RENDERER_COLOR = "blue"
 
@@ -15,7 +13,7 @@ DEFAULT_MARKER_SIZE = 6
 DEFAULT_LINE_WIDTH = 1.3
 
 
-class BaseXYRendererStyle(Exportable):
+class BaseXYRendererStyle(HasStrictTraits):
     """ Styling object for customizing scatter renderers.
     """
     #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
@@ -40,6 +38,9 @@ class BaseXYRendererStyle(Exportable):
     #: View klass. Override to customize the view, for example its icon
     view_klass = Any(default_value=View)
 
+    #: List of attributes to convert to kwargs for the Plot.plot method
+    dict_keys = List(Str)
+
     def traits_view(self):
         view = self.view_klass(
             VGroup(
@@ -61,6 +62,12 @@ class BaseXYRendererStyle(Exportable):
             ),
         )
         return elements
+
+    def to_plot_kwargs(self):
+        """ Supports converting renderer styles into a dict of kwargs for the
+        Plot.plot() method.
+        """
+        return {key: getattr(self, key) for key in self.dict_keys}
 
     def _dict_keys_default(self):
         return ["color", "alpha"]
@@ -213,11 +220,11 @@ class CmapHeatmapRendererStyle(BaseXYRendererStyle):
     # Note: this count be encoded in an AxisStyle
     xbounds = Tuple((0, 1))
 
-    auto_xbound = Tuple((0, 1))
+    auto_xbounds = Tuple((0, 1))
 
     ybounds = Tuple((0, 1))
 
-    auto_ybound = Tuple((0, 1))
+    auto_ybounds = Tuple((0, 1))
 
     reset_xbounds = Button("Reset")
 
@@ -245,10 +252,10 @@ class CmapHeatmapRendererStyle(BaseXYRendererStyle):
         self.colormap = self._colormap_default()
 
     def _reset_xbounds_fired(self):
-        self.xbounds = self.auto_xbound
+        self.xbounds = self.auto_xbounds
 
     def _reset_ybounds_fired(self):
-        self.ybounds = self.auto_ybound
+        self.ybounds = self.auto_ybounds
 
     # Traits initialization methods -------------------------------------------
 

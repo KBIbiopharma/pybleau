@@ -1,6 +1,6 @@
 """ Module containing multi-plot configurator objects. They are responsible for
 holding/collecting all data (arrays and styling info) to make multiple Chaco
-plots easily.
+plots easily (as opposed to Plots holding multiple renderers).
 
 They display data and styling choices using TraitsUI views, and use user
 selections to collect all necessary data from a source DataFrame. This is where
@@ -8,11 +8,12 @@ the translation between dataFrame and numpy arrays consumed by Chaco is done.
 """
 import logging
 
-from traits.api import Bool, Constant, Instance, List, Str
+from traits.api import Bool, Constant, List, Str
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, Item, VGroup
 
 from .plot_config import BasePlotConfigurator, HistogramPlotConfigurator, \
-    HistogramPlotStyle, LinePlotConfigurator, SingleLinePlotStyle, X_COL_NAME_LABEL
+    HistogramPlotStyle, LinePlotConfigurator, SingleLinePlotStyle, \
+    X_COL_NAME_LABEL
 
 logger = logging.getLogger(__name__)
 
@@ -33,13 +34,10 @@ class BaseMultiPlotConfigurator(BasePlotConfigurator):
 
 
 class MultiLinePlotConfigurator(BaseMultiPlotConfigurator):
-    """ Configurator to create multiple histograms.
+    """ Configurator to create multiple histogram plots.
     """
     #: Type of the series of plots being created
     plot_type = Constant(MULTI_LINE_PLOT_TYPE)
-
-    #: Styling of the plots created
-    plot_style = Instance(SingleLinePlotStyle, ())
 
     #: Column name to display along the x-axis
     x_col_name = Str
@@ -84,9 +82,6 @@ class MultiLinePlotConfigurator(BaseMultiPlotConfigurator):
 
     def to_config_list(self):
         """ Convert self into multiple Histogram configurators.
-
-        FIXME: This makes all plots have the same style instance, which can be
-         bad.
         """
         config_list = []
         for y_col in self.y_col_names:
@@ -97,7 +92,7 @@ class MultiLinePlotConfigurator(BaseMultiPlotConfigurator):
                 x_axis_title=self.x_col_name,
                 y_col_name=y_col,
                 y_axis_title=y_col,
-                plot_style=self.plot_style
+                plot_style=SingleLinePlotStyle()
             )
             config_list.append(single_plot_config)
         return config_list
@@ -108,9 +103,6 @@ class MultiHistogramPlotConfigurator(BaseMultiPlotConfigurator):
     """
     #: Type of the series of plots being created
     plot_type = Constant(MULTI_HIST_PLOT_TYPE)
-
-    #: Styling of the plots created
-    plot_style = Instance(HistogramPlotStyle, ())
 
     #: List of col names to make a histogram of
     x_col_names = List(Str)
@@ -136,9 +128,6 @@ class MultiHistogramPlotConfigurator(BaseMultiPlotConfigurator):
 
     def to_config_list(self):
         """ Convert self into multiple Histogram configurators.
-
-        FIXME: This makes all plots have the same style instance, which can be
-         bad.
         """
         config_list = []
         for x_col in self.x_col_names:
@@ -147,7 +136,7 @@ class MultiHistogramPlotConfigurator(BaseMultiPlotConfigurator):
                 plot_title=self.plot_title,
                 x_col_name=x_col,
                 x_axis_title=x_col,
-                plot_style=self.plot_style
+                plot_style=HistogramPlotStyle()
             )
             config_list.append(single_plot_config)
         return config_list

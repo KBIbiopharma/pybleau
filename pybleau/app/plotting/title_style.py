@@ -1,10 +1,8 @@
 
 
-from traits.api import Any, Enum, Int, List
+from traits.api import Any, Enum, HasStrictTraits, Int, List
 from traitsui.api import HGroup, Item, RangeEditor, View
 from kiva.trait_defs.kiva_font_trait import font_families
-
-from .exportable import Exportable
 
 DEFAULT_AXIS_LABEL_FONT_SIZE = 18
 
@@ -13,8 +11,9 @@ DEFAULT_TITLE_FONT_SIZE = 18
 DEFAULT_TITLE_FONT = "modern"
 
 
-class TitleStyle(Exportable):
-
+class TitleStyle(HasStrictTraits):
+    """ Styling tool for an plot (axis) title.
+    """
     #: Font used to draw the title
     font_name = Enum(DEFAULT_TITLE_FONT, values="_all_fonts")
 
@@ -35,10 +34,6 @@ class TitleStyle(Exportable):
                      editor=RangeEditor(low=9, high=32))
             )
         )
-
-    # Traits initialization methods -------------------------------------------
-    def _dict_keys_default(self):
-        return ["font_name", "font_size"]
 
     def __all_fonts_default(self):
         return sorted(list(font_families.keys()))
