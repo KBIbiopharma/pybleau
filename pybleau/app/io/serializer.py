@@ -78,3 +78,28 @@ class HistogramPlotConfigurator_Serializer(BaseSinglePlotConfigurator_Serializer
 
 class HeatmapPlotConfigurator_Serializer(BaseSinglePlotConfigurator_Serializer):  # noqa
     pass
+
+
+class BasePlotStyle_Serializer(Serializer):
+    def attr_names_to_serialize(self, obj):
+        return obj.dict_keys
+
+
+class ScatterPlotStyle_Serializer(BasePlotStyle_Serializer):
+    pass
+
+
+class LinePlotStyle_Serializer(BasePlotStyle_Serializer):
+    pass
+
+
+class BarPlotStyle_Serializer(BasePlotStyle_Serializer):
+    pass
+
+
+class HistogramPlotStyle_Serializer(BasePlotStyle_Serializer):
+    pass
+
+
+class HeatmapPlotStyle_Serializer(BasePlotStyle_Serializer):
+    pass
