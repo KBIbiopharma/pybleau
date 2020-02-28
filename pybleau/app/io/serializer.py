@@ -7,31 +7,6 @@ from app_common.apptools.io.serializer import DataElement_Serializer, \
     Serializer
 
 
-def serialize(obj, array_collection=None):
-    """ Serialization functional entry point.
-
-    Parameters
-    ----------
-    obj : any
-        Object to serialize
-
-    array_collection : dict
-        Dictionary mapping all numpy arrays stored to an id in the serial data.
-    """
-    from app_common.apptools.io.serializer import serialize
-    from pybleau import __build__, __version__
-    from ..ui.branding import APP_FAMILY, APP_TITLE, APP_UUID
-
-    software_version = [__version__, __build__]
-    local_serializers = {key: val for key, val in globals().items()
-                         if key.endswith("_Serializer")}
-    return serialize(obj, array_collection=array_collection,
-                     software_name="{} {}".format(APP_FAMILY, APP_TITLE),
-                     software_uuid=APP_UUID,
-                     software_version=software_version,
-                     additional_serializers=local_serializers)
-
-
 class DataFramePlotManager_Serializer(DataElement_Serializer):
     def attr_names_to_serialize(self, obj):
         return ['name', 'uuid', "source_analyzer_id", "contained_plots"]
