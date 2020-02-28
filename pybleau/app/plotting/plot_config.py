@@ -13,21 +13,16 @@ from traits.api import Any, Bool, cached_property, Constant, Dict, \
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 
-from .plot_style import ALL_CHACO_PALETTES, ALL_MPL_PALETTES, BarPlotStyle, \
-    BasePlotStyle, DEFAULT_DIVERG_PALETTE, DEFAULT_CONTIN_PALETTE, \
-    HeatmapPlotStyle, HistogramPlotStyle, LinePlotStyle, ScatterPlotStyle
+from .plot_style import BaseColorXYPlotStyle, BaseXYPlotStyle, \
+    SingleLinePlotStyle, SingleScatterPlotStyle
 
-HIST_PLOT_TYPE = "Histogram Plot"
-
-BAR_PLOT_TYPE = "Bar plot"
-
-LINE_PLOT_TYPE = "Line plot"
-
-SCATTER_PLOT_TYPE = "Scatter plot"
-
-CMAP_SCATTER_PLOT_TYPE = "CMAP Scatter plot"
-
-HEATMAP_PLOT_TYPE = "Grid heat-map"
+from .bar_plot_style import BarPlotStyle
+from .renderer_style import BarRendererStyle, CmapScatterRendererStyle, \
+    LineRendererStyle, ScatterRendererStyle
+from .heatmap_plot_style import HeatmapPlotStyle
+from .histogram_plot_style import HistogramPlotStyle
+from ..utils.string_definitions import BAR_PLOT_TYPE, CMAP_SCATTER_PLOT_TYPE, \
+    HEATMAP_PLOT_TYPE, HIST_PLOT_TYPE, LINE_PLOT_TYPE, SCATTER_PLOT_TYPE
 
 X_COL_NAME_LABEL = "Column to plot along X"
 
@@ -46,7 +41,7 @@ class BasePlotConfigurator(HasStrictTraits):
     transformed_data = Property
 
     #: Grouped plot style information
-    plot_style = Instance(BasePlotStyle)
+    plot_style = Instance(BaseXYPlotStyle)
 
     #: Title of the future plot, or plot pattern for MultiConfigurators
     plot_title = Str
@@ -121,7 +116,7 @@ class BasePlotConfigurator(HasStrictTraits):
                 name, target_name = key
                 out[target_name] = getattr(self, name)
 
-        out["plot_style"] = self.plot_style.to_dict()
+        out["plot_style"] = self.plot_style
         return out
 
     def df_column2array(self, col_name, df=None):
@@ -206,8 +201,9 @@ class BaseSinglePlotConfigurator(BasePlotConfigurator):
 
 
 class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
-    """ GUI configurator to create a new Chaco Plot. May contain mutliple
-    renderers.
+    """ GUI configurator to create a new Chaco Plot w/ single renderer type.
+
+    Note: may contain multiple renderers.
     """
     #: X coordinates of the data points
     x_arr = Property
@@ -226,6 +222,23 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
 
     #: Whether this configuration will lead to 1 or multiple renderers
     _single_renderer = Property(Bool)
+
+    plot_style = Instance(BaseXYPlotStyle)
+
+    #: Whether the column selected to colorize the renderers contains floats
+    colorize_by_float = Property(Bool,
+                                 depends_on="transformed_data, z_col_name, "
+                                            "force_discrete_colors")
+
+    @cached_property
+    def _get_colorize_by_float(self):
+        if not self.z_col_name:
+            return False
+
+        df = self.transformed_data
+        color_by_discrete = (self.force_discrete_colors or
+                             df[self.z_col_name].dtype in [bool, object])
+        return not color_by_discrete
 
     # Traits property getters/setters -----------------------------------------
 
@@ -318,7 +331,7 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     def _get_z_arr(self):
         return None
 
-    # Traits methods ----------------------------------------------------------
+    # Traits listener methods -------------------------------------------------
 
     def _data_selection_items(self):
         """ Build the default list of items to select data to plot in XY plots.
@@ -368,12 +381,34 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
 
 class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
     """ Configuration object for building a bar plot.
+
+    In default mode, a bar plot can display 2 columns as bars, using the
+    content of the 2 columns as the x and y values to display. If the x values
+    are not unique, y-values can be averaged. A color column can also be
+    specified allowing multiple sets of bars to be drawn, one for each set of x
+    values.
+
+    Finally, x data may be encoded in the column names. For example, consider
+    this "pivoted" table:
+        male  female
+    1    181    124
+    2    183    114
+
+    and imagine we want to draw a bar plot displaying the (average) weight per
+    gender. In that case, the table must first be "melted" to build:
+        weight  gender
+    1      181    male
+    2      183    male
+    3      124  female
+    4      114  female
+    and then, it's possible to specify that we want to plot the weight as a
+    function of gender.
     """
     #: Plot type
     plot_type = Str(BAR_PLOT_TYPE)
 
     #: Plot style
-    plot_style = Instance(BarPlotStyle, ())
+    plot_style = Instance(BarPlotStyle)
 
     #: Whether to "melt" (in the Pandas' sense) the DF to build the bar plot
     melt_source_data = Bool
@@ -387,6 +422,11 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
     #: Transform DF to support melting multiple columns as individual bars
     transformed_data = Property(depends_on="data_source, columns_to_melt, "
                                            "z_col_name")
+
+    plot_style = Property(Instance(BarPlotStyle),
+                          depends_on="transformed_data, z_col_name")
+
+    renderer_style_klass = BarRendererStyle
 
     def __init__(self, **traits):
         # Consistency check:
@@ -452,7 +492,8 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
         """ If in melt mode, melt the DF, otherwise, return the source_data.
 
         In melt mode, melt the columns to display as bars and keep the
-        hue column as an ID variable (pandas terminology) for the splitting.
+        hue column as an ID variable (pandas terminology) so it can be used for
+        splitting.
         """
         if self.columns_to_melt:
             if self.z_col_name:
@@ -462,6 +503,17 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
                 return self.data_source.melt(value_vars=self.columns_to_melt)
         else:
             return self.data_source
+
+    @cached_property
+    def _get_plot_style(self):
+        if not self.z_col_name:
+            num_renderer = 1
+        else:
+            num_renderer = len(self.transformed_data[self.z_col_name].unique())
+
+        renderer_styles = [self.renderer_style_klass()
+                           for _ in range(num_renderer)]
+        return BarPlotStyle(renderer_styles=renderer_styles)
 
     # Traits initialization methods -------------------------------------------
 
@@ -479,34 +531,31 @@ class LinePlotConfigurator(BaseSingleXYPlotConfigurator):
     """
     plot_type = Str(LINE_PLOT_TYPE)
 
-    plot_style = Instance(LinePlotStyle, ())
+    plot_style = Instance(SingleLinePlotStyle, ())
+
+    renderer_style_klass = LineRendererStyle
 
 
 class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     """ Configuration object for building scatter plot (std or color-mapped).
     """
-    plot_type = Property(Str, depends_on="z_col_name")
+    plot_type = Property(Str, depends_on="colorize_by_float")
 
-    plot_style = Instance(ScatterPlotStyle, ())
+    plot_style = Property(Instance(BaseColorXYPlotStyle),
+                          depends_on="data_source, z_col_name, plot_type")
 
     _support_hover = Bool(True)
 
-    colorize_by_float = Property(Bool)
+    renderer_style_klass = Property(Any, depends_on="plot_type")
 
+    # Traits property getters/setters -----------------------------------------
+
+    @cached_property
     def _get_plot_type(self):
         if self.colorize_by_float:
             return CMAP_SCATTER_PLOT_TYPE
         else:
             return SCATTER_PLOT_TYPE
-
-    def _get_colorize_by_float(self):
-        if not self.z_col_name:
-            return False
-
-        df = self.data_source
-        color_by_discrete = (df[self.z_col_name].dtype in [bool, object] or
-                             self.force_discrete_colors)
-        return not color_by_discrete
 
     def _get_z_arr(self):
         # Collect an array for z (color) if the dimension exists and is
@@ -514,17 +563,25 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         if self.plot_type == CMAP_SCATTER_PLOT_TYPE:
             return self.data_source[self.z_col_name].values
 
-    def _z_col_name_changed(self, new):
-        super(ScatterPlotConfigurator, self)._z_col_name_changed(new)
-
-        if self.plot_type == SCATTER_PLOT_TYPE:
-            # Interpolating any MPL palettes in a regular scatter
-            self.plot_style._all_palettes = ALL_MPL_PALETTES
-            self.plot_style.color_palette = DEFAULT_DIVERG_PALETTE
+    @cached_property
+    def _get_renderer_style_klass(self):
+        if self.plot_type == CMAP_SCATTER_PLOT_TYPE:
+            return CmapScatterRendererStyle
         else:
-            # Using chaco palettes in a CMAP scatter
-            self.plot_style._all_palettes = ALL_CHACO_PALETTES
-            self.plot_style.color_palette = DEFAULT_CONTIN_PALETTE
+            return ScatterRendererStyle
+
+    @cached_property
+    def _get_plot_style(self):
+        if not self.z_col_name or self.plot_type == CMAP_SCATTER_PLOT_TYPE:
+            num_renderer = 1
+        else:
+            num_renderer = len(self.data_source[self.z_col_name].unique())
+
+        # Always use a color styler to support cmap scatters and multi-scatters
+        style = BaseColorXYPlotStyle(colorize_by_float=self.colorize_by_float)
+        style.renderer_styles = [self.renderer_style_klass()
+                                 for _ in range(num_renderer)]
+        return style
 
 
 class HistogramPlotConfigurator(BaseSingleXYPlotConfigurator):
@@ -613,13 +670,10 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
         )
         return view
 
-    # Traits initialization methods -------------------------------------------
-
-    def __dict_keys_default(self):
-        # Attributes to serialize to pass to factory or serialization for file
-        # storage:
-        return ["plot_title", "x_col_name", "x_axis_title", "y_col_name",
-                "y_axis_title", "z_col_name", "z_axis_title", "data_source"]
+    def _get_z_arr(self):
+        return self.data_source.pivot_table(index=self.y_col_name,
+                                            columns=self.x_col_name,
+                                            values=self.z_col_name).values
 
 
 DEFAULT_CONFIGS = {HIST_PLOT_TYPE: HistogramPlotConfigurator,
@@ -632,7 +686,7 @@ DEFAULT_CONFIGS = {HIST_PLOT_TYPE: HistogramPlotConfigurator,
 
 DEFAULT_STYLES = {HIST_PLOT_TYPE: HistogramPlotStyle,
                   BAR_PLOT_TYPE: BarPlotStyle,
-                  LINE_PLOT_TYPE: LinePlotStyle,
-                  SCATTER_PLOT_TYPE: ScatterPlotStyle,
-                  CMAP_SCATTER_PLOT_TYPE: ScatterPlotStyle,
+                  LINE_PLOT_TYPE: SingleLinePlotStyle,
+                  SCATTER_PLOT_TYPE: SingleScatterPlotStyle,
+                  CMAP_SCATTER_PLOT_TYPE: SingleScatterPlotStyle,
                   HEATMAP_PLOT_TYPE: HeatmapPlotStyle}

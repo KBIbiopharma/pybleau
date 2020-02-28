@@ -18,17 +18,16 @@ from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 import logging
-from six import string_types
 
 from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
     Str
-from chaco.api import ArrayPlotData, LabelAxis, Plot
+from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, Plot
 from chaco.tools.api import BetterSelectingZoom, LegendTool, PanTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 
 from app_common.chaco.legend import Legend, LegendHighlighter
 
-from ..utils.chaco_colors import generate_chaco_colors
+from .plot_style import BaseXYPlotStyle
 
 SELECTION_COLOR = "red"
 
@@ -44,7 +43,7 @@ class BasePlotFactory(HasStrictTraits):
     plot_data = Instance(ArrayPlotData)
 
     #: Styling of the ** renderer **. Passed to renderer creation method
-    plot_style = Dict
+    plot_style = Instance(BaseXYPlotStyle)
 
     #: Title of the generated plot
     plot_title = Str
@@ -106,8 +105,8 @@ class BasePlotFactory(HasStrictTraits):
             # if x_labels set, axis labels shouldn't be generated from the
             # numerical values but by the values stored in x_labels (for e.g.
             # when x_axis_col contains strings)
-            label_rotation = self.plot_style["x_axis_label_rotation"]
-            if self.plot_style["show_all_x_ticks"]:
+            label_rotation = self.plot_style.x_axis_style.label_rotation
+            if self.plot_style.x_axis_style.show_all_labels:
                 label_positions = range(len(x_labels))
                 tick_generator = ShowAllTickGenerator(
                     positions=label_positions
@@ -125,20 +124,20 @@ class BasePlotFactory(HasStrictTraits):
             plot.underlays.append(bottom_axis)
 
         plot.index_axis.title = self.x_axis_title
-        font_size = self.plot_style["x_title_font_size"]
-        font_name = self.plot_style["title_font_name"]
+        font_size = self.plot_style.x_axis_style.title_style.font_size
+        font_name = self.plot_style.x_axis_style.title_style.font_name
         plot.index_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_y_axis_labels(self, plot):
         plot.value_axis.title = self.y_axis_title
-        font_size = self.plot_style["y_title_font_size"]
-        font_name = self.plot_style["title_font_name"]
+        font_size = self.plot_style.y_axis_style.title_style.font_size
+        font_name = self.plot_style.y_axis_style.title_style.font_name
         plot.value_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_title_label(self, plot):
         plot.title = self.plot_title
-        font_size = self.plot_style["title_font_size"]
-        font_name = self.plot_style["title_font_name"]
+        font_size = self.plot_style.title_style.font_size
+        font_name = self.plot_style.title_style.font_name
         plot._title.font = '{} {}'.format(font_name, font_size)
 
 
@@ -150,6 +149,9 @@ class StdXYPlotFactory(BasePlotFactory):
 
     #: List of plot_data keys to plot in pairs, one pair per renderer
     renderer_desc = List(Dict)
+
+    #: Colorbar built to describe the data's z dimension (for select types)
+    colorbar = Instance(ColorBar)
 
     def __init__(self, x_arr=None, y_arr=None, z_arr=None, hover_data=None,
                  **traits):
@@ -176,9 +178,9 @@ class StdXYPlotFactory(BasePlotFactory):
         else:
             self.ndim = 2
 
-        self.adjust_plot_style()
+        self.adjust_plot_style(x_arr=x_arr, y_arr=y_arr, z_arr=z_arr)
 
-    def adjust_plot_style(self):
+    def adjust_plot_style(self, x_arr=None, y_arr=None, z_arr=None):
         """ Translate general plotting style info into xy plot parameters.
         """
         pass
@@ -221,9 +223,8 @@ class StdXYPlotFactory(BasePlotFactory):
         """
         data_map = {self.x_col_name: x_arr, self.y_col_name: y_arr}
         data_map.update(adtl_arrays)
-        color = self.plot_style.pop("color")
         renderer_data = {"x": self.x_col_name, "y": self.y_col_name,
-                         "color": color, "name": DEFAULT_RENDERER_NAME}
+                         "name": DEFAULT_RENDERER_NAME}
         self.renderer_desc = [renderer_data]
         return data_map
 
@@ -231,30 +232,12 @@ class StdXYPlotFactory(BasePlotFactory):
                                   **adtl_arrays):
         """ Built the data_map to build the plot data for multiple renderers.
         """
-        # Generate colors for all z_values: color style keyword ignored
-        self.plot_style.pop("color", None)
-        color_palette = self.plot_style.pop("color_palette")
-        n_colors = len(x_arr)
-        if isinstance(color_palette, string_types):
-            colors = generate_chaco_colors(n_colors, palette=color_palette)
-        elif isinstance(color_palette, dict):
-            colors = [color_palette[key] for key in x_arr.keys()]
-        else:
-            msg = "color_palette should be a Matplotlib palette name " \
-                  "(string) or a dictionary mapping values to a colors, " \
-                  "but {} ({}) was provided."
-            msg = msg.format(color_palette, type(color_palette))
-            logger.exception(msg)
-            raise ValueError(msg)
-
         data_map = {}
         for i, hue_val in enumerate(sorted(x_arr.keys())):
-            color = colors[i]
             hue_name, x_name, y_name = self._add_arrays_for_hue(
                 data_map, x_arr, y_arr, hue_val, i, adtl_arrays
             )
-            renderer_data = {"x": x_name, "y": y_name,
-                             "color": color, "name": hue_name}
+            renderer_data = {"x": x_name, "y": y_name, "name": hue_name}
             self._hue_values.append(hue_name)
             self.renderer_desc.append(renderer_data)
 
@@ -304,6 +287,18 @@ class StdXYPlotFactory(BasePlotFactory):
 
         self.add_tools(plot)
 
+        if self.colorbar:
+            # Make more room for labels
+            plot.padding_right = 5
+            plot.padding_top = 25
+
+            container = HPlotContainer(padding=0)
+            container.add(plot, self.colorbar)
+            container.padding_right = sum([comp.padding_right
+                                           for comp in container.components])
+            container.bgcolor = "transparent"
+            plot = container
+
         # Build a description of the plot to build a PlotDescriptor
         desc = dict(plot_type=self.plot_type, plot=plot, visible=True,
                     plot_title=self.plot_title, x_col_name=self.x_col_name,
@@ -320,14 +315,17 @@ class StdXYPlotFactory(BasePlotFactory):
             plot.tools.append(pan_tool)
 
         if "zoom" in self.plot_tools:
-            zoom_tool = BetterSelectingZoom(component=plot)
+            zoom_tool = BetterSelectingZoom(component=plot, zoom_factor=1.2)
             plot.overlays.append(zoom_tool)
 
     def add_renderers(self, plot):
-        for desc in self.renderer_desc:
-            plot.plot((desc["x"], desc["y"]), type=self.plot_type_name,
-                      color=desc["color"], name=desc["name"],
-                      **self.plot_style)
+        renderer_styles = self.plot_style.renderer_styles
+        assert len(renderer_styles) == len(self.renderer_desc)
+
+        for desc, style in zip(self.renderer_desc, renderer_styles):
+            style.renderer_name = desc["name"]
+            plot.plot((desc["x"], desc["y"]), type=style.renderer_type,
+                      name=desc["name"], **style.to_plot_kwargs())
 
     def set_legend(self, plot, align="ur", padding=10, drag_button="right"):
         """ Add legend and make it relocatable & clickable.

@@ -18,6 +18,7 @@ from ..plotting.plot_config import BaseSinglePlotConfigurator
 from ..plotting.plot_factories import DEFAULT_FACTORIES, \
     DISCONNECTED_SELECTION_COLOR, HistogramPlotFactory, ScatterPlotFactory, \
     SELECTION_COLOR, SELECTION_METADATA_NAME
+from ..plotting.base_factories import DEFAULT_RENDERER_NAME
 from ..plotting.api import HEATMAP_PLOT_TYPE
 from ..model.multi_canvas_manager import MultiCanvasManager
 
@@ -333,10 +334,10 @@ class DataFramePlotManager(DataElement):
         """ Apply the styler's range attributes to the created plot.
         """
         style = config.plot_style
-        plot.index_mapper.range.low = style.x_axis_range_low
-        plot.index_mapper.range.high = style.x_axis_range_high
-        plot.value_mapper.range.low = style.y_axis_range_low
-        plot.value_mapper.range.high = style.y_axis_range_high
+        plot.index_mapper.range.low = style.x_axis_style.range_low
+        plot.index_mapper.range.high = style.x_axis_style.range_high
+        plot.value_mapper.range.low = style.y_axis_style.range_low
+        plot.value_mapper.range.high = style.y_axis_style.range_high
 
     def _factory_from_config(self, config):
         """ Return plot factory capable of building a plot described by config.
@@ -458,27 +459,27 @@ class DataFramePlotManager(DataElement):
             # If new data was added, add missing renderers --------------------
 
             if isinstance(factory, ScatterPlotFactory) and new_data_added:
-                for renderer_desc in factory.renderer_desc:
+                styles = factory.plot_style.renderer_styles
+                for style, renderer_desc in zip(styles, factory.renderer_desc):
                     if renderer_desc in old_factory.renderer_desc:
                         continue
 
                     desc.plot.plot(
                         (renderer_desc["x"], renderer_desc["y"]),
-                        type=factory.plot_type_name,
-                        color=renderer_desc["color"],
-                        name=renderer_desc["name"], **factory.plot_style
+                        type=style.renderer_type,
+                        name=renderer_desc["name"], **style.to_plot_kwargs()
                     )
 
             # Plot type specific updates --------------------------------------
 
             elif isinstance(factory, HistogramPlotFactory):
                 x_arr = new_df[desc.x_col_name]
-                num_bins = factory.plot_style['num_bins']
+                num_bins = factory.plot_style.num_bins
                 _, edges = factory.build_hist_data(desc.x_col_name, x_arr,
                                                    num_bins)
                 # Recompute the bar width since bin edges changed
                 bar_width = factory.compute_bar_width(edges, num_bins)
-                desc.plot.plots["plot0"].bar_width = bar_width
+                desc.plot.plots[DEFAULT_RENDERER_NAME].bar_width = bar_width
 
             desc.plot_factory = factory
 
@@ -487,9 +488,9 @@ class DataFramePlotManager(DataElement):
         """ Styling changed: update the corresponding plot
 
         FIXME: this implementation involves very little code but is
-               inefficient. For example, if we are just changing a renderer's
-               attribute, we don't need to rebuild the entire plot. Can we find
-               better?
+         inefficient. For example, if we are just changing a renderer's
+         attribute, we don't need to rebuild the entire plot. Can we find
+         better?
         """
         position = self.contained_plots.index(plot_desc)
         self.contained_plots.remove(plot_desc)

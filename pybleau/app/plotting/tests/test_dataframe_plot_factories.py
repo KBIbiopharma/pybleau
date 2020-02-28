@@ -10,6 +10,7 @@ from traits.testing.unittest_tools import UnittestTools
 try:
     from chaco.api import BarPlot, LinePlot, Plot, PlotGraphicsContext, \
         ScatterInspectorOverlay, ScatterPlot
+    from chaco.color_mapper import ColorMapper
     from chaco.plot_containers import HPlotContainer
     from chaco.color_bar import ColorBar
     from chaco.cmap_image_plot import CMapImagePlot
@@ -30,7 +31,10 @@ try:
     from pybleau.app.plotting.bar_factory import BAR_SQUEEZE_FACTOR, \
         ERROR_BAR_DATA_KEY_PREFIX
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
-    from pybleau.app.plotting.plot_style import HistogramPlotStyle
+    from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
+    from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
+        HeatmapPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
+
 except ImportError as e:
     print("ERROR: Module imports failed with error: {}".format(e))
 
@@ -57,12 +61,6 @@ TEST_DF = DataFrame({"a": [1, 2, 3, 4] * (LEN//4),
                      "k": sorted(list("abcdefgh") * 2),
                      "l": sorted(list("abcd") * 4)})
 
-SCATTER_STYLE = {'z_title_font_size': 18, 'color': 'blue',
-                 'y_title_font_size': 18, 'title_font_name': 'modern',
-                 'title_font_size': 18, 'alpha': 1.0,
-                 'x_title_font_size': 18, 'marker_size': 6, "marker": "circle",
-                 "color_palette": "hsv"}
-
 msg = "No UI backend to paint into"
 
 
@@ -76,17 +74,18 @@ class BaseTestMakePlot(object):
     def assert_valid_plot(self, plot, desc, num_renderers=1, main_renderer="",
                           test_view=True):
         if isinstance(plot, HPlotContainer):
-            is_cmaped = True
+            is_cmapped = True
             colorbar = plot.plot_components[1]
             self.assertIsInstance(colorbar, ColorBar)
+            self.assertIsInstance(colorbar.color_mapper, ColorMapper)
             plot = plot.plot_components[0]
         else:
-            is_cmaped = False
+            is_cmapped = False
 
         self.assertIsInstance(plot, Plot)
         self.assertIsInstance(desc, dict)
         self.assertIs(desc["plot"], plot)
-        if not is_cmaped:
+        if not is_cmapped:
             self.assertEqual(desc["plot_type"], self.type)
 
         self.assertTrue(desc['visible'])
@@ -111,12 +110,7 @@ class BaseTestMakePlot(object):
 class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
     def setUp(self):
         self.renderer_class = BarPlot
-        style = {'z_title_font_size': 18, 'bar_width_type': 'data',
-                 'color': 'blue', 'y_title_font_size': 18,
-                 'bar_width_factor': 1.0, 'title_font_name': 'modern',
-                 'title_font_size': 18, 'alpha': 1.0, 'num_bins': 10,
-                 'x_title_font_size': 18, "bin_limits": ()}
-
+        style = HistogramPlotStyle()
         self.hist_kw = {'plot_title': 'Foo', 'x_axis_title': 'blah',
                         'plot_style': style}
         self.type = HIST_PLOT_TYPE
@@ -132,7 +126,7 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
         self.assertAlmostEqual(plot.data.arrays['a'][-1], 3.85)
 
     def test_histogram_simple_array_different_num_bins(self):
-        self.hist_kw['plot_style']["num_bins"] = 20
+        self.hist_kw['plot_style'].num_bins = 20
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           **self.hist_kw)
         plot, desc = factory.generate_plot()
@@ -140,7 +134,7 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
         self.assertEqual(len(plot.data.arrays['a']), 20)
 
     def test_histogram_simple_array_control_bin_limits(self):
-        self.hist_kw['plot_style']["bin_limits"] = (0, 10)
+        self.hist_kw['plot_style'].bin_limits = (0, 10)
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           **self.hist_kw)
         plot, desc = factory.generate_plot()
@@ -179,19 +173,6 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
 class BaseTestMakeXYPlot(BaseTestMakePlot):
     """ Tests for the scatter and line plots.
     """
-    def setUp(self):
-        # Mocking the generation of the style dictionary generated when
-        # exporting a configurator to dict:
-        style = {'z_title_font_size': 18, 'color': 'blue',
-                 "color_palette": "hsv", 'y_title_font_size': 18,
-                 'title_font_name': 'modern', 'title_font_size': 18,
-                 'alpha': 1.0, 'x_title_font_size': 18,
-                 "show_all_x_ticks": False}
-
-        self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
-                        'plot_style': style}
-        super(BaseTestMakeXYPlot, self).setUp()
-
     def test_plot_simple_array(self):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
@@ -225,6 +206,9 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
 
     def test_with_str_color_dimension(self):
         x_arr, y_arr = self.compute_x_y_arrays_split_by("a", "b", "d")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="d")
+        self.plot_kw['plot_style'] = config.plot_style
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           z_col_name="d", **self.plot_kw)
@@ -235,6 +219,9 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
 
     def test_with_bool_color_dimension(self):
         x_arr, y_arr = self.compute_x_y_arrays_split_by("a", "b", "h")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="h")
+        self.plot_kw['plot_style'] = config.plot_style
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
@@ -244,6 +231,10 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
 
     def test_with_int_color_dimension(self):
         x_arr, y_arr = self.compute_x_y_arrays_split_by("a", "b", "c")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="c",
+                                   force_discrete_colors=True)
+        self.plot_kw['plot_style'] = config.plot_style
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           z_col_name="c", **self.plot_kw)
@@ -256,12 +247,13 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
 
     def assert_renderers_have_distinct_colors(self, plot):
         if self.type == BAR_PLOT_TYPE:
-            # For BarPlots, the color is called fill_color:
-            color_list = [plot.plots[name][0].fill_color
-                          for name in plot.plots]
+            # For BarPlots, the color is called 'fill_color':
+            color_attr = 'fill_color'
         else:
-            color_list = [plot.plots[name][0].color for name in plot.plots]
+            color_attr = 'color'
 
+        color_list = [getattr(plot.plots[name][0], color_attr)
+                      for name in plot.plots]
         self.assertEqual(len(color_list), len(set(color_list)))
 
     def compute_x_y_arrays_split_by(self, x_col, y_col, z_col):
@@ -285,9 +277,10 @@ class TestMakeScatterPlot(BaseTestMakeXYPlot, TestCase):
     def setUp(self):
         self.type = SCATTER_PLOT_TYPE
         self.renderer_class = ScatterPlot
+        self.config_class = ScatterPlotConfigurator
+        self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                        'plot_style': self.config_class().plot_style}
         super(TestMakeScatterPlot, self).setUp()
-        self.plot_kw['plot_style']["marker"] = "square"
-        self.plot_kw['plot_style']["marker_size"] = 6
 
 
 @skipIf(not BACKEND_AVAILABLE, msg)
@@ -295,11 +288,13 @@ class TestMakeCmapScatterPlot(BaseTestMakeXYPlot, TestCase):
     def setUp(self):
         self.type = CMAP_SCATTER_PLOT_TYPE
         self.renderer_class = ColormappedScatterPlot
+        self.config_class = ScatterPlotConfigurator
+        config = self.config_class(data_source=TEST_DF, z_col_name="b")
+        style = config.plot_style
+        self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                        'plot_style': style, 'z_col_name': "b",
+                        'z_arr': TEST_DF["b"].values}
         super(TestMakeCmapScatterPlot, self).setUp()
-        self.plot_kw['plot_style']["marker"] = "square"
-        self.plot_kw['plot_style']["marker_size"] = 6
-        self.plot_kw['z_col_name'] = "b"
-        self.plot_kw['z_arr'] = TEST_DF["b"].values
 
     def test_with_str_color_dimension(self):
         # Cannot be the case, because then it wouldn't be a CmapScatterPlot but
@@ -322,7 +317,27 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
     def setUp(self):
         self.type = LINE_PLOT_TYPE
         self.renderer_class = LinePlot
+        self.config_class = LinePlotConfigurator
+        config = self.config_class(data_source=TEST_DF)
+        style = config.plot_style
+        self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                        'plot_style': style}
         super(TestMakeLinePlot, self).setUp()
+
+    def test_with_str_color_dimension(self):
+        # Cannot be the case, because then it wouldn't be a CmapScatterPlot but
+        # a regular ScatterPlot
+        pass
+
+    def test_with_bool_color_dimension(self):
+        # Cannot be the case, because then it wouldn't be a CmapScatterPlot but
+        # a regular ScatterPlot
+        pass
+
+    def test_with_int_color_dimension(self):
+        # Cannot be the case, because then it wouldn't be a CmapScatterPlot but
+        # a regular ScatterPlot
+        pass
 
 
 @skipIf(not BACKEND_AVAILABLE, msg)
@@ -330,16 +345,17 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
     def setUp(self):
         self.type = BAR_PLOT_TYPE
         self.renderer_class = BarPlot
+        self.config_class = BarPlotConfigurator
+        config = self.config_class(data_source=TEST_DF)
+        self.style = config.plot_style
+        self.style.bar_width = 0.5
+        self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                        'plot_style': self.style}
         super(TestMakeBarPlot, self).setUp()
-        self.plot_kw['plot_style']["bar_width"] = 0.5
-        self.plot_kw["plot_style"]['x_axis_label_rotation'] = 0
-        self.plot_kw['plot_style']['data_duplicate'] = "ignore"
-        self.plot_kw['plot_style']['bar_style'] = "group"
-        self.plot_kw['plot_style']['show_error_bars'] = False
 
     def test_compute_bar_width(self):
         # bar_plot: if bar_width=0, it's computed from index spacing
-        self.plot_kw['plot_style']["bar_width"] = 0.
+        self.style.bar_width = 0.
         factory = self.plot_factory_klass(x_col_name="c", x_arr=TEST_DF["c"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
@@ -369,7 +385,7 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
     def test_compute_bar_width_single_bar(self):
         """" Regression test: compute bar width when only 1 bar.
         """
-        self.plot_kw['plot_style']["bar_width"] = 0.
+        self.style.bar_width = 0.
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"][:1],  # noqa
                                           y_col_name="a", y_arr=TEST_DF["a"][:1],  # noqa
                                           **self.plot_kw)
@@ -392,7 +408,7 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_x_axis_labels_equal(plot, TEST_DF["d"].tolist())
 
     def test_redundant_str_index_with_aggregation(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
         factory = self.plot_factory_klass(x_col_name="d", x_arr=TEST_DF["d"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
@@ -436,7 +452,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_x_axis_labels_equal(plot, [str(x) for x in TEST_DF["h"]])
 
     def test_bool_index_with_aggregation(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         factory = self.plot_factory_klass(x_col_name="h", x_arr=TEST_DF["h"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
@@ -455,7 +472,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
 
     def test_bool_index_with_aggregation_control_x_labels(self):
         # Same as above but controlling the order of the x_labels
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         factory = self.plot_factory_klass(
             x_col_name="h", x_arr=TEST_DF["h"], y_col_name="a",
             y_arr=TEST_DF["a"], x_labels=[True, False], **self.plot_kw
@@ -474,7 +492,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         assert_array_almost_equal(plot.data.arrays["a"], expected_values)
 
     def test_str_index_with_aggregation_1_value(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
@@ -492,7 +511,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         assert_array_almost_equal(plot.data.arrays["a"], TEST_DF["a"].values)
 
     def test_str_index_with_aggregation(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         factory = self.plot_factory_klass(x_col_name="d", x_arr=TEST_DF["d"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           **self.plot_kw)
@@ -501,7 +521,7 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_bar_height_averaged(plot)
 
     def test_str_index_with_aggregation_control_x_labels(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.plot_kw['plot_style'].data_duplicate = "mean"
         factory = self.plot_factory_klass(x_col_name="d", x_arr=TEST_DF["d"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           x_labels=list("edcba"),
@@ -511,8 +531,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_bar_height_averaged(plot, reverse_order=True)
 
     def test_str_index_with_aggregation_and_errorbars(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
-        self.plot_kw['plot_style']['show_error_bars'] = True
+        self.style.data_duplicate = "mean"
+        self.style.show_error_bars = True
 
         factory = self.plot_factory_klass(x_col_name="d", x_arr=TEST_DF["d"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
@@ -530,6 +550,10 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
 
     def test_colors_from_str_int_index_no_aggregation(self):
         x_arr, y_arr = self.compute_x_y_arrays_split_by("b2", "c", "j")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="j")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="b2", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="j", **self.plot_kw)
@@ -544,6 +568,10 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
 
     def test_colors_from_str_str_index_no_aggregation(self):
         x_arr, y_arr = self.compute_x_y_arrays_split_by("k", "c", "i")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="i")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="k", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
@@ -559,8 +587,13 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, list("abcdefgh"))
 
     def test_colors_from_str_str_index_aggregation_1_value(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         x_arr, y_arr = self.compute_x_y_arrays_split_by("l", "c", "j")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="j")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="l", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="j", **self.plot_kw)
@@ -580,8 +613,13 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, list("abcd"))
 
     def test_colors_from_str_str_index_with_aggregation(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         x_arr, y_arr = self.compute_x_y_arrays_split_by("d", "c", "i")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="i")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="d", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
@@ -598,18 +636,24 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, sorted(d_values))
 
     def test_colors_from_str_str_index_with_aggregation_and_error_bars(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
-        self.plot_kw['plot_style']['show_error_bars'] = True
+        self.style.data_duplicate = "mean"
+        self.style.show_error_bars = True
 
         x_arr, y_arr = self.compute_x_y_arrays_split_by("l", "c", "i")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="i")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+        self.style.show_error_bars = True
+
         factory = self.plot_factory_klass(x_col_name="l", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
         plot, desc = factory.generate_plot()
         hue_values = set(TEST_DF["i"])
         x_values = set(TEST_DF["l"])
-        self.assert_valid_plot(plot, desc,
-                               num_renderers=len(hue_values)*(1+len(x_values)))
+        # 1 for the bars, and len(x_values) for the error bars:
+        num_renderers = len(hue_values) * (1 + len(x_values))
+        self.assert_valid_plot(plot, desc, num_renderers=num_renderers)
         assert_array_almost_equal(plot.data.arrays["lF"],
                                   arange(len(x_values)))
         assert_array_almost_equal(plot.data.arrays["lT"],
@@ -622,18 +666,25 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_error_bars_present(plot, num_error_bars)
 
     def test_colors_from_bool_str_index_with_aggregation_and_error_bars(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
-        self.plot_kw['plot_style']['show_error_bars'] = True
+        self.style.data_duplicate = "mean"
+        self.style.show_error_bars = True
 
         x_arr, y_arr = self.compute_x_y_arrays_split_by("l", "c", "h")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="h")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+        self.style.show_error_bars = True
+
         factory = self.plot_factory_klass(x_col_name="l", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
         plot, desc = factory.generate_plot()
         hue_values = set(TEST_DF["h"])
         x_values = set(TEST_DF["l"])
-        self.assert_valid_plot(plot, desc,
-                               num_renderers=len(hue_values)*(1+len(x_values)))
+        # 1 for the bars, and len(x_values) for the error bars:
+        num_renderers = len(hue_values) * (1 + len(x_values))
+        self.assert_valid_plot(plot, desc, num_renderers=num_renderers)
+
         assert_array_almost_equal(plot.data.arrays["lFalse"],
                                   arange(len(x_values)))
         assert_array_almost_equal(plot.data.arrays["lTrue"],
@@ -646,18 +697,24 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_error_bars_present(plot, num_error_bars)
 
     def test_colors_from_str_bool_index_with_aggregation_and_error_bars(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
-        self.plot_kw['plot_style']['show_error_bars'] = True
+        self.style.data_duplicate = "mean"
+        self.style.show_error_bars = True
 
         x_arr, y_arr = self.compute_x_y_arrays_split_by("h", "c", "i")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="i")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+        self.style.show_error_bars = True
+
         factory = self.plot_factory_klass(x_col_name="h", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
         plot, desc = factory.generate_plot()
         hue_values = set(TEST_DF["i"])
         x_values = set(TEST_DF["h"])
-        self.assert_valid_plot(plot, desc,
-                               num_renderers=len(hue_values)*(1+len(x_values)))
+        # 1 for the bars, and len(x_values) for the error bars:
+        num_renderers = len(hue_values) * (1 + len(x_values))
+        self.assert_valid_plot(plot, desc, num_renderers=num_renderers)
         assert_array_almost_equal(plot.data.arrays["hF"],
                                   arange(len(x_values)))
         assert_array_almost_equal(plot.data.arrays["hT"],
@@ -671,6 +728,10 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
 
     def test_colors_from_bool_str_index_no_aggregation(self):
         x_arr, y_arr = self.compute_x_y_arrays_split_by("k", "c", "h")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="h")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="k", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
@@ -684,8 +745,13 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, list("abcdefgh"))
 
     def test_colors_from_bool_str_index_with_aggregation(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         x_arr, y_arr = self.compute_x_y_arrays_split_by("d", "c", "h")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="h")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="d", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
@@ -704,8 +770,13 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, sorted(d_values))
 
     def test_colors_from_str_bool_index_with_aggregation(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         x_arr, y_arr = self.compute_x_y_arrays_split_by("h", "c", "i")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="i")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="h", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
@@ -724,8 +795,13 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                   array([nan, TEST_DF["c"][1::2].mean()]))
 
     def test_colors_from_str_bool_index_with_aggregation_control_xlabels(self):
-        self.plot_kw['plot_style']['data_duplicate'] = "mean"
+        self.style.data_duplicate = "mean"
+
         x_arr, y_arr = self.compute_x_y_arrays_split_by("h", "c", "i")
+        # Z column, so recompute the style:
+        config = self.config_class(data_source=TEST_DF, z_col_name="i")
+        self.style = self.plot_kw['plot_style'] = config.plot_style
+
         factory = self.plot_factory_klass(x_col_name="h", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i",
@@ -750,7 +826,7 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
     def test_str_index_dont_force_all_ticks(self):
         """ String index ticks are decimated w/ show_all_x_ticks=False.
         """
-        self.plot_kw['plot_style']['show_all_x_ticks'] = False
+        self.style.x_axis_style.show_all_labels = False
 
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
@@ -766,7 +842,7 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
     def test_str_index_do_force_all_ticks(self):
         """ String index ticks are NOT decimated w/ show_all_x_ticks=True.
         """
-        self.plot_kw['plot_style']['show_all_x_ticks'] = True
+        self.style.x_axis_style.show_all_labels = True
 
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
@@ -843,45 +919,56 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
     def setUp(self):
         self.type = HEATMAP_PLOT_TYPE
         self.renderer_class = CMapImagePlot
-        style = {'z_title_font_size': 18, 'y_title_font_size': 18,
-                 'title_font_name': 'modern', 'title_font_size': 18,
-                 'x_title_font_size': 18, "colormap_str": "cool",
-                 "contour_levels": 5, "contour_styles": "solid",
-                 "contour_widths": 1, 'contour_alpha': 1.}
-
-        self.heatmap_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
-                           'plot_style': style}
+        self.config_class = HeatmapPlotConfigurator
+        config = self.config_class(data_source=TEST_DF)
+        self.style = config.plot_style
+        self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                        'plot_style': self.style}
 
         super(TestMakeHeatmapPlot, self).setUp()
 
     def test_create_no_contour(self):
-        self.heatmap_kw['plot_style']['add_contours'] = False
-        factory = self.plot_factory_klass(TEST_DF, x_col_name="a",
-                                          y_col_name="b2", z_col_name="c",
-                                          **self.heatmap_kw)
+        self.style.add_contours = False
+        x_arr, y_arr, z_arr = self.pivot_data("a", "b2", "c")
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b2", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
         plot, desc = factory.generate_plot()
         self.assert_valid_plot(plot, desc, with_contours=False)
 
     def test_create_with_interpolation(self):
-        self.heatmap_kw['plot_style']['add_contours'] = False
-        self.heatmap_kw['plot_style']["interpolation"] = "bilinear"
+        self.style.add_contours = False
+        self.style.interpolation = "bilinear"
 
-        factory = self.plot_factory_klass(TEST_DF, x_col_name="a",
-                                          y_col_name="b2", z_col_name="c",
-                                          **self.heatmap_kw)
+        x_arr, y_arr, z_arr = self.pivot_data("a", "b2", "c")
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b2", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
         plot, desc = factory.generate_plot()
         self.assert_valid_plot(plot, desc, with_contours=False)
 
     def test_create_with_contour(self):
-        self.heatmap_kw['plot_style']['add_contours'] = True
-        self.heatmap_kw['plot_style']["interpolation"] = "bilinear"
-        factory = self.plot_factory_klass(TEST_DF, x_col_name="a",
-                                          y_col_name="b2", z_col_name="c",
-                                          **self.heatmap_kw)
+        self.style.contour_style.add_contours = True
+        self.style.interpolation = "bilinear"
+        x_arr, y_arr, z_arr = self.pivot_data("a", "b2", "c")
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b2", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
         plot, desc = factory.generate_plot()
         self.assert_valid_plot(plot, desc, with_contours=True)
 
     # Helpers -----------------------------------------------------------------
+
+    def pivot_data(self, x_col_name, y_col_name, z_col_name):
+        x_arr = TEST_DF[x_col_name]
+        y_arr = TEST_DF[y_col_name]
+        z_arr = TEST_DF.pivot_table(index=y_col_name,
+                                    columns=x_col_name,
+                                    values=z_col_name).values
+        return x_arr, y_arr, z_arr
 
     def assert_valid_plot(self, plot, desc, with_contours=False):
         """ Overridden since plot container generated instead of Plot.
@@ -905,6 +992,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
             num_renderers = 2
         else:
             num_renderers = 1
+
         self.assertEqual(len(main_plot.plots), num_renderers)
         self.assertIsInstance(main_plot.plots["plot0"][0],
                               self.renderer_class)
@@ -1011,8 +1099,9 @@ class BaseScatterPlotTools(object):
 class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
     def setUp(self):
         self.type = SCATTER_PLOT_TYPE
-        self.style = SCATTER_STYLE
-
+        self.config_class = ScatterPlotConfigurator
+        self.config = self.config_class(data_source=TEST_DF)
+        self.style = self.config.plot_style
         self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
                         'plot_style': self.style}
 
@@ -1073,6 +1162,8 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         """ Tools present on scatter when color dimension specified.
         """
         all_x_arr, all_y_arr = self._split_df_for_factory_arrays()
+        self.config.z_col_name = "d"
+        self.plot_kw["plot_style"] = self.config.plot_style
         factory = self.plot_factory_klass(x_col_name="a", x_arr=all_x_arr,
                                           y_col_name="b", y_arr=all_y_arr,
                                           z_col_name="d", **self.plot_kw)
@@ -1086,6 +1177,8 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         """ Tools present on scatter when color and hover dimensions specified.
         """
         all_x_arr, all_y_arr = self._split_df_for_factory_arrays()
+        self.config.z_col_name = "d"
+        self.plot_kw["plot_style"] = self.config.plot_style
         factory = self.plot_factory_klass(
             x_col_name="a", x_arr=all_x_arr, y_col_name="b", y_arr=all_y_arr,
             z_col_name="d", hover_col_names=["a", "b", "d"], **self.plot_kw
@@ -1101,6 +1194,10 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         # Same as above, but with only 1 color (regression test)
         df = TEST_DF.loc[TEST_DF["d"] == "a", :]
         all_x_arr, all_y_arr = self._split_df_for_factory_arrays(df=df)
+        self.config.data_source = df
+        self.config.z_col_name = "d"
+        self.plot_kw["plot_style"] = self.config.plot_style
+
         factory = self.plot_factory_klass(
             x_col_name="a", x_arr=all_x_arr, y_col_name="b", y_arr=all_y_arr,
             z_col_name="d", hover_col_names=["a", "b", "d"], **self.plot_kw
@@ -1112,7 +1209,9 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         self.assert_hover_tool_present(factory, plot)
 
     def test_selector_tool_overlay_follow_marker(self):
-        # Default marker is a circle:
+        # Default marker is a circle of size 6:
+        self.assertEqual(self.style.renderer_styles[0].marker, "circle")
+        self.assertEqual(self.style.renderer_styles[0].marker_size, 6)
         renderer = list(self.plot.plots.values())[0][0]
         inspector_overlay = renderer.overlays[0]
         self.assertEqual(inspector_overlay.selection_marker, "circle")
@@ -1120,8 +1219,8 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
 
         # Make another plot with square markers and make sure the overlay
         # follows that:
-        self.plot_kw['plot_style']["marker"] = "square"
-        self.plot_kw['plot_style']["marker_size"] = 9
+        self.style.renderer_styles[0].marker = "square"
+        self.style.renderer_styles[0].marker_size = 9
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           **self.plot_kw)
@@ -1136,8 +1235,9 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
 class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
     def setUp(self):
         self.type = CMAP_SCATTER_PLOT_TYPE
-        self.style = SCATTER_STYLE
-
+        self.config_class = ScatterPlotConfigurator
+        self.config = self.config_class(data_source=TEST_DF, z_col_name="b")
+        self.style = self.config.plot_style
         self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
                         'plot_style': self.style}
 

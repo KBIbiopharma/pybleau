@@ -9,7 +9,6 @@ import logging
 from traits.api import Constant, Tuple
 from chaco.api import ArrayPlotData, ColorBar, ColormappedSelectionOverlay, \
     HPlotContainer, LinearMapper, ScatterInspectorOverlay
-from chaco.default_colormaps import color_map_name_dict
 from chaco.tools.api import RangeSelection, RangeSelectionOverlay
 
 from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
@@ -57,10 +56,12 @@ class ScatterPlotFactory(StdXYPlotFactory):
         return plot, desc
 
     def add_click_selector_tool(self, plot):
-        for renderer_name in plot.plots:
+        """ Add scatter point click tool to select points.
+        """
+        for i, renderer_name in enumerate(plot.plots):
             renderer = plot.plots[renderer_name][0]
-            marker_size = self.plot_style["marker_size"]
-            marker = self.plot_style["marker"]
+            marker_size = self.plot_style.renderer_styles[i].marker_size
+            marker = self.plot_style.renderer_styles[i].marker
             inspector_tool = DataframeScatterInspector(
                 renderer, selection_metadata_name=SELECTION_METADATA_NAME,
                 selection_mode="toggle", persistent_hover=False
@@ -117,14 +118,6 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         # No need for a legend
         return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
 
-    def adjust_plot_style(self):
-        """ Translate general plotting style info into cmap_scatter params.
-        """
-        self.plot_style.pop("color")
-        self.plot_style["fill_alpha"] = self.plot_style.pop("alpha")
-        palette_name = self.plot_style["color_palette"]
-        self.plot_style["color_mapper"] = color_map_name_dict[palette_name]
-
     def generate_plot(self):
         # FIXME: move the plot title to the container level.
 
@@ -153,9 +146,13 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         return container, desc
 
     def add_renderers(self, plot):
-        for desc in self.renderer_desc:
+        renderer_styles = self.plot_style.renderer_styles
+        assert len(renderer_styles) == len(self.renderer_desc)
+
+        for desc, style in zip(self.renderer_desc, renderer_styles):
+            style.renderer_name = desc["name"]
             plot.plot((desc["x"], desc["y"], desc["z"]), type="cmap_scatter",
-                      name=desc["name"], **self.plot_style)
+                      name=desc["name"], **style.to_plot_kwargs())
 
     def initialize_plot_data(self, x_arr=None, y_arr=None, z_arr=None,
                              **adtl_arrays):

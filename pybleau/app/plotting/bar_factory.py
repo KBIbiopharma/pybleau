@@ -8,7 +8,7 @@ import logging
 
 from traits.api import Any, Constant
 from .plot_config import BAR_PLOT_TYPE
-from .plot_style import IGNORE_DATA_DUPLICATES
+from .bar_plot_style import IGNORE_DATA_DUPLICATES
 from .base_factories import StdXYPlotFactory
 
 BAR_SQUEEZE_FACTOR = 0.8
@@ -37,14 +37,10 @@ class BarPlotFactory(StdXYPlotFactory):
         """
         # Now that the x_values have been laid out, compute the appropriate bar
         # width:
-        if not self.plot_style["bar_width"]:
-            self.plot_style["bar_width"] = self._compute_bar_width()
+        if self.plot_style.bar_width == 0:
+            self.plot_style.bar_width = self._compute_bar_width()
 
-        for desc in self.renderer_desc:
-            # For bar plots, apply the color value to the fill_color keyword:
-            plot.plot((desc["x"], desc["y"]), type=self.plot_type_name,
-                      fill_color=desc["color"], name=desc["name"],
-                      **self.plot_style)
+        super(BarPlotFactory, self).add_renderers(plot)
 
         if self.error_bars is not None and len(self.error_bars):
             self._draw_error_bars(plot)
@@ -63,14 +59,14 @@ class BarPlotFactory(StdXYPlotFactory):
             _, y, errors = _split_avg_for_bar_heights(
                 x, y, force_index=self.x_labels
             )
-            show_error_bars = self.plot_style["show_error_bars"]
+            show_error_bars = self.plot_style.show_error_bars
             if show_error_bars:
                 self.error_bars[hue_name] = errors
 
             # Strings along x: replace with equi-distant positions...
             x = np.arange(len(self.x_labels), dtype="float64")
             # shifted so the bars are side by side if that's the chosen style:
-            if self.plot_style["bar_style"] == "group":
+            if self.plot_style.bar_style == "group":
                 bar_width = BAR_SQUEEZE_FACTOR / len(x_arr)
                 x = x + hue_val_idx * bar_width
             else:
@@ -82,10 +78,10 @@ class BarPlotFactory(StdXYPlotFactory):
     def _draw_error_bars(self, plot):
         """ Add data and renderers for drawing error bars around bar heights.
         """
-        if not self.z_col_name:
-            self._draw_error_bars_single_renderer(plot)
-        else:
+        if self.z_col_name:
             self._draw_error_bars_multi_renderer(plot)
+        else:
+            self._draw_error_bars_single_renderer(plot)
 
     def _draw_error_bars_single_renderer(self, plot):
         """ Add data and renderers for drawing error bars around bar heights.
@@ -164,8 +160,7 @@ class BarPlotFactory(StdXYPlotFactory):
         # Collect all labels and reset x_arr as an int list
         if x_arr.dtype in [object, bool]:
             duplicates_present = len(set(x_arr)) != len(x_arr)
-            data_duplicate = self.plot_style.pop("data_duplicate",
-                                                 IGNORE_DATA_DUPLICATES)
+            data_duplicate = self.plot_style.data_duplicate
             handle_duplicates = data_duplicate != IGNORE_DATA_DUPLICATES
             if duplicates_present and handle_duplicates:
                 if self.x_labels:
@@ -176,7 +171,7 @@ class BarPlotFactory(StdXYPlotFactory):
                     x_arr, y_arr, errors = _split_avg_for_bar_heights(
                         x_arr, y_arr
                     )
-                show_error_bars = self.plot_style.pop("show_error_bars", False)
+                show_error_bars = self.plot_style.show_error_bars
                 if show_error_bars:
                     self.error_bars = errors
 
@@ -193,6 +188,7 @@ class BarPlotFactory(StdXYPlotFactory):
                                   **adtl_arrays):
         """ Built the data_map to build the plot data for multiple renderers.
         """
+        # Error bar dict initialization:
         self.error_bars = {}
 
         # Collect all possible labels
