@@ -88,7 +88,7 @@ class BaseXYPlotStyle(HasTraits):
                 msg = "Unsupported plot type: {}".format(type(plot))
                 raise ValueError(msg)
 
-        # Apply transform() to avoid UI polluted by non-sensical digits
+        # Apply transform for e.g. to avoid polluting UI w/ non-sensical digits
         if x_mapper:
             self.x_axis_style.range_low = transform(x_mapper.range.low)
             self.x_axis_style.auto_range_low = self.x_axis_style.range_low
