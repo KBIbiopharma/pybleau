@@ -41,14 +41,5 @@ class BarPlotStyle(BaseColorXYPlotStyle):
             )
         ]
 
-    def _dict_keys_default(self):
-        general_items = super(BarPlotStyle, self)._dict_keys_default()
-        return general_items + ["bar_width", "bar_style", "show_error_bars",
-                                "data_duplicate"]
-
-    def _bar_width_changed(self):
-        for rend in self.renderer_styles:
-            rend.bar_width = self.bar_width
-
     def _renderer_styles_default(self):
         return [BarRendererStyle()]

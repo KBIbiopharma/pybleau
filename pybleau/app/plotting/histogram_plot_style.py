@@ -28,11 +28,6 @@ class HistogramPlotStyle(BaseXYPlotStyle):
     # the bar width computation makes that assumption.
     bar_width_type = Enum("data", "screen")
 
-    def _dict_keys_default(self):
-        general_items = super(HistogramPlotStyle, self)._dict_keys_default()
-        return general_items + ["num_bins", "bin_limits", "bar_width_factor",
-                                "bar_width_type", "bar_width"]
-
     def _get_specific_view_elements(self):
         return [
             VGroup(

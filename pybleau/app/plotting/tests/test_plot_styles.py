@@ -10,10 +10,12 @@ try:
     from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle, \
         HeatmapRendererStyle
     from pybleau.app.plotting.plot_style import SingleLinePlotStyle, \
-        SingleScatterPlotStyle, BaseXYPlotStyle
+        SingleScatterPlotStyle, BaseColorXYPlotStyle, BaseXYPlotStyle
     from pybleau.app.plotting.title_style import TitleStyle
     from pybleau.app.plotting.axis_style import AxisStyle
     from pybleau.app.plotting.contour_style import ContourStyle
+    from pybleau.app.plotting.renderer_style import LineRendererStyle, \
+        ScatterRendererStyle
 except ImportError:
     pass
 
@@ -75,6 +77,18 @@ class TestPlotStyleAsView(TestCase):
 
     def test_open_base_xy_plot_style(self):
         assert_obj_gui_works(BaseXYPlotStyle())
+
+    def test_open_base_color_xy_plot(self):
+        assert_obj_gui_works(BaseColorXYPlotStyle())
+
+    def test_open_hybrid_plot(self):
+        renderer_styles = [LineRendererStyle(), ScatterRendererStyle()]
+        assert_obj_gui_works(BaseXYPlotStyle(renderer_styles=renderer_styles))
+
+    def test_open_hybrid_color_plot_style(self):
+        renderer_styles = [LineRendererStyle(), ScatterRendererStyle()]
+        obj = BaseColorXYPlotStyle(renderer_styles=renderer_styles)
+        assert_obj_gui_works(obj)
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")

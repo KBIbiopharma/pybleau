@@ -71,8 +71,6 @@ class BaseXYPlotStyle(HasTraits):
         if x_mapper is None:
             if isinstance(plot, Plot):
                 x_mapper = plot.x_axis.mapper
-            # elif isinstance(plot, LinePlot):
-            #     x_mapper = plot.index_mapper
             else:
                 msg = "Unsupported plot type: {}".format(type(plot))
                 logger.exception(msg)
@@ -81,8 +79,6 @@ class BaseXYPlotStyle(HasTraits):
         if y_mapper is None:
             if isinstance(plot, Plot):
                 y_mapper = plot.y_axis.mapper
-            # elif isinstance(plot, LinePlot):
-            #     y_mapper = plot.value_mapper
             else:
                 msg = "Unsupported plot type: {}".format(type(plot))
                 logger.exception(msg)
@@ -254,8 +250,3 @@ class SingleLinePlotStyle(BaseXYPlotStyle):
 class SingleScatterPlotStyle(BaseXYPlotStyle):
     def _renderer_styles_default(self):
         return [ScatterRendererStyle()]
-
-
-if __name__ == "__main__":
-    renderer_styles = [LineRendererStyle(), ScatterRendererStyle()]
-    BaseXYPlotStyle(renderer_styles=renderer_styles).configure_traits()

@@ -14,16 +14,6 @@ class HeatmapPlotStyle(BaseColorXYPlotStyle):
 
     contour_style = Instance(ContourStyle, ())
 
-    def _colorize_by_float_default(self):
-        return True
-
-    def _dict_keys_default(self):
-        general_items = super(HeatmapPlotStyle, self)._dict_keys_default()
-        return general_items + ["interpolation", "contour_style"]
-
-    def _renderer_styles_default(self):
-        return [HeatmapRendererStyle()]
-
     def _get_specific_view_elements(self):
         return [
             VGroup(
@@ -37,3 +27,11 @@ class HeatmapPlotStyle(BaseColorXYPlotStyle):
                 ),
             )
         ]
+
+    # Traits initialization methods -------------------------------------------
+
+    def _colorize_by_float_default(self):
+        return True
+
+    def _renderer_styles_default(self):
+        return [HeatmapRendererStyle()]
