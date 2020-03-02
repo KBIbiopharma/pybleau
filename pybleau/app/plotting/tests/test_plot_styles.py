@@ -7,32 +7,19 @@ try:
     from chaco.api import ArrayPlotData, Plot
     from pybleau.app.plotting.bar_plot_style import BarPlotStyle
     from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
-    from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
+    from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle, \
+        HeatmapRendererStyle
     from pybleau.app.plotting.plot_style import SingleLinePlotStyle, \
-        SingleScatterPlotStyle, BaseXYPlotStyle
+        SingleScatterPlotStyle, BaseColorXYPlotStyle, BaseXYPlotStyle
     from pybleau.app.plotting.title_style import TitleStyle
     from pybleau.app.plotting.axis_style import AxisStyle
     from pybleau.app.plotting.contour_style import ContourStyle
-    from pybleau.app.plotting.renderer_style import BarRendererStyle, \
-        LineRendererStyle, ScatterRendererStyle
+    from pybleau.app.plotting.renderer_style import LineRendererStyle, \
+        ScatterRendererStyle
 except ImportError:
     pass
 
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
-
-
-@skipIf(not BACKEND_AVAILABLE, "No UI backend available")
-class TestRendererStyleAsView(TestCase):
-    """ Make sure any styling renderer object can be brought up as views.
-    """
-    def test_open_bar_renderer_style_as_view(self):
-        assert_obj_gui_works(BarRendererStyle())
-
-    def test_open_line_renderer_style_as_view(self):
-        assert_obj_gui_works(LineRendererStyle())
-
-    def test_open_scatter_renderer_style_as_view(self):
-        assert_obj_gui_works(ScatterRendererStyle())
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
@@ -52,6 +39,7 @@ class TestComponentStyleAsView(TestCase):
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestAxisStyle(TestCase):
     def test_auto_set_auto_range(self):
+        # Passing initial values at creation automatically sets the auto values
         axis_style = AxisStyle(range_low=2, range_high=17)
         self.assertEqual(axis_style.range_low, axis_style.auto_range_low)
         self.assertEqual(axis_style.range_high, axis_style.auto_range_high)
@@ -89,6 +77,18 @@ class TestPlotStyleAsView(TestCase):
 
     def test_open_base_xy_plot_style(self):
         assert_obj_gui_works(BaseXYPlotStyle())
+
+    def test_open_base_color_xy_plot(self):
+        assert_obj_gui_works(BaseColorXYPlotStyle())
+
+    def test_open_hybrid_plot(self):
+        renderer_styles = [LineRendererStyle(), ScatterRendererStyle()]
+        assert_obj_gui_works(BaseXYPlotStyle(renderer_styles=renderer_styles))
+
+    def test_open_hybrid_color_plot_style(self):
+        renderer_styles = [LineRendererStyle(), ScatterRendererStyle()]
+        obj = BaseColorXYPlotStyle(renderer_styles=renderer_styles)
+        assert_obj_gui_works(obj)
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
@@ -192,3 +192,13 @@ class TestPlotStyleBehaviors(TestCase):
                          style.y_axis_style.auto_range_low)
         self.assertEqual(style.y_axis_style.range_high,
                          style.y_axis_style.auto_range_high)
+
+
+class TestHeatmapPlotStyle(TestCase):
+    def test_create_with_renderer(self):
+        self.style_klass = HeatmapPlotStyle
+        style = self.style_klass(renderer_styles=[
+                HeatmapRendererStyle(color_palette="bone", alpha=0.3)
+        ])
+        self.assertIsInstance(style, HeatmapPlotStyle)
+        assert_obj_gui_works(style)

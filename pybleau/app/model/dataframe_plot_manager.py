@@ -5,7 +5,7 @@ import numpy as np
 
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
-from chaco.api import BasePlotContainer, Plot
+from chaco.api import BasePlotContainer, HPlotContainer, Plot
 
 from app_common.std_lib.sys_utils import extract_traceback
 from app_common.chaco.constraints_plot_container_manager import \
@@ -327,7 +327,14 @@ class DataFramePlotManager(DataElement):
         return desc
 
     def _initialize_config_plot_ranges(self, config, plot):
-        """ Initialize the styler's range attributes from the created plot."""
+        """ Initialize the styler's range attributes from the created plot.
+        """
+        if isinstance(plot, HPlotContainer):
+            for comp in plot.components:
+                if isinstance(comp, Plot):
+                    plot = comp
+                    break
+
         config.plot_style.initialize_axis_ranges(plot)
 
     def _apply_config_plot_ranges(self, config, plot):
@@ -557,7 +564,7 @@ class DataFramePlotManager(DataElement):
     def update_plot_z_title(self, plot_desc, attr_name, old, new_title):
         if plot_desc.plot_type == HEATMAP_PLOT_TYPE:
             container = self.canvas_manager.get_container_for_plot(plot_desc)
-            # Change the heatmap plot's colorbar:
+            # Change the plot's colorbar:
             plot_desc.plot.components[1]._axis.title = new_title
 
             container.refresh_container()

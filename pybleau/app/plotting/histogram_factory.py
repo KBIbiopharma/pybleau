@@ -77,14 +77,15 @@ class HistogramPlotFactory(StdXYPlotFactory):
     def adjust_plot_style(self, x_arr=None, y_arr=None, z_arr=None):
         """ Translate general plotting style information into histogram params.
         """
-        # Adjust the bar width
-        if not self.plot_style.bar_width:
-            bar_width_factor = self.plot_style.bar_width_factor
-            num_bins = self.plot_style.num_bins
-            bar_width = self.compute_bar_width(
-                self.bin_edges, num_bins, bar_width_factor=bar_width_factor
-            )
-            self.plot_style.bar_width = bar_width
+        # Adjust the renderer bar widths:
+        for style in self.plot_style.renderer_styles:
+            if style.bar_width == 0:
+                bar_width_factor = self.plot_style.bar_width_factor
+                num_bins = self.plot_style.num_bins
+                bar_width = self.compute_bar_width(
+                    self.bin_edges, num_bins, bar_width_factor=bar_width_factor
+                )
+                style.bar_width = bar_width
 
     def initialize_plot_data(self, x_arr=None, y_arr=None, z_arr=None,
                              **adtl_arrays):

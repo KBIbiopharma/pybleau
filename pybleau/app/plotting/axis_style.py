@@ -44,7 +44,7 @@ class AxisStyle(HasStrictTraits):
     view_klass = Any(default_value=View)
 
     #: Is there a finite number of labels?
-    # If so, it will be possible to force the appearance of all of them.
+    # (If so, allow forcing the appearance of all of them and label rotation)
     _finite_labels = Bool
 
     def __init__(self, **traits):
@@ -71,16 +71,13 @@ class AxisStyle(HasStrictTraits):
                          style="custom", show_label=False),
                     show_border=True, label="Title"
                 ),
-                VGroup(
-                    HGroup(
-                        Item('label_rotation',
-                             editor=RangeEditor(low=0, high=360)),
-                        Item('show_all_labels',
-                             label="Show all ticks/labels",
-                             enabled_when="_finite_labels"),
-                    ),
+                HGroup(
+                    Item('label_rotation',
+                         editor=RangeEditor(low=0, high=360)),
+                    Item('show_all_labels',
+                         label="Show all ticks/labels"),
                     show_border=True, label="Labels",
-                    enabled_when="finite_labels"
+                    visible_when="_finite_labels"
                 ),
             ),
             resizable=True

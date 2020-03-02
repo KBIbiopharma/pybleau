@@ -9,7 +9,7 @@ import logging
 import pandas as pd
 
 from traits.api import Any, Bool, cached_property, Constant, Dict, \
-    HasStrictTraits, Instance, Int, List, Property, Str
+    HasStrictTraits, Instance, Int, List, on_trait_change, Property, Str
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 
@@ -211,7 +211,7 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     #: Y coordinates of the data points
     y_arr = Property
 
-    #: Z (color) coordinates of the data points to generate a cmap_scatter
+    #: Z (color) coordinates of the data points to generate colored renderers
     z_arr = Property
 
     #: Force floating point or integer column to be treated as discrete values?
@@ -233,6 +233,10 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     @cached_property
     def _get_colorize_by_float(self):
         if not self.z_col_name:
+            return False
+
+        if self.transformed_data is None:
+            # Skip for now: can't compute that property
             return False
 
         df = self.transformed_data
@@ -331,7 +335,7 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     def _get_z_arr(self):
         return None
 
-    # Traits listener methods -------------------------------------------------
+    # Traits private interface ------------------------------------------------
 
     def _data_selection_items(self):
         """ Build the default list of items to select data to plot in XY plots.
@@ -423,9 +427,6 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
     transformed_data = Property(depends_on="data_source, columns_to_melt, "
                                            "z_col_name")
 
-    plot_style = Property(Instance(BarPlotStyle),
-                          depends_on="transformed_data, z_col_name")
-
     renderer_style_klass = BarRendererStyle
 
     def __init__(self, **traits):
@@ -504,8 +505,11 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
         else:
             return self.data_source
 
-    @cached_property
-    def _get_plot_style(self):
+    @on_trait_change("z_col_name, transformed_data", post_init=True)
+    def update_style(self):
+        self.plot_style = self._plot_style_default()
+
+    def _plot_style_default(self):
         if not self.z_col_name:
             num_renderer = 1
         else:
@@ -541,9 +545,6 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     """
     plot_type = Property(Str, depends_on="colorize_by_float")
 
-    plot_style = Property(Instance(BaseColorXYPlotStyle),
-                          depends_on="data_source, z_col_name, plot_type")
-
     _support_hover = Bool(True)
 
     renderer_style_klass = Property(Any, depends_on="plot_type")
@@ -570,8 +571,11 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         else:
             return ScatterRendererStyle
 
-    @cached_property
-    def _get_plot_style(self):
+    @on_trait_change("data_source, z_col_name, plot_type", post_init=True)
+    def update_style(self):
+        self.plot_style = self._plot_style_default()
+
+    def _plot_style_default(self):
         if not self.z_col_name or self.plot_type == CMAP_SCATTER_PLOT_TYPE:
             num_renderer = 1
         else:

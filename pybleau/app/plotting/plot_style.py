@@ -7,18 +7,16 @@ from traits.api import Any, Bool, Dict, Enum, Float, HasTraits, Instance, \
     List, on_trait_change, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
-from chaco.api import LinePlot, Plot
+from chaco.api import Plot
 
-from ..utils.chaco_colors import ALL_CHACO_PALETTES, ALL_MPL_PALETTES
+from ..utils.chaco_colors import ALL_MPL_PALETTES
 from .axis_style import AxisStyle
 from .title_style import TitleStyle
-from .renderer_style import BaseXYRendererStyle, DEFAULT_RENDERER_COLOR, \
-    LineRendererStyle, ScatterRendererStyle
+from .renderer_style import BaseRendererStyle, LineRendererStyle, \
+    ScatterRendererStyle
 from ..utils.chaco_colors import generate_chaco_colors
+from ..utils.string_definitions import DEFAULT_DIVERG_PALETTE
 
-DEFAULT_DIVERG_PALETTE = "hsv"
-
-DEFAULT_CONTIN_PALETTE = "cool"
 
 SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
 
@@ -33,7 +31,7 @@ class BaseXYPlotStyle(HasTraits):
     traits-based app views.
     """
     #: Styling controls for each renderer contained in the plot
-    renderer_styles = List(Instance(BaseXYRendererStyle))
+    renderer_styles = List(Instance(BaseRendererStyle))
 
     #: Font used to draw the plot title
     title_style = Instance(TitleStyle, ())
@@ -73,19 +71,17 @@ class BaseXYPlotStyle(HasTraits):
         if x_mapper is None:
             if isinstance(plot, Plot):
                 x_mapper = plot.x_axis.mapper
-            elif isinstance(plot, LinePlot):
-                x_mapper = plot.index_mapper
             else:
                 msg = "Unsupported plot type: {}".format(type(plot))
+                logger.exception(msg)
                 raise ValueError(msg)
 
         if y_mapper is None:
             if isinstance(plot, Plot):
                 y_mapper = plot.y_axis.mapper
-            elif isinstance(plot, LinePlot):
-                y_mapper = plot.value_mapper
             else:
                 msg = "Unsupported plot type: {}".format(type(plot))
+                logger.exception(msg)
                 raise ValueError(msg)
 
         # Apply transform for e.g. to avoid polluting UI w/ non-sensical digits
@@ -191,13 +187,9 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
     """ Styling class for X-Y plots that have a color dimension (heatmap,
     color-coded scatters, ...)
     """
-    #: Name of the palette to pick colors from in z direction
-    color_palette = Enum(values="_all_palettes")
-
-    #: List of available color palettes
-    _all_palettes = Property(List, depends_on="colorize_by_float")
-
-    colormap = Any
+    #: Name of the palette to pick colors when generating multiple renderers
+    # (Ignored when colorizing by a float: then the renderer's palette is used)
+    color_palette = Enum(DEFAULT_DIVERG_PALETTE, values=ALL_MPL_PALETTES)
 
     #: Font used to draw the color dimension title
     color_axis_title_style = Instance(TitleStyle, ())
@@ -213,16 +205,10 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
 
     # Traits property getters/setters -----------------------------------------
 
-    def _get__all_palettes(self):
-        if self.colorize_by_float:
-            return ALL_CHACO_PALETTES
-        else:
-            return ALL_MPL_PALETTES
-
     def _get_specific_view_elements(self):
         return [
             VGroup(
-                Item("color_palette"),
+                Item("color_palette", visible_when="not colorize_by_float"),
                 VGroup(
                     Item("color_axis_title_style", editor=InstanceEditor(),
                          style="custom", show_label=False),
@@ -245,28 +231,12 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
         For colormapped renderers, pass the palette straight.
         """
         num_renderer = len(self.renderer_styles)
-        if num_renderer == 1 and not self.colorize_by_float:
-            self.renderer_styles[0].color = DEFAULT_RENDERER_COLOR
-        else:
+        if num_renderer > 1 and not self.colorize_by_float:
             color_palette = self.color_palette
             colors = generate_chaco_colors(num_renderer, palette=color_palette)
             for i, color in enumerate(colors):
                 renderer = self.renderer_styles[i]
-                if hasattr(renderer, "color_palette"):
-                    renderer.color_palette = self.color_palette
-                else:
-                    renderer.color = color
-
-    def __all_palettes_changed(self):
-        self.color_palette = self._color_palette_default()
-
-    # Traits initialization methods -------------------------------------------
-
-    def _color_palette_default(self):
-        if self._all_palettes == ALL_CHACO_PALETTES:
-            return DEFAULT_CONTIN_PALETTE
-        else:
-            return DEFAULT_DIVERG_PALETTE
+                renderer.color = color
 
 
 # Single renderer implementations ---------------------------------------------
@@ -280,8 +250,3 @@ class SingleLinePlotStyle(BaseXYPlotStyle):
 class SingleScatterPlotStyle(BaseXYPlotStyle):
     def _renderer_styles_default(self):
         return [ScatterRendererStyle()]
-
-
-if __name__ == "__main__":
-    renderer_styles = [LineRendererStyle(), ScatterRendererStyle()]
-    BaseXYPlotStyle(renderer_styles=renderer_styles).configure_traits()

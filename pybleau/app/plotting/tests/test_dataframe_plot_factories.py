@@ -348,14 +348,14 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.config_class = BarPlotConfigurator
         config = self.config_class(data_source=TEST_DF)
         self.style = config.plot_style
-        self.style.bar_width = 0.5
+        self.style.renderer_styles[0].bar_width = 0.5
         self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
                         'plot_style': self.style}
         super(TestMakeBarPlot, self).setUp()
 
     def test_compute_bar_width(self):
         # bar_plot: if bar_width=0, it's computed from index spacing
-        self.style.bar_width = 0.
+        self.style.renderer_styles[0].bar_width = 0.
         factory = self.plot_factory_klass(x_col_name="c", x_arr=TEST_DF["c"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
@@ -385,7 +385,7 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
     def test_compute_bar_width_single_bar(self):
         """" Regression test: compute bar width when only 1 bar.
         """
-        self.style.bar_width = 0.
+        self.style.renderer_styles[0].bar_width = 0.
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"][:1],  # noqa
                                           y_col_name="a", y_arr=TEST_DF["a"][:1],  # noqa
                                           **self.plot_kw)

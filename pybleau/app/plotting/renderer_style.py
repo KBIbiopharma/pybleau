@@ -6,6 +6,9 @@ from chaco.default_colormaps import color_map_name_dict
 from enable.markers import MarkerNameDict, marker_names
 from enable.api import ColorTrait, LineStyle
 
+from ..utils.chaco_colors import ALL_CHACO_PALETTES
+from ..utils.string_definitions import DEFAULT_CONTIN_PALETTE
+
 DEFAULT_RENDERER_COLOR = "blue"
 
 DEFAULT_MARKER_SIZE = 6
@@ -13,20 +16,11 @@ DEFAULT_MARKER_SIZE = 6
 DEFAULT_LINE_WIDTH = 1.3
 
 
-class BaseXYRendererStyle(HasStrictTraits):
+class BaseRendererStyle(HasStrictTraits):
     """ Styling object for customizing scatter renderers.
     """
     #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
     renderer_type = ""
-
-    #: Color of the renderer
-    color = ColorTrait(DEFAULT_RENDERER_COLOR)
-
-    #: Transparency of the renderer
-    alpha = Range(value=1., low=0., high=1.)
-
-    #: Which y-axis to be displayed along
-    orientation = Enum(["left", "right"])
 
     #: Name of the renderer as referenced in the plot container.
     # Used by the PlotStyle to frame views.
@@ -40,6 +34,25 @@ class BaseXYRendererStyle(HasStrictTraits):
 
     #: List of attributes to convert to kwargs for the Plot.plot method
     dict_keys = List(Str)
+
+    def to_plot_kwargs(self):
+        """ Supports converting renderer styles into a dict of kwargs for the
+        Plot.plot() method.
+        """
+        return {key: getattr(self, key) for key in self.dict_keys}
+
+
+class BaseXYRendererStyle(BaseRendererStyle):
+    """ Styling object for customizing scatter renderers.
+    """
+    #: Color of the renderer
+    color = ColorTrait(DEFAULT_RENDERER_COLOR)
+
+    #: Transparency of the renderer
+    alpha = Range(value=1., low=0., high=1.)
+
+    #: Which y-axis to be displayed along
+    orientation = Enum(["left", "right"])
 
     def traits_view(self):
         view = self.view_klass(
@@ -62,12 +75,6 @@ class BaseXYRendererStyle(HasStrictTraits):
             ),
         )
         return elements
-
-    def to_plot_kwargs(self):
-        """ Supports converting renderer styles into a dict of kwargs for the
-        Plot.plot() method.
-        """
-        return {key: getattr(self, key) for key in self.dict_keys}
 
     def _dict_keys_default(self):
         return ["color", "alpha"]
@@ -110,17 +117,18 @@ class CmapScatterRendererStyle(ScatterRendererStyle):
     renderer_type = "cmap_scatter"
 
     #: Name of the palette to pick colors from in z direction
-    color_palette = Str
+    color_palette = Enum(ALL_CHACO_PALETTES)
 
     #: Transparency of the marker coloring
     fill_alpha = Range(value=1., low=0., high=1.)
 
     #: Chaco color mapper to provide to plot.plot for a cmap_scatter type
-    color_mapper = Any
+    color_mapper = Property(Any, depends_on="color_palette")
 
     def traits_view(self):
         view = self.view_klass(
             VGroup(
+                Item('color_palette'),
                 HGroup(
                     Item('marker', label="Marker"),
                     Item('marker_size',
@@ -133,15 +141,18 @@ class CmapScatterRendererStyle(ScatterRendererStyle):
         )
         return view
 
-    def _color_palette_changed(self):
-        self.color_mapper = self._color_mapper_default()
+    # Traits property getters/setters -----------------------------------------
 
-    def _color_mapper_default(self):
-        if self.color_palette in color_map_name_dict:
-            return color_map_name_dict[self.color_palette]
+    def _get_color_mapper(self):
+        return color_map_name_dict[self.color_palette]
+
+    # Traits initialization methods -------------------------------------------
 
     def _dict_keys_default(self):
         return ["fill_alpha", "color_mapper", "marker", "marker_size"]
+
+    def _color_palette_default(self):
+        return DEFAULT_CONTIN_PALETTE
 
 
 class LineRendererStyle(BaseXYRendererStyle):
@@ -190,32 +201,34 @@ class BarRendererStyle(BaseXYRendererStyle):
             VGroup(
                 Item('bar_width'),
                 HGroup(
-                    Item('line_color'),
-                    Item('fill_color'),
+                    Item('color'),
+                    Item('alpha', label="Transparency"),
                 ),
-                *self.general_view_elements
+                Item("orientation", label="Y-axis"),
             ),
         )
         return view
 
     def _color_changed(self, new):
-        # Bar renderers have 2 different color traits for the line and the
-        # inside of the bar:
-        self.line_color = new
+        # Needed so plot style can control the renderer colors
         self.fill_color = new
+        self.line_color = new
 
     def _dict_keys_default(self):
         return ["bar_width", "line_color", "fill_color", "alpha"]
 
 
-class CmapHeatmapRendererStyle(BaseXYRendererStyle):
+class HeatmapRendererStyle(BaseRendererStyle):
     """ Styling class for heatmap renderers (cmapped image plot).
     """
+    #: Transparency of the renderer
+    alpha = Range(value=1., low=0., high=1.)
+
     #: Name of the palette to pick colors from in color direction
-    color_palette = Str
+    color_palette = Enum(ALL_CHACO_PALETTES)
 
     #: Chaco color mapper to provide to plot.plot for a cmap_scatter type
-    colormap = Any
+    colormap = Property(Any, depends_on="color_palette")
 
     # Note: this count be encoded in an AxisStyle
     xbounds = Tuple((0, 1))
@@ -230,9 +243,22 @@ class CmapHeatmapRendererStyle(BaseXYRendererStyle):
 
     reset_ybounds = Button("Reset")
 
+    def __init__(self, **traits):
+        if "xbounds" in traits and "auto_xbounds" not in traits:
+            traits["auto_xbounds"] = traits["xbounds"]
+
+        if "ybounds" in traits and "auto_ybounds" not in traits:
+            traits["auto_ybounds"] = traits["ybounds"]
+
+        super(HeatmapRendererStyle, self).__init__(**traits)
+
     def traits_view(self):
         view = self.view_klass(
             VGroup(
+                HGroup(
+                    Item('color_palette'),
+                    Item('alpha', label="Transparency"),
+                ),
                 HGroup(
                     Item('xbounds'),
                     Item('reset_xbounds', show_label=False),
@@ -241,15 +267,11 @@ class CmapHeatmapRendererStyle(BaseXYRendererStyle):
                     Item('ybounds'),
                     Item('reset_ybounds', show_label=False),
                 ),
-                *self.general_view_elements
             ),
         )
         return view
 
     # Traits listener methods -------------------------------------------------
-
-    def _color_palette_changed(self):
-        self.colormap = self._colormap_default()
 
     def _reset_xbounds_fired(self):
         self.xbounds = self.auto_xbounds
@@ -259,9 +281,12 @@ class CmapHeatmapRendererStyle(BaseXYRendererStyle):
 
     # Traits initialization methods -------------------------------------------
 
-    def _colormap_default(self):
+    def _get_colormap(self):
         if self.color_palette in color_map_name_dict:
             return color_map_name_dict[self.color_palette]
+
+    def _color_palette_default(self):
+        return DEFAULT_CONTIN_PALETTE
 
     def _dict_keys_default(self):
         return ["colormap", "xbounds", "ybounds"]

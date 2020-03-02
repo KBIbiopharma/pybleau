@@ -1,5 +1,24 @@
+""" Deserialization tools and entry point.
+"""
+import logging
 
 from app_common.apptools.io.deserializer import dataElementDeSerializer
+
+
+logger = logging.getLogger(__name__)
+
+
+def deserialize(serial_data, array_collection=None):
+    """ Functional entry point to deserialize any serial data.
+
+    See app_common implementation for details.
+    """
+    from app_common.apptools.io.deserializer import deserialize
+
+    local_deserializers = {key: val for key, val in globals().items()
+                           if key.endswith("DeSerializer")}
+    return deserialize(serial_data, array_collection=array_collection,
+                       additional_deserializers=local_deserializers)
 
 
 class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
@@ -24,7 +43,7 @@ class scatterPlotConfiguratorDeSerializer(dataElementDeSerializer):
         return ScatterPlotConfigurator
 
 
-class scatterPlotStyleDeSerializer(dataElementDeSerializer):
+class singlescatterPlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.plot_style import SingleScatterPlotStyle
         return SingleScatterPlotStyle
@@ -36,10 +55,16 @@ class linePlotConfiguratorDeSerializer(dataElementDeSerializer):
         return LinePlotConfigurator
 
 
-class linePlotStyleDeSerializer(dataElementDeSerializer):
+class singleLinePlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.plot_style import SingleLinePlotStyle
         return SingleLinePlotStyle
+
+
+class singleScatterPlotStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.plot_style import SingleScatterPlotStyle
+        return SingleScatterPlotStyle
 
 
 class barPlotConfiguratorDeSerializer(dataElementDeSerializer):
@@ -77,3 +102,51 @@ class heatmapPlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
         return HeatmapPlotStyle
+
+
+class lineRendererStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.renderer_style import LineRendererStyle
+        return LineRendererStyle
+
+
+class scatterRendererStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.renderer_style import ScatterRendererStyle
+        return ScatterRendererStyle
+
+
+class barRendererStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.renderer_style import BarRendererStyle
+        return BarRendererStyle
+
+
+class heatmapRendererStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.renderer_style import HeatmapRendererStyle
+        return HeatmapRendererStyle
+
+
+class titleStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.title_style import TitleStyle
+        return TitleStyle
+
+
+class axisStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.axis_style import AxisStyle
+        return AxisStyle
+
+
+class baseColorXYPlotStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.bar_plot_style import BaseColorXYPlotStyle
+        return BaseColorXYPlotStyle
+
+
+class contourStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.contour_style import ContourStyle
+        return ContourStyle

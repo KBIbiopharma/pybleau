@@ -102,7 +102,21 @@ class PlotDescriptor(HasStrictTraits):
         if self.plot_config:
             self.plot_config.z_axis_title = new
 
+    def _plot_config_changed(self, new):
+        self.plot_title = new.plot_title
+        self.x_col_name = new.x_col_name
+        self.x_axis_title = new.x_axis_title
+        self.y_col_name = new.y_col_name
+        self.y_axis_title = new.y_axis_title
+        self.z_col_name = new.z_col_name
+        self.z_axis_title = new.z_axis_title
+
     # Traits initialization methods -------------------------------------------
+
+    def _plot_title_default(self):
+        if self.plot_config:
+            return self.plot_config.plot_title
+        return ""
 
     def _x_col_name_default(self):
         if self.plot_config:

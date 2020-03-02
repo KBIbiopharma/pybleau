@@ -39,7 +39,3 @@ class ContourStyle(HasStrictTraits):
             )
         )
         return view
-
-    def _dict_keys_default(self):
-        return ["add_contours", "contour_levels", "contour_styles",
-                "contour_alpha", "contour_widths"]
