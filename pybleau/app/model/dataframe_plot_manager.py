@@ -5,7 +5,7 @@ import numpy as np
 
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
-from chaco.api import BasePlotContainer, Plot
+from chaco.api import BasePlotContainer, HPlotContainer, Plot
 
 from app_common.std_lib.sys_utils import extract_traceback
 from app_common.chaco.constraints_plot_container_manager import \
@@ -176,7 +176,7 @@ class DataFramePlotManager(DataElement):
         """ Initialize from list of plot descriptions (which gets serialized).
         """
         for i, desc in enumerate(self.contained_plots):
-            try:
+            # try:
                 # Enforce the id since it will drive what plot gets removed and
                 # replaced by the updated version:
                 desc.id = str(i)
@@ -194,14 +194,14 @@ class DataFramePlotManager(DataElement):
                                        list_op="replace", **desc_attrs)
                 else:
                     self._add_raw_plot(desc, position=i, list_op="replace")
-            except Exception as e:
-                tb = extract_traceback()
-                msg = "Failed to recreate the plot number {} ({} of '{}' vs " \
-                      "'{}', z_col '{}').\nError was {}. Traceback was:\n{}"
-                msg = msg.format(i, desc.plot_type, desc.x_col_name,
-                                 desc.y_col_name, desc.z_col_name, e, tb)
-                logger.error(msg)
-                self.failed_plots.append(desc)
+            # except Exception as e:
+            #     tb = extract_traceback()
+            #     msg = "Failed to recreate the plot number {} ({} of '{}' vs " \
+            #           "'{}', z_col '{}').\nError was {}. Traceback was:\n{}"
+            #     msg = msg.format(i, desc.plot_type, desc.x_col_name,
+            #                      desc.y_col_name, desc.z_col_name, e, tb)
+            #     logger.error(msg)
+            #     self.failed_plots.append(desc)
 
         if self.failed_plots:
             self.delete_plots(self.failed_plots)
@@ -327,7 +327,14 @@ class DataFramePlotManager(DataElement):
         return desc
 
     def _initialize_config_plot_ranges(self, config, plot):
-        """ Initialize the styler's range attributes from the created plot."""
+        """ Initialize the styler's range attributes from the created plot.
+        """
+        if isinstance(plot, HPlotContainer):
+            for comp in plot.components:
+                if isinstance(comp, Plot):
+                    plot = comp
+                    break
+
         config.plot_style.initialize_axis_ranges(plot)
 
     def _apply_config_plot_ranges(self, config, plot):

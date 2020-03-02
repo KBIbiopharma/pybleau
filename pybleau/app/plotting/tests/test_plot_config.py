@@ -154,18 +154,17 @@ class TestScatterPlotConfig(TestCase, BaseXYPlotConfig):
         self.assertIn("z_arr", config_dict)
         self.assertIsInstance(config_dict["z_arr"], np.ndarray)
 
-    def test_palette_changes_on_colorizing_column(self):
-        """ The dtype of the column to colorize controls the default palette.
+    def test_style_colorize_by_float_changes_on_color_column_change(self):
+        """ The dtype of the column to colorize controls colorize_by_float.
         """
         # Color by a string:
         config = self.configurator(data_source=TEST_DF, x_col_name="a",
                                    y_col_name="b", z_col_name="d")
-        self.assertEqual(config.plot_style.color_palette,
-                         DEFAULT_DIVERG_PALETTE)
+        self.assertFalse(config.plot_style.colorize_by_float)
+
         # Color by a float:
         config.z_col_name = "e"
-        self.assertEqual(config.plot_style.color_palette,
-                         DEFAULT_CONTIN_PALETTE)
+        self.assertTrue(config.plot_style.colorize_by_float)
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")

@@ -72,19 +72,21 @@ class BaseXYPlotStyle(HasTraits):
         if x_mapper is None:
             if isinstance(plot, Plot):
                 x_mapper = plot.x_axis.mapper
-            elif isinstance(plot, LinePlot):
-                x_mapper = plot.index_mapper
+            # elif isinstance(plot, LinePlot):
+            #     x_mapper = plot.index_mapper
             else:
                 msg = "Unsupported plot type: {}".format(type(plot))
+                logger.exception(msg)
                 raise ValueError(msg)
 
         if y_mapper is None:
             if isinstance(plot, Plot):
                 y_mapper = plot.y_axis.mapper
-            elif isinstance(plot, LinePlot):
-                y_mapper = plot.value_mapper
+            # elif isinstance(plot, LinePlot):
+            #     y_mapper = plot.value_mapper
             else:
                 msg = "Unsupported plot type: {}".format(type(plot))
+                logger.exception(msg)
                 raise ValueError(msg)
 
         # Apply transform for e.g. to avoid polluting UI w/ non-sensical digits
