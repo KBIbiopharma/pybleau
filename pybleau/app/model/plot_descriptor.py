@@ -111,7 +111,7 @@ class PlotDescriptor(HasStrictTraits):
         self.z_col_name = new.z_col_name
         self.z_axis_title = new.z_axis_title
 
-        # Traits initialization methods -------------------------------------------
+    # Traits initialization methods -------------------------------------------
 
     def _plot_title_default(self):
         if self.plot_config:

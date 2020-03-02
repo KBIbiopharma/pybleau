@@ -2,9 +2,7 @@
 from unittest import TestCase
 from traits.testing.unittest_tools import UnittestTools
 
-from app_common.traits.assertion_utils import assert_has_traits_almost_equal
-from app_common.apptools.io.assertion_utils import assert_roundtrip_identical,\
-    assert_file_roundtrip_identical
+from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
 from pybleau.app.io.serializer import serialize
 from pybleau.app.io.deserializer import deserialize
@@ -16,7 +14,6 @@ from pybleau.app.plotting.plot_style import SingleLinePlotStyle, \
 from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
 from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
-from pybleau.app.utils.string_definitions import DEFAULT_CONTIN_PALETTE
 
 
 class BaseSerialDataTest(UnittestTools):

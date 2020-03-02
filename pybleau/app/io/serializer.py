@@ -118,7 +118,7 @@ class BasePlotStyle_Serializer(Serializer):
 
 class BaseColorXYPlotStyle_Serializer(BasePlotStyle_Serializer):
     def attr_names_to_serialize(self, obj):
-        attrs = super(BaseColorXYPlotStyle_Serializer, self).attr_names_to_serialize(obj)
+        attrs = super(BaseColorXYPlotStyle_Serializer, self).attr_names_to_serialize(obj)  # noqa
         return attrs + ['color_palette', 'color_axis_title_style',
                         'colorbar_low', 'colorbar_high', 'colorize_by_float']
 
@@ -133,19 +133,19 @@ class SingleLinePlotStyle_Serializer(BasePlotStyle_Serializer):
 
 class BarPlotStyle_Serializer(BaseColorXYPlotStyle_Serializer):
     def attr_names_to_serialize(self, obj):
-        attrs = super(BarPlotStyle_Serializer, self).attr_names_to_serialize(obj)
+        attrs = super(BarPlotStyle_Serializer, self).attr_names_to_serialize(obj)  # noqa
         return attrs + ["bar_style", "data_duplicate", "show_error_bars"]
 
 
 class HistogramPlotStyle_Serializer(BasePlotStyle_Serializer):
     def attr_names_to_serialize(self, obj):
-        attrs = super(HistogramPlotStyle_Serializer, self).attr_names_to_serialize(obj)
+        attrs = super(HistogramPlotStyle_Serializer, self).attr_names_to_serialize(obj)  # noqa
         return attrs + ["num_bins", "bin_limits", "bar_width_factor"]
 
 
 class HeatmapPlotStyle_Serializer(BaseColorXYPlotStyle_Serializer):
     def attr_names_to_serialize(self, obj):
-        attrs = super(HeatmapPlotStyle_Serializer, self).attr_names_to_serialize(obj)
+        attrs = super(HeatmapPlotStyle_Serializer, self).attr_names_to_serialize(obj)  # noqa
         return attrs + ["interpolation", "contour_style"]
 
 

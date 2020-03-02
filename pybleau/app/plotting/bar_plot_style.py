@@ -1,5 +1,5 @@
 
-from traits.api import Bool, Enum, Float
+from traits.api import Bool, Enum
 from traitsui.api import HGroup, Item, VGroup
 
 from .plot_style import BaseColorXYPlotStyle, SPECIFIC_CONFIG_CONTROL_LABEL

@@ -10,7 +10,7 @@ try:
     from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle, \
         HeatmapRendererStyle
     from pybleau.app.plotting.plot_style import SingleLinePlotStyle, \
-        SingleScatterPlotStyle, BaseXYPlotStyle, BaseColorXYPlotStyle
+        SingleScatterPlotStyle, BaseXYPlotStyle
     from pybleau.app.plotting.title_style import TitleStyle
     from pybleau.app.plotting.axis_style import AxisStyle
     from pybleau.app.plotting.contour_style import ContourStyle
