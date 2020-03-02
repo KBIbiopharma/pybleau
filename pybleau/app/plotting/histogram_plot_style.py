@@ -21,9 +21,6 @@ class HistogramPlotStyle(BaseXYPlotStyle):
     #: Factor to apply to the default bar width. Set to 1 for bars to touch.
     bar_width_factor = Float(1.0)
 
-    #: Width of the bars to draw: leave at 0 to be computed.
-    bar_width = Float
-
     # Extra parameters not needed in the view ---------------------------------
 
     #: Meaning of the parameter above: data space or screen space?
