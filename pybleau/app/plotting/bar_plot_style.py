@@ -10,13 +10,7 @@ IGNORE_DATA_DUPLICATES = "ignore"
 
 class BarPlotStyle(BaseColorXYPlotStyle):
     """ Styling object for customizing bar plots.
-
-    FIXME: Maybe this becomes a renderer style rather than a plot style, so we
-     can support merging lines and bar renderers within the same plot?
     """
-    #: Width of each bar. Leave as 0 to have it computed programmatically.
-    bar_width = Float
-
     #: How to handle multiple bars from hue dim? Next to each other or stacked?
     # Stacked bars aren't working right in current Chaco
     bar_style = Enum(["group"])  # , "stack"
@@ -34,7 +28,6 @@ class BarPlotStyle(BaseColorXYPlotStyle):
             VGroup(
                 VGroup(
                     HGroup(
-                        Item('bar_width'),
                         Item('bar_style', tooltip="When multiple bars, display"
                                                   " side by side or stacked?")
                     ),
@@ -58,4 +51,4 @@ class BarPlotStyle(BaseColorXYPlotStyle):
             rend.bar_width = self.bar_width
 
     def _renderer_styles_default(self):
-        return [BarRendererStyle(bar_width=self.bar_width)]
+        return [BarRendererStyle()]

@@ -37,8 +37,9 @@ class BarPlotFactory(StdXYPlotFactory):
         """
         # Now that the x_values have been laid out, compute the appropriate bar
         # width:
-        if self.plot_style.bar_width == 0:
-            self.plot_style.bar_width = self._compute_bar_width()
+        for style in self.plot_style.renderer_styles:
+            if style.bar_width == 0:
+                style.bar_width = self._compute_bar_width()
 
         super(BarPlotFactory, self).add_renderers(plot)
 

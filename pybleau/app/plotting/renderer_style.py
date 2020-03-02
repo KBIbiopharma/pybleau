@@ -201,10 +201,9 @@ class BarRendererStyle(BaseXYRendererStyle):
             VGroup(
                 Item('bar_width'),
                 HGroup(
-                    Item('line_color'),
-                    Item('fill_color'),
+                    Item('color'),
+                    Item('alpha', label="Transparency"),
                 ),
-                Item('alpha', label="Transparency"),
                 Item("orientation", label="Y-axis"),
             ),
         )

@@ -7,16 +7,15 @@ from traits.api import Any, Bool, Dict, Enum, Float, HasTraits, Instance, \
     List, on_trait_change, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
-from chaco.api import LinePlot, Plot
+from chaco.api import Plot
 
-from ..utils.chaco_colors import ALL_CHACO_PALETTES, ALL_MPL_PALETTES
+from ..utils.chaco_colors import ALL_MPL_PALETTES
 from .axis_style import AxisStyle
 from .title_style import TitleStyle
-from .renderer_style import BaseRendererStyle, BaseXYRendererStyle, \
-    DEFAULT_RENDERER_COLOR, LineRendererStyle, ScatterRendererStyle
+from .renderer_style import BaseRendererStyle, LineRendererStyle, \
+    ScatterRendererStyle
 from ..utils.chaco_colors import generate_chaco_colors
-from ..utils.string_definitions import DEFAULT_CONTIN_PALETTE, \
-    DEFAULT_DIVERG_PALETTE
+from ..utils.string_definitions import DEFAULT_DIVERG_PALETTE
 
 
 SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"

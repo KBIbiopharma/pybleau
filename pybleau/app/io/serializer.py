@@ -134,15 +134,13 @@ class SingleLinePlotStyle_Serializer(BasePlotStyle_Serializer):
 class BarPlotStyle_Serializer(BaseColorXYPlotStyle_Serializer):
     def attr_names_to_serialize(self, obj):
         attrs = super(BarPlotStyle_Serializer, self).attr_names_to_serialize(obj)
-        return attrs + ["bar_width", "bar_style", "data_duplicate",
-                        "show_error_bars"]
+        return attrs + ["bar_style", "data_duplicate", "show_error_bars"]
 
 
 class HistogramPlotStyle_Serializer(BasePlotStyle_Serializer):
     def attr_names_to_serialize(self, obj):
         attrs = super(HistogramPlotStyle_Serializer, self).attr_names_to_serialize(obj)
-        return attrs + ["num_bins", "bin_limits", "bar_width_factor",
-                        "bar_width"]
+        return attrs + ["num_bins", "bin_limits", "bar_width_factor"]
 
 
 class HeatmapPlotStyle_Serializer(BaseColorXYPlotStyle_Serializer):
