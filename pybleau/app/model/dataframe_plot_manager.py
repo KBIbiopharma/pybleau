@@ -176,7 +176,7 @@ class DataFramePlotManager(DataElement):
         """ Initialize from list of plot descriptions (which gets serialized).
         """
         for i, desc in enumerate(self.contained_plots):
-            # try:
+            try:
                 # Enforce the id since it will drive what plot gets removed and
                 # replaced by the updated version:
                 desc.id = str(i)
@@ -194,14 +194,14 @@ class DataFramePlotManager(DataElement):
                                        list_op="replace", **desc_attrs)
                 else:
                     self._add_raw_plot(desc, position=i, list_op="replace")
-            # except Exception as e:
-            #     tb = extract_traceback()
-            #     msg = "Failed to recreate the plot number {} ({} of '{}' vs " \
-            #           "'{}', z_col '{}').\nError was {}. Traceback was:\n{}"
-            #     msg = msg.format(i, desc.plot_type, desc.x_col_name,
-            #                      desc.y_col_name, desc.z_col_name, e, tb)
-            #     logger.error(msg)
-            #     self.failed_plots.append(desc)
+            except Exception as e:
+                tb = extract_traceback()
+                msg = "Failed to recreate the plot number {} ({} of '{}' vs " \
+                      "'{}', z_col '{}').\nError was {}. Traceback was:\n{}"
+                msg = msg.format(i, desc.plot_type, desc.x_col_name,
+                                 desc.y_col_name, desc.z_col_name, e, tb)
+                logger.error(msg)
+                self.failed_plots.append(desc)
 
         if self.failed_plots:
             self.delete_plots(self.failed_plots)
@@ -564,7 +564,7 @@ class DataFramePlotManager(DataElement):
     def update_plot_z_title(self, plot_desc, attr_name, old, new_title):
         if plot_desc.plot_type == HEATMAP_PLOT_TYPE:
             container = self.canvas_manager.get_container_for_plot(plot_desc)
-            # Change the heatmap plot's colorbar:
+            # Change the plot's colorbar:
             plot_desc.plot.components[1]._axis.title = new_title
 
             container.refresh_container()
