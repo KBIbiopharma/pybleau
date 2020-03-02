@@ -10,3 +10,7 @@ SCATTER_PLOT_TYPE = "Scatter plot"
 CMAP_SCATTER_PLOT_TYPE = "CMAP Scatter plot"
 
 HEATMAP_PLOT_TYPE = "Grid heat-map"
+
+DEFAULT_DIVERG_PALETTE = "hsv"
+
+DEFAULT_CONTIN_PALETTE = "cool"

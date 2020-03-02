@@ -4,8 +4,6 @@ from traits.api import Any, Enum, HasStrictTraits, Int, List
 from traitsui.api import HGroup, Item, RangeEditor, View
 from kiva.trait_defs.kiva_font_trait import font_families
 
-DEFAULT_AXIS_LABEL_FONT_SIZE = 18
-
 DEFAULT_TITLE_FONT_SIZE = 18
 
 DEFAULT_TITLE_FONT = "modern"
@@ -18,7 +16,7 @@ class TitleStyle(HasStrictTraits):
     font_name = Enum(DEFAULT_TITLE_FONT, values="_all_fonts")
 
     #: Font size used to draw the title
-    font_size = Int(DEFAULT_AXIS_LABEL_FONT_SIZE)
+    font_size = Int(DEFAULT_TITLE_FONT_SIZE)
 
     #: List of all available fonts
     _all_fonts = List
