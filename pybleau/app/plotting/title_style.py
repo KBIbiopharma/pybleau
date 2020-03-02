@@ -35,7 +35,3 @@ class TitleStyle(HasStrictTraits):
 
     def __all_fonts_default(self):
         return sorted(list(font_families.keys()))
-
-
-if __name__ == "__main__":
-    TitleStyle().configure_traits()
