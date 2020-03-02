@@ -6,8 +6,8 @@ from app_common.apptools.testing_utils import assert_obj_gui_works
 
 try:
     from pybleau.app.plotting.renderer_style import BarRendererStyle, \
-        HeatmapRendererStyle, CmapScatterRendererStyle, LineRendererStyle,\
-        ScatterRendererStyle
+        HeatmapRendererStyle, CmapScatterRendererStyle, \
+        DEFAULT_RENDERER_COLOR, LineRendererStyle, ScatterRendererStyle
 except ImportError:
     pass
 
@@ -34,7 +34,7 @@ class TestRendererStyleAsView(TestCase):
         assert_obj_gui_works(CmapScatterRendererStyle())
 
 
-class TestCmapHeatmapRendererStyle(TestCase, UnittestTools):
+class TestHeatmapRendererStyle(TestCase, UnittestTools):
 
     def test_color_palette_controls_colormap(self):
         style = HeatmapRendererStyle()
@@ -53,3 +53,14 @@ class TestCmapHeatmapRendererStyle(TestCase, UnittestTools):
         style.xbounds = (3, 4)
         style.reset_xbounds = True
         self.assertEqual(style.auto_ybounds, style.ybounds)
+
+
+class TestBarRendererStyle(TestCase):
+    def test_change_color(self):
+        style = BarRendererStyle()
+        self.assertEqual(style.line_color, DEFAULT_RENDERER_COLOR)
+        self.assertEqual(style.fill_color, DEFAULT_RENDERER_COLOR)
+
+        style.color = "red"
+        self.assertEqual(style.line_color, "red")
+        self.assertEqual(style.fill_color, "red")

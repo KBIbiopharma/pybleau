@@ -211,7 +211,7 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     #: Y coordinates of the data points
     y_arr = Property
 
-    #: Z (color) coordinates of the data points to generate a cmap_scatter
+    #: Z (color) coordinates of the data points to generate colored renderers
     z_arr = Property
 
     #: Force floating point or integer column to be treated as discrete values?
@@ -335,7 +335,7 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     def _get_z_arr(self):
         return None
 
-    # Traits listener methods -------------------------------------------------
+    # Traits private interface ------------------------------------------------
 
     def _data_selection_items(self):
         """ Build the default list of items to select data to plot in XY plots.

@@ -15,8 +15,6 @@ if BACKEND_AVAILABLE:
         LinePlotConfigurator, BarPlotConfigurator, ScatterPlotConfigurator, \
         SCATTER_PLOT_TYPE, CMAP_SCATTER_PLOT_TYPE, LINE_PLOT_TYPE, \
         BAR_PLOT_TYPE
-    from pybleau.app.plotting.plot_style import DEFAULT_CONTIN_PALETTE, \
-        DEFAULT_DIVERG_PALETTE
 
 LEN = 16
 

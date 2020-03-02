@@ -100,7 +100,7 @@ class TestRoundtripHistogramPlotStyle(BaseSerialDataTest, TestCase):
         ]
 
     def test_aroundtrip_additional_attrs(self):
-        obj = HistogramPlotStyle(bar_width=2)
+        obj = HistogramPlotStyle(bar_width_factor=0.9)
         self.assert_roundtrip_identical(obj)
 
         obj = HistogramPlotStyle(num_bins=20)
