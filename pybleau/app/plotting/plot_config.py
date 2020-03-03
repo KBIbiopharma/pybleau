@@ -201,7 +201,7 @@ class BaseSinglePlotConfigurator(BasePlotConfigurator):
 
 
 class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
-    """ GUI configurator to create a new Chaco Plot w/ single renderer type.
+    """ GUI configurator to create a new Chaco Plot.
 
     Note: may contain multiple renderers.
     """
@@ -574,6 +574,8 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     @on_trait_change("data_source, z_col_name, plot_type", post_init=True)
     def update_style(self):
         self.plot_style = self._plot_style_default()
+
+    # Traits intialization methods --------------------------------------------
 
     def _plot_style_default(self):
         if not self.z_col_name or self.plot_type == CMAP_SCATTER_PLOT_TYPE:
