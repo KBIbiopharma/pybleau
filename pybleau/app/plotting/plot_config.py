@@ -688,7 +688,7 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
 
 
 def col_name_to_title(col_name):
-    return col_name.replace("_", "  ")
+    return col_name.replace("_", " ")
 
 
 DEFAULT_CONFIGS = {HIST_PLOT_TYPE: HistogramPlotConfigurator,
