@@ -121,32 +121,21 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
         return config_list
 
     def _get_x_arr(self):
-        """ Collect the x array from the dataframe and the column name for x.
+        """ Collect all x arrays, for each renderer.
 
-        Returns
-        -------
-        np.array or dict
-            Collect either an array to display along the x axis or a dictionary
-            of arrays mapped to z-values if a coloring column was selected.
+        Only used in the multi_mode == MULTI_CURVE case.
         """
-        all_y_arr = {}
-        for y_val in self.y_col_names:
-            all_y_arr[y_val] = self.df_column2array(self.x_col_name)
-        return all_y_arr
+        # Make multiple copies of the x_arr, one for each curve:
+        x_arr = self.df_column2array(self.x_col_name)
+        return {y_val: x_arr for y_val in self.y_col_names}
 
     def _get_y_arr(self):
-        """ Collect the y array from the dataframe and the column name for y.
+        """ Collect all y arrays, for each renderer.
 
-        Returns
-        -------
-        np.array or dict
-            Collect either an array to display along the y axis or a dictionary
-            of arrays mapped to z-values if a coloring column was selected.
+        Only used in the multi_mode == MULTI_CURVE case.
         """
-        all_y_arr = {}
-        for y_val in self.y_col_names:
-            all_y_arr[y_val] = self.df_column2array(y_val)
-        return all_y_arr
+        return {y_val: self.df_column2array(y_val)
+                for y_val in self.y_col_names}
 
 
 class MultiHistogramPlotConfigurator(BaseMultiPlotConfigurator):
