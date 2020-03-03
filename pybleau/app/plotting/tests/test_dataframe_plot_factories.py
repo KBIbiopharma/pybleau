@@ -34,6 +34,10 @@ try:
     from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
     from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HeatmapPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
+    from pybleau.app.plotting.multi_plot_config import \
+        MultiLinePlotConfigurator
+    from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
+        LineRendererStyle
 
 except ImportError as e:
     print("ERROR: Module imports failed with error: {}".format(e))
@@ -338,6 +342,66 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         # Cannot be the case, because then it wouldn't be a CmapScatterPlot but
         # a regular ScatterPlot
         pass
+
+    def test_multi_line_1_curve_plot(self):
+        renderer_styles = [LineRendererStyle()]
+        self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
+            renderer_styles=renderer_styles,
+            colorize_by_float=False
+        )
+        y_arr = {"b": TEST_DF["b"]}
+        x_arr = {"b": TEST_DF["a"]}
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b", y_arr=y_arr,
+                                          **self.plot_kw)
+        plot, desc = factory.generate_plot()
+        self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
+        self.assert_renderers_have_distinct_colors(plot)
+
+    def test_multi_line_2_curve_plot(self):
+        renderer_styles = [LineRendererStyle(), LineRendererStyle()]
+        self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
+            renderer_styles=renderer_styles,
+            colorize_by_float=False
+        )
+        y_arr = {"b": TEST_DF["b"], "f": TEST_DF["f"]}
+        x_arr = {"b": TEST_DF["a"], "f": TEST_DF["a"]}
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b", y_arr=y_arr,
+                                          **self.plot_kw)
+        plot, desc = factory.generate_plot()
+        self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
+        self.assert_renderers_have_distinct_colors(plot)
+
+    def test_multi_line_3_curve_plot(self):
+        renderer_styles = [LineRendererStyle(), LineRendererStyle(),
+                           LineRendererStyle()]
+        self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
+            renderer_styles=renderer_styles,
+            colorize_by_float=False
+        )
+        y_arr = {"b": TEST_DF["b"], "f": TEST_DF["f"], "c": TEST_DF["c"]}
+        x_arr = {"b": TEST_DF["a"], "f": TEST_DF["a"], "c": TEST_DF["a"]}
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b", y_arr=y_arr,
+                                          **self.plot_kw)
+        plot, desc = factory.generate_plot()
+        self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
+        self.assert_renderers_have_distinct_colors(plot)
+
+    def test_multi_line_bad_num_renderer_style_plot(self):
+        renderer_styles = [LineRendererStyle()]
+        self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
+            renderer_styles=renderer_styles,
+            colorize_by_float=False
+        )
+        y_arr = {"b": TEST_DF["b"], "f": TEST_DF["f"], "c": TEST_DF["c"]}
+        x_arr = {"b": TEST_DF["a"], "f": TEST_DF["a"], "c": TEST_DF["a"]}
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b", y_arr=y_arr,
+                                          **self.plot_kw)
+        with self.assertRaises(ValueError):
+            factory.generate_plot()
 
 
 @skipIf(not BACKEND_AVAILABLE, msg)

@@ -49,6 +49,8 @@ class BasePlotConfigurator(HasStrictTraits):
     #: Class to use to create TraitsUI window to open controls
     view_klass = Any(View)
 
+    _plot_type_item = Property
+
     # List of attributes to export to pass to the factory
     _dict_keys = List
 
@@ -63,11 +65,7 @@ class BasePlotConfigurator(HasStrictTraits):
         view = self.view_klass(
             Tabbed(
                 VGroup(
-                    HGroup(
-                        Spring(),
-                        Item('plot_type', style="readonly"),
-                        Spring(),
-                    ),
+                    self._plot_type_item,
                     Item("plot_title"),
                     *self._data_selection_items(),
                     show_border=True, label="Data Selection"
@@ -83,6 +81,13 @@ class BasePlotConfigurator(HasStrictTraits):
             title="Configure plot",
         )
         return view
+
+    def _get__plot_type_item(self):
+        return HGroup(
+            Spring(),
+            Item('plot_type', style="readonly"),
+            Spring(),
+        )
 
     # Public interface --------------------------------------------------------
 
@@ -175,13 +180,13 @@ class BaseSinglePlotConfigurator(BasePlotConfigurator):
     # Traits listeners --------------------------------------------------------
 
     def _x_col_name_changed(self, new):
-        self.x_axis_title = new.replace("_", "  ")
+        self.x_axis_title = col_name_to_title(new)
 
     def _y_col_name_changed(self, new):
-        self.y_axis_title = new.replace("_", "  ")
+        self.y_axis_title = col_name_to_title(new)
 
     def _z_col_name_changed(self, new):
-        self.z_axis_title = new.replace("_", "  ")
+        self.z_axis_title = col_name_to_title(new)
 
     # Traits property getters/setters -----------------------------------------
 
@@ -191,17 +196,17 @@ class BaseSinglePlotConfigurator(BasePlotConfigurator):
     # Traits initializers -----------------------------------------------------
 
     def _x_axis_title_default(self):
-        return self.x_col_name.replace("_", "  ")
+        return col_name_to_title(self.x_col_name)
 
     def _y_axis_title_default(self):
-        return self.y_col_name.replace("_", "  ")
+        return col_name_to_title(self.y_col_name)
 
     def _z_axis_title_default(self):
-        return self.y_col_name.replace("_", "  ")
+        return col_name_to_title(self.y_col_name)
 
 
 class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
-    """ GUI configurator to create a new Chaco Plot w/ single renderer type.
+    """ GUI configurator to create a new Chaco Plot.
 
     Note: may contain multiple renderers.
     """
@@ -575,6 +580,8 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     def update_style(self):
         self.plot_style = self._plot_style_default()
 
+    # Traits intialization methods --------------------------------------------
+
     def _plot_style_default(self):
         if not self.z_col_name or self.plot_type == CMAP_SCATTER_PLOT_TYPE:
             num_renderer = 1
@@ -678,6 +685,10 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
         return self.data_source.pivot_table(index=self.y_col_name,
                                             columns=self.x_col_name,
                                             values=self.z_col_name).values
+
+
+def col_name_to_title(col_name):
+    return col_name.replace("_", " ")
 
 
 DEFAULT_CONFIGS = {HIST_PLOT_TYPE: HistogramPlotConfigurator,

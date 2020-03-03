@@ -320,7 +320,12 @@ class StdXYPlotFactory(BasePlotFactory):
 
     def add_renderers(self, plot):
         renderer_styles = self.plot_style.renderer_styles
-        assert len(renderer_styles) == len(self.renderer_desc)
+        if len(renderer_styles) != len(self.renderer_desc):
+            msg = "Something went wrong: received {} styles and {} renderer " \
+                  "descriptions.".format(len(renderer_styles),
+                                         len(self.renderer_desc))
+            logger.exception(msg)
+            raise ValueError(msg)
 
         for desc, style in zip(self.renderer_desc, renderer_styles):
             style.renderer_name = desc["name"]
