@@ -9,7 +9,8 @@ the translation between dataFrame and numpy arrays consumed by Chaco is done.
 import logging
 
 from traits.api import Bool, Constant, Enum, List, Str
-from traitsui.api import CheckListEditor, EnumEditor, HGroup, Item, VGroup
+from traitsui.api import CheckListEditor, EnumEditor, HGroup, Item, Spring, \
+    VGroup
 
 from .plot_config import BasePlotConfigurator, HistogramPlotConfigurator, \
     HistogramPlotStyle, LinePlotConfigurator, SingleLinePlotStyle, \
@@ -17,7 +18,7 @@ from .plot_config import BasePlotConfigurator, HistogramPlotConfigurator, \
 from .plot_style import BaseColorXYPlotStyle, LineRendererStyle
 from ..utils.string_definitions import MULTI_HIST_PLOT_TYPE, \
     MULTI_LINE_PLOT_TYPE
-from .plot_config import BaseSingleXYPlotConfigurator
+from .plot_config import BaseSingleXYPlotConfigurator, col_name_to_title
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,9 @@ class BaseMultiPlotConfigurator(BasePlotConfigurator):
     #: Checkbox to support plotting all columns
     select_all = Bool
 
+    #: Will lead to a multi-renderer plot or multiple single-renderer plots?
+    multi_mode = Enum([MULTI_CURVE, SINGLE_CURVE])
+
     def to_config_list(self):
         raise NotImplementedError()
 
@@ -45,17 +49,8 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
     #: Type of the series of plots being created
     plot_type = Constant(MULTI_LINE_PLOT_TYPE)
 
-    #: Column name to display along the x-axis
-    x_col_name = Str
-
-    #: Title to display along the x-axis
-    x_axis_title = Str
-
     #: List of column names to plot against x_col_name
     y_col_names = List(Str)
-
-    #: Will lead to a multi-renderer plot or multiple single-renderer plots
-    multi_mode = Enum([SINGLE_CURVE, MULTI_CURVE])
 
     # Traits methods ----------------------------------------------------------
 
@@ -68,7 +63,6 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
                                                 cols=num_cols)
 
         items = [
-            Item("multi_mode"),
             HGroup(
                 Item("x_col_name", editor=enum_data_columns,
                      label=X_COL_NAME_LABEL),
@@ -83,6 +77,14 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
             ),
         ]
         return items
+
+    def _get__plot_type_item(self):
+        return HGroup(
+            Spring(),
+            Item('plot_type', style="readonly"),
+            Item("multi_mode", show_label=False),
+            Spring(),
+        )
 
     def _select_all_changed(self, new):
         if new:
@@ -104,9 +106,9 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
                     data_source=self.data_source,
                     plot_title=self.plot_title,
                     x_col_name=self.x_col_name,
-                    x_axis_title=self.x_col_name,
+                    x_axis_title=col_name_to_title(self.x_col_name),
                     y_col_name=y_col,
-                    y_axis_title=y_col,
+                    y_axis_title=col_name_to_title(y_col),
                     plot_style=SingleLinePlotStyle()
                 )
                 config_list.append(single_plot_config)
@@ -117,6 +119,8 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
                 colorize_by_float=False
             )
             config_list = [self]
+            self.y_axis_title = ", ".join([col_name_to_title(y)
+                                           for y in self.y_col_names])
 
         return config_list
 
@@ -147,6 +151,9 @@ class MultiHistogramPlotConfigurator(BaseMultiPlotConfigurator):
     #: List of col names to make a histogram of
     x_col_names = List(Str)
 
+    #: Multi-curve not supported yet. Remove when it is:
+    multi_mode = Str(SINGLE_CURVE)
+
     def _data_selection_items(self):
         """ Build the default list of items to select data to plot in XY plots.
         """
@@ -175,7 +182,7 @@ class MultiHistogramPlotConfigurator(BaseMultiPlotConfigurator):
                 data_source=self.data_source,
                 plot_title=self.plot_title,
                 x_col_name=x_col,
-                x_axis_title=x_col,
+                x_axis_title=col_name_to_title(x_col),
                 plot_style=HistogramPlotStyle()
             )
             config_list.append(single_plot_config)
