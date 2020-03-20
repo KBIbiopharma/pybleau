@@ -168,6 +168,12 @@ class BaseSinglePlotConfigurator(BasePlotConfigurator):
     #: Title to display along the y-axis
     y_axis_title = Str
 
+    #: Column name(s) to display along the secondary y-axis
+    second_y_col_name = Str
+
+    #: Title to display along the secondary y-axis
+    second_y_axis_title = Str
+
     #: Title to display along the z-axis
     z_axis_title = Str
 
@@ -385,7 +391,8 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     def __dict_keys_default(self):
         return ["plot_title", "x_col_name", "y_col_name", "z_col_name",
                 "x_axis_title", "y_axis_title", "z_axis_title", "x_arr",
-                "y_arr", "z_arr", "hover_data", "hover_col_names"]
+                "y_arr", "z_arr", "hover_data", "hover_col_names",
+                "second_y_col_name", "second_y_axis_title"]
 
 
 class BarPlotConfigurator(BaseSingleXYPlotConfigurator):

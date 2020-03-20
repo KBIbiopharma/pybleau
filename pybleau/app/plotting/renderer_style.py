@@ -33,13 +33,21 @@ class BaseRendererStyle(HasStrictTraits):
     view_klass = Any(default_value=View)
 
     #: List of attributes to convert to kwargs for the Plot.plot method
-    dict_keys = List(Str)
+    dict_keys = List
 
     def to_plot_kwargs(self):
         """ Supports converting renderer styles into a dict of kwargs for the
-        Plot.plot() method.
+        renderer factory function/method.
         """
-        return {key: getattr(self, key) for key in self.dict_keys}
+        kwargs = {}
+        for key in self.dict_keys:
+            if isinstance(key, tuple):
+                key, target_key = key
+            else:
+                target_key = key
+
+            kwargs[target_key] = getattr(self, key)
+        return kwargs
 
 
 class BaseXYRendererStyle(BaseRendererStyle):
@@ -168,8 +176,8 @@ class LineRendererStyle(BaseXYRendererStyle):
         view = self.view_klass(
             VGroup(
                 HGroup(
-                    Item('line_width'),
-                    Item('line_style', style="custom"),
+                    Item('line_width', label="Line width"),
+                    Item('line_style', label="Line style", style="custom"),
                 ),
                 *self.general_view_elements
             ),
@@ -178,7 +186,8 @@ class LineRendererStyle(BaseXYRendererStyle):
 
     def _dict_keys_default(self):
         general_items = super(LineRendererStyle, self)._dict_keys_default()
-        return general_items + ["line_width", "line_style"]
+        new = [("line_width", "width"), ("line_style", "dash")]
+        return general_items + new
 
 
 class BarRendererStyle(BaseXYRendererStyle):

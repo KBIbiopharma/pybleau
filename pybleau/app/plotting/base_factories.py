@@ -21,10 +21,15 @@ import logging
 
 from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
     Str
-from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, Plot
-from chaco.tools.api import BetterSelectingZoom, LegendTool, PanTool
+from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, \
+    OverlayPlotContainer, PlotAxis, PlotLabel
+from chaco.plot_factory import add_default_axes
+from chaco.tools.api import BroadcasterTool, LegendTool, PanTool, ZoomTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 
+from app_common.chaco.overlay_plot_container_utils import align_renderer
+from app_common.chaco.plot_factory import create_bar_plot, \
+    create_cmap_scatter_plot, create_line_plot, create_scatter_plot
 from app_common.chaco.legend import Legend, LegendHighlighter
 
 from .plot_style import BaseXYPlotStyle
@@ -36,13 +41,21 @@ DEFAULT_RENDERER_NAME = "plot0"
 logger = logging.getLogger(__name__)
 
 
+RENDERER_MAKER = {
+    "line": create_line_plot,
+    "scatter": create_scatter_plot,
+    "bar": create_bar_plot,
+    "cmap_scatter": create_cmap_scatter_plot
+}
+
+
 class BasePlotFactory(HasStrictTraits):
     """ Base Chaco plot factory.
     """
     #: ArrayPlotData supporting the Plot object
     plot_data = Instance(ArrayPlotData)
 
-    #: Styling of the ** renderer **. Passed to renderer creation method
+    #: Styling of the plot and renderer. Passed to renderer creation method
     plot_style = Instance(BaseXYPlotStyle)
 
     #: Title of the generated plot
@@ -54,7 +67,7 @@ class BasePlotFactory(HasStrictTraits):
     #: Label to display along the x-axis
     x_axis_title = Str
 
-    #: Ordererd list of x values to use to build labels when strings/booleans
+    #: Ordered list of x values to use to build labels when strings/booleans
     x_labels = List
 
     #: Name of the column to display along the y axis
@@ -62,6 +75,12 @@ class BasePlotFactory(HasStrictTraits):
 
     #: Label to display along the y-axis
     y_axis_title = Str
+
+    #: Name of the column(s) to display along the y axis
+    second_y_col_name = Str
+
+    #: Label to display along the secondary y-axis
+    second_y_axis_title = Str
 
     #: Name of the column to display along the color dimension
     z_col_name = Str
@@ -92,11 +111,13 @@ class BasePlotFactory(HasStrictTraits):
 
         Parameters
         ----------
-        plot : chaco.plot.Plot
-            Instance of a chaco Plot to set the axis and title labels of.
+        plot : chaco plot container
+            Instance of a chaco OverlayPlotContainer to set the axis and title
+            labels of.
         """
         self._set_x_axis_labels(plot)
         self._set_y_axis_labels(plot)
+        self._set_second_y_axis_labels(plot)
         self._set_title_label(plot)
 
     def _set_x_axis_labels(self, plot):
@@ -119,26 +140,50 @@ class BasePlotFactory(HasStrictTraits):
                                     positions=np.arange(len(x_labels)),
                                     label_rotation=label_rotation,
                                     tick_generator=tick_generator)
-            plot.underlays.remove(plot.index_axis)
-            plot.index_axis = bottom_axis
-            plot.underlays.append(bottom_axis)
+            plot.x_axis = bottom_axis
 
-        plot.index_axis.title = self.x_axis_title
+        plot.x_axis.title = self.x_axis_title
         font_size = self.plot_style.x_axis_style.title_style.font_size
         font_name = self.plot_style.x_axis_style.title_style.font_name
-        plot.index_axis.title_font = '{} {}'.format(font_name, font_size)
+        plot.x_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_y_axis_labels(self, plot):
-        plot.value_axis.title = self.y_axis_title
+        if self.y_axis_title == "auto":
+            styles = self.plot_style.renderer_styles
+            plot.y_axis.title = ", ".join(
+                [desc["y"] for style, desc in zip(styles, self.renderer_desc)
+                 if style.orientation == "left"])
+        else:
+            plot.y_axis.title = self.y_axis_title
+
         font_size = self.plot_style.y_axis_style.title_style.font_size
         font_name = self.plot_style.y_axis_style.title_style.font_name
-        plot.value_axis.title_font = '{} {}'.format(font_name, font_size)
+        plot.y_axis.title_font = '{} {}'.format(font_name, font_size)
+
+    def _set_second_y_axis_labels(self, plot):
+        if not hasattr(plot, "second_y_axis"):
+            return
+
+        if self.second_y_axis_title == "auto":
+            styles = self.plot_style.renderer_styles
+            plot.second_y_axis.title = ", ".join(
+                [desc["y"] for style, desc in zip(styles, self.renderer_desc)
+                 if style.orientation == "right"])
+        else:
+            plot.y_axis.title = self.second_y_axis_title
+
+        font_size = self.plot_style.second_y_axis_style.title_style.font_size
+        font_name = self.plot_style.second_y_axis_style.title_style.font_name
+        plot.second_y_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_title_label(self, plot):
-        plot.title = self.plot_title
         font_size = self.plot_style.title_style.font_size
         font_name = self.plot_style.title_style.font_name
-        plot._title.font = '{} {}'.format(font_name, font_size)
+        font = '{} {}'.format(font_name, font_size)
+        title_label = PlotLabel(self.plot_title, component=plot, font=font,
+                                overlay_position="top")
+        plot.overlays.append(title_label)
+        plot.title = title_label
 
 
 class StdXYPlotFactory(BasePlotFactory):
@@ -149,6 +194,9 @@ class StdXYPlotFactory(BasePlotFactory):
 
     #: List of plot_data keys to plot in pairs, one pair per renderer
     renderer_desc = List(Dict)
+
+    #: Renderer list, mapped to their name
+    _renderers = Dict
 
     #: Colorbar built to describe the data's z dimension (for select types)
     colorbar = Instance(ColorBar)
@@ -276,7 +324,11 @@ class StdXYPlotFactory(BasePlotFactory):
     def generate_plot(self):
         """ Generate and return a line plot & a dict describing its properties.
         """
-        plot = Plot(data=self.plot_data)
+        plot = OverlayPlotContainer(
+            **self.plot_style.container_style.to_opc_traits()
+        )
+        # Emulate chaco.Plot interface:
+        plot.data = self.plot_data
 
         self.add_renderers(plot)
 
@@ -310,40 +362,79 @@ class StdXYPlotFactory(BasePlotFactory):
     def add_tools(self, plot):
         """ Add pan and zoom tools.
         """
-        if "pan" in self.plot_tools:
-            pan_tool = PanTool(component=plot)
-            plot.tools.append(pan_tool)
+        broadcaster = BroadcasterTool()
 
-        if "zoom" in self.plot_tools:
-            zoom_tool = BetterSelectingZoom(component=plot, zoom_factor=1.2)
-            plot.overlays.append(zoom_tool)
+        # IMPORTANT: add the broadcast tool to one of the renderers, NOT the
+        # container. Otherwise, the box zoom will crop wrong:
+        first_plot = plot.components[0]
+        first_plot.tools.append(broadcaster)
+
+        for i, plot in enumerate(plot.components):
+            if "pan" in self.plot_tools:
+                pan = PanTool(plot)
+                broadcaster.tools.append(pan)
+
+            if "zoom" in self.plot_tools:
+                # FIXME: the zoom tool is added to the broadcaster's tools
+                #  attribute because it doesn't have an overlay list. That
+                #  means the box plot mode won't display the blue box!
+                zoom = ZoomTool(component=plot, zoom_factor=1.25)
+                broadcaster.tools.append(zoom)
 
     def add_renderers(self, plot):
-        renderer_styles = self.plot_style.renderer_styles
-        if len(renderer_styles) != len(self.renderer_desc):
+        """ Add all renderers to the plot container.
+
+        TODO: use log/lin styling info to create axis objects.
+        """
+        styles = self.plot_style.renderer_styles
+        if len(styles) != len(self.renderer_desc):
             msg = "Something went wrong: received {} styles and {} renderer " \
-                  "descriptions.".format(len(renderer_styles),
-                                         len(self.renderer_desc))
+                  "descriptions.".format(len(styles), len(self.renderer_desc))
             logger.exception(msg)
             raise ValueError(msg)
 
-        for desc, style in zip(self.renderer_desc, renderer_styles):
+        for i, (desc, style) in enumerate(zip(self.renderer_desc, styles)):
             style.renderer_name = desc["name"]
-            plot.plot((desc["x"], desc["y"]), type=style.renderer_type,
-                      name=desc["name"], **style.to_plot_kwargs())
+            renderer_maker = RENDERER_MAKER[style.renderer_type]
+            x = self.plot_data.get_data(desc["x"])
+            y = self.plot_data.get_data(desc["y"])
+            renderer = renderer_maker(data=(x, y), **style.to_plot_kwargs())
+            plot.add(renderer)
+            self._renderers[desc["name"]] = renderer
+
+            if i == 0:
+                y_axis, x_axis = add_default_axes(renderer)
+                # Add to plot (displays) and keep a handle on the axis objects:
+                plot.x_axis = x_axis
+                plot.y_axis = y_axis
+            else:
+                # Align index dimension:
+                align_renderer(renderer, plot.x_axis, dim="index")
+
+                if style.orientation == "right":
+                    if not hasattr(plot, "second_y_axis"):
+                        second_y_axis = PlotAxis(component=renderer,
+                                                 orientation="right")
+                        renderer.underlays.append(second_y_axis)
+                        # Keep a handle on the axis object:
+                        plot.second_y_axis = second_y_axis
+                    else:
+                        align_renderer(renderer, plot.second_y_axis,
+                                       dim="value")
+                else:
+                    align_renderer(renderer, plot.y_axis, dim="value")
 
     def set_legend(self, plot, align="ur", padding=10, drag_button="right"):
         """ Add legend and make it relocatable & clickable.
         """
         # Make sure plot list in legend doesn't include error bar renderers:
-        legend_labels = [desc["name"] for desc in
-                         self.renderer_desc]
+        # legend_labels = [desc["name"] for desc in self.renderer_desc]
         legend = Legend(component=plot, padding=padding, align=align,
-                        title=self.z_axis_title, labels=legend_labels)
-        legend.plots = plot.plots
+                        title=self.z_axis_title)  # , labels=legend_labels
+        legend.plots = self._renderers
         if "legend" in self.plot_tools:
             legend.tools.append(LegendTool(component=legend,
                                            drag_button=drag_button))
             legend.tools.append(LegendHighlighter(component=legend))
             legend.visible = True
-            plot.legend = legend
+            plot.overlays.append(legend)

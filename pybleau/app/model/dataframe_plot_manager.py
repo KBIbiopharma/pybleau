@@ -94,10 +94,9 @@ class DataFramePlotManager(DataElement):
         # Support passing a custom Chaco plot/container to the list of
         # contained plots:
         if "contained_plots" in traits:
-            for i, desc in enumerate(traits["contained_plots"]):
-                if isinstance(desc, BasePlotContainer):
-                    new_desc = embed_plot_in_desc(desc)
-                    traits["contained_plots"][i] = new_desc
+            contained_plots = self.preprocess_plot_list(
+                traits["contained_plots"])
+            traits["contained_plots"] = contained_plots
 
         super(DataFramePlotManager, self).__init__(**traits)
 
@@ -109,6 +108,38 @@ class DataFramePlotManager(DataElement):
         if self.source_analyzer:
             if self not in self.source_analyzer.plot_manager_list:
                 self.source_analyzer.plot_manager_list.append(self)
+
+    def preprocess_plot_list(self, plot_list):
+        """ Preprocess the list of plots so they can be embeded in the manager.
+
+        1. Expand MultiConfigurators into a list of single plot configurators.
+        2. Convert Chaco containers and raw Configurators into descriptors.
+        """
+        from ..plotting.multi_plot_config import BaseMultiPlotConfigurator
+
+        if not plot_list:
+            return
+
+        contained_plots = []
+        for i, desc in enumerate(plot_list):
+            if isinstance(desc, BasePlotContainer):
+                new_desc = embed_plot_in_desc(desc)
+                contained_plots.append(new_desc)
+            elif isinstance(desc, BaseMultiPlotConfigurator):
+                config_list = desc.to_config_list()
+                contained_plots += [PlotDescriptor.from_config(x)
+                                    for x in config_list]
+            elif isinstance(desc, PlotDescriptor) and \
+                    isinstance(desc.plot_config, BaseMultiPlotConfigurator):
+                config_list = desc.plot_config.to_config_list()
+                contained_plots += [PlotDescriptor.from_config(x)
+                                    for x in config_list]
+            elif isinstance(desc, BaseSinglePlotConfigurator):
+                contained_plots.append(PlotDescriptor.from_config(desc))
+            else:
+                contained_plots.append(desc)
+
+        return contained_plots
 
     # Public interface --------------------------------------------------------
 
@@ -341,10 +372,7 @@ class DataFramePlotManager(DataElement):
         """ Apply the styler's range attributes to the created plot.
         """
         style = config.plot_style
-        plot.index_mapper.range.low = style.x_axis_style.range_low
-        plot.index_mapper.range.high = style.x_axis_style.range_high
-        plot.value_mapper.range.low = style.y_axis_style.range_low
-        plot.value_mapper.range.high = style.y_axis_style.range_high
+        style.apply_axis_ranges(plot)
 
     def _factory_from_config(self, config):
         """ Return plot factory capable of building a plot described by config.

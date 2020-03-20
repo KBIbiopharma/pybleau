@@ -77,6 +77,10 @@ class PlotDescriptor(HasStrictTraits):
     #: Event triggered if the plot's styling is changed and plot needs updating
     style_edited = Event
 
+    @classmethod
+    def from_config(cls, config):
+        return cls(plot_config=config)
+
     # Traits listeners --------------------------------------------------------
 
     def _edit_plot_style_fired(self):

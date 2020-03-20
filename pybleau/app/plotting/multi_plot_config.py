@@ -119,8 +119,8 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
                 colorize_by_float=False
             )
             config_list = [self]
-            self.y_axis_title = ", ".join([col_name_to_title(y)
-                                           for y in self.y_col_names])
+            self.y_axis_title = "auto"
+            self.second_y_axis_title = "auto"
 
         return config_list
 

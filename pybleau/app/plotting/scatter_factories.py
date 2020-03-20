@@ -58,8 +58,7 @@ class ScatterPlotFactory(StdXYPlotFactory):
     def add_click_selector_tool(self, plot):
         """ Add scatter point click tool to select points.
         """
-        for i, renderer_name in enumerate(plot.plots):
-            renderer = plot.plots[renderer_name][0]
+        for i, renderer in enumerate(plot.components):
             marker_size = self.plot_style.renderer_styles[i].marker_size
             marker = self.plot_style.renderer_styles[i].marker
             inspector_tool = DataframeScatterInspector(
