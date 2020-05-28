@@ -71,7 +71,7 @@ class DataFrameAnalyzer(DataElement):
     #: Function to apply to the filter_exp before passing to the DF
     filter_transformation = Callable
 
-    #: Whether to auto-recomputate filtered DF when filter_exp changes
+    #: Whether to auto-recompute filtered DF when filter_exp changes
     filter_auto_apply = Bool(True)
 
     #: List of known filter expressions (mapped to a unique name)
