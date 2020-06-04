@@ -50,6 +50,8 @@ class HistogramPlotFactory(StdXYPlotFactory):
       ...})
 
     FIXME: Make this class a subclass of the BarPlotFactory!
+
+    TODO: support displaying a histogram for multiple datasets.
     """
     #: Label to display along the y-axis
     y_axis_title = Str(HISTOGRAM_Y_LABEL)
