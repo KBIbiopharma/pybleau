@@ -18,12 +18,15 @@ class PlotContainerStyle(HasStrictTraits):
     padding_bottom = Int(20)
 
     # Is the border visible?
-    border_visible = Bool(True)
+    border_visible = Bool(False)
 
     # The background color of the plot
     bgcolor = white_color_trait
 
-    def to_opc_traits(self):
+    #: Whether to show a colorbar (if relevant)
+    include_colorbar = Bool
+
+    def to_traits(self):
         """ Build OverlayPlotContainer construction keyword list.
         """
         return {

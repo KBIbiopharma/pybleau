@@ -5,7 +5,8 @@ import numpy as np
 
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
-from chaco.api import BasePlotContainer, HPlotContainer, Plot
+from chaco.api import BasePlotContainer, HPlotContainer, OverlayPlotContainer,\
+    Plot
 
 from app_common.std_lib.sys_utils import extract_traceback
 from app_common.chaco.constraints_plot_container_manager import \
@@ -313,7 +314,8 @@ class DataFramePlotManager(DataElement):
             position = self.next_plot_id
 
         factory = self._factory_from_config(config)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         if initial_creation:
             self._initialize_config_plot_ranges(config, plot)
         else:
@@ -360,9 +362,10 @@ class DataFramePlotManager(DataElement):
     def _initialize_config_plot_ranges(self, config, plot):
         """ Initialize the styler's range attributes from the created plot.
         """
+        # Collect the plot instance which holds the mappers to initialize from:
         if isinstance(plot, HPlotContainer):
             for comp in plot.components:
-                if isinstance(comp, Plot):
+                if isinstance(comp, OverlayPlotContainer):
                     plot = comp
                     break
 
@@ -372,6 +375,13 @@ class DataFramePlotManager(DataElement):
         """ Apply the styler's range attributes to the created plot.
         """
         style = config.plot_style
+        # Collect the plot instance which holds the mappers to apply to:
+        if isinstance(plot, HPlotContainer):
+            for comp in plot.components:
+                if isinstance(comp, OverlayPlotContainer):
+                    plot = comp
+                    break
+
         style.apply_axis_ranges(plot)
 
     def _factory_from_config(self, config):
@@ -514,7 +524,8 @@ class DataFramePlotManager(DataElement):
                                                    num_bins)
                 # Recompute the bar width since bin edges changed
                 bar_width = factory.compute_bar_width(edges, num_bins)
-                desc.plot.plots[DEFAULT_RENDERER_NAME].bar_width = bar_width
+                desc.plot_factory.renderers[DEFAULT_RENDERER_NAME].bar_width =\
+                    bar_width
 
             desc.plot_factory = factory
 

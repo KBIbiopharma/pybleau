@@ -22,17 +22,19 @@ import logging
 from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
     Str
 from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, \
-    OverlayPlotContainer, PlotAxis, PlotLabel
+    LinearMapper, LogMapper, OverlayPlotContainer, PlotAxis, PlotLabel
 from chaco.plot_factory import add_default_axes
 from chaco.tools.api import BroadcasterTool, LegendTool, PanTool, ZoomTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
 
-from app_common.chaco.overlay_plot_container_utils import align_renderer
+from app_common.chaco.overlay_plot_container_utils import align_renderers
 from app_common.chaco.plot_factory import create_bar_plot, \
     create_cmap_scatter_plot, create_line_plot, create_scatter_plot
 from app_common.chaco.legend import Legend, LegendHighlighter
 
 from .plot_style import BaseXYPlotStyle
+from .renderer_style import STYLE_L_ORIENT, STYLE_R_ORIENT
+from .axis_style import LINEAR_AXIS_STYLE, LOG_AXIS_STYLE
 
 SELECTION_COLOR = "red"
 
@@ -152,7 +154,7 @@ class BasePlotFactory(HasStrictTraits):
             styles = self.plot_style.renderer_styles
             plot.y_axis.title = ", ".join(
                 [desc["y"] for style, desc in zip(styles, self.renderer_desc)
-                 if style.orientation == "left"])
+                 if style.orientation == STYLE_L_ORIENT])
         else:
             plot.y_axis.title = self.y_axis_title
 
@@ -168,7 +170,7 @@ class BasePlotFactory(HasStrictTraits):
             styles = self.plot_style.renderer_styles
             plot.second_y_axis.title = ", ".join(
                 [desc["y"] for style, desc in zip(styles, self.renderer_desc)
-                 if style.orientation == "right"])
+                 if style.orientation == STYLE_R_ORIENT])
         else:
             plot.y_axis.title = self.second_y_axis_title
 
@@ -196,7 +198,7 @@ class StdXYPlotFactory(BasePlotFactory):
     renderer_desc = List(Dict)
 
     #: Renderer list, mapped to their name
-    _renderers = Dict
+    renderers = Dict
 
     #: Colorbar built to describe the data's z dimension (for select types)
     colorbar = Instance(ColorBar)
@@ -323,10 +325,17 @@ class StdXYPlotFactory(BasePlotFactory):
 
     def generate_plot(self):
         """ Generate and return a line plot & a dict describing its properties.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the generated plot and all the information
+            about it to create a PlotDescriptor.
         """
         plot = OverlayPlotContainer(
-            **self.plot_style.container_style.to_opc_traits()
+            **self.plot_style.container_style.to_traits()
         )
+
         # Emulate chaco.Plot interface:
         plot.data = self.plot_data
 
@@ -339,25 +348,33 @@ class StdXYPlotFactory(BasePlotFactory):
 
         self.add_tools(plot)
 
-        if self.colorbar:
-            # Make more room for labels
-            plot.padding_right = 5
-            plot.padding_top = 25
-
-            container = HPlotContainer(padding=0)
-            container.add(plot, self.colorbar)
-            container.padding_right = sum([comp.padding_right
-                                           for comp in container.components])
-            container.bgcolor = "transparent"
-            plot = container
-
         # Build a description of the plot to build a PlotDescriptor
         desc = dict(plot_type=self.plot_type, plot=plot, visible=True,
                     plot_title=self.plot_title, x_col_name=self.x_col_name,
                     y_col_name=self.y_col_name, x_axis_title=self.x_axis_title,
                     y_axis_title=self.y_axis_title, z_col_name=self.z_col_name,
                     z_axis_title=self.z_axis_title, ndim=self.ndim)
-        return plot, desc
+
+        self.add_colorbar(desc)
+
+        return desc
+
+    def add_colorbar(self, desc):
+        # FIXME: what plot factories need this? Reconcile with ScatterFactory.
+        if self.plot_style.container_style.include_colorbar:
+            plot = desc["plot"]
+            # Make more room for labels
+            plot.padding_right = 5
+            plot.padding_top = 25
+
+            container = HPlotContainer(
+                self.plot_style.container_style.to_traits()
+            )
+            container.add(plot, self.colorbar)
+            container.padding_right = sum([comp.padding_right
+                                           for comp in container.components])
+            container.bgcolor = "transparent"
+            desc["plot"] = container
 
     def add_tools(self, plot):
         """ Add pan and zoom tools.
@@ -395,34 +412,52 @@ class StdXYPlotFactory(BasePlotFactory):
 
         for i, (desc, style) in enumerate(zip(self.renderer_desc, styles)):
             style.renderer_name = desc["name"]
-            renderer_maker = RENDERER_MAKER[style.renderer_type]
-            x = self.plot_data.get_data(desc["x"])
-            y = self.plot_data.get_data(desc["y"])
-            renderer = renderer_maker(data=(x, y), **style.to_plot_kwargs())
+            renderer = self.build_renderer(desc, style)
             plot.add(renderer)
-            self._renderers[desc["name"]] = renderer
+            self.renderers[desc["name"]] = renderer
 
             if i == 0:
-                y_axis, x_axis = add_default_axes(renderer)
-                # Add to plot (displays) and keep a handle on the axis objects:
-                plot.x_axis = x_axis
-                plot.y_axis = y_axis
-            else:
-                # Align index dimension:
-                align_renderer(renderer, plot.x_axis, dim="index")
+                # if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
+                #     x_mapper_klass = LogMapper
+                # else:
+                #     x_mapper_klass = LinearMapper
 
-                if style.orientation == "right":
-                    if not hasattr(plot, "second_y_axis"):
-                        second_y_axis = PlotAxis(component=renderer,
-                                                 orientation="right")
-                        renderer.underlays.append(second_y_axis)
-                        # Keep a handle on the axis object:
-                        plot.second_y_axis = second_y_axis
-                    else:
-                        align_renderer(renderer, plot.second_y_axis,
-                                       dim="value")
-                else:
-                    align_renderer(renderer, plot.y_axis, dim="value")
+                left_axis, bottom_axis = add_default_axes(renderer)
+                # Add to plot (displays) and keep a handle on the axis objects:
+                plot.x_axis = bottom_axis
+                plot.y_axis = left_axis
+            else:
+                if style.orientation == STYLE_R_ORIENT and not \
+                        hasattr(plot, "second_y_axis"):
+                    # if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
+                    #     mapper_klass = LogMapper
+                    # else:
+                    #     mapper_klass = LinearMapper
+
+                    second_y_axis = PlotAxis(component=renderer,
+                                             orientation="right")
+                    renderer.underlays.append(second_y_axis)
+                    # Keep a handle on the axis object:
+                    plot.second_y_axis = second_y_axis
+
+        # Align all renderers in index and value dimension:
+        all_renderers = self.renderers.values()
+        align_renderers(all_renderers, plot.x_axis, dim="index")
+        if hasattr(plot, "second_y_axis"):
+            l_renderers = [rend for rend, style in zip(all_renderers, styles)
+                           if style.orientation == STYLE_L_ORIENT]
+            r_renderers = [rend for rend, style in zip(all_renderers, styles)
+                           if style.orientation == STYLE_R_ORIENT]
+            align_renderers(l_renderers, plot.y_axis, dim="value")
+            align_renderers(r_renderers, plot.second_y_axis, dim="value")
+        else:
+            align_renderers(all_renderers, plot.y_axis, dim="value")
+
+    def build_renderer(self, desc, style):
+        renderer_maker = RENDERER_MAKER[style.renderer_type]
+        x = self.plot_data.get_data(desc["x"])
+        y = self.plot_data.get_data(desc["y"])
+        return renderer_maker(data=(x, y), **style.to_plot_kwargs())
 
     def set_legend(self, plot, align="ur", padding=10, drag_button="right"):
         """ Add legend and make it relocatable & clickable.
@@ -431,7 +466,7 @@ class StdXYPlotFactory(BasePlotFactory):
         # legend_labels = [desc["name"] for desc in self.renderer_desc]
         legend = Legend(component=plot, padding=padding, align=align,
                         title=self.z_axis_title)  # , labels=legend_labels
-        legend.plots = self._renderers
+        legend.plots = self.renderers
         if "legend" in self.plot_tools:
             legend.tools.append(LegendTool(component=legend,
                                            drag_button=drag_button))

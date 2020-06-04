@@ -16,11 +16,13 @@ from pybleau.app.plotting.multi_plot_config import MultiLinePlotConfigurator
 
 initialize_logging(logging_level="DEBUG")
 
+col4 = np.random.randn(8)
+
 TEST_DF = DataFrame({"Col_1": [1, 2, 3, 4, 5, 6, 7, 8],
                      "Col_2": 5*np.array([1, 2, 3, 4, 5, 6, 7, 8])[::-1],
                      "Col_3": ["aa_aaa", "bb_bbb", "aa_aaa", "cc_ccc",
                                "ee_eee", "dd_ddd", "ff_fff", "gg_ggg"],
-                     "Col_4": np.random.randn(8),
+                     "Col_4": col4,
                      })
 
 config = HistogramPlotConfigurator(data_source=TEST_DF)
@@ -83,7 +85,7 @@ plot_manager = DataFramePlotManager(
         cust_plot1,
         desc6,
         desc7,
-        # desc8
+        desc8
     ],
     data_source=TEST_DF, source_analyzer=analyzer
 )

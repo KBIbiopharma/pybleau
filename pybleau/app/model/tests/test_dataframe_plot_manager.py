@@ -76,10 +76,9 @@ class BasePlotManagerTools(UnittestTools):
             self.assertIsInstance(plot_desc, PlotDescriptor)
             self.assertIsInstance(plot_desc.id, string_types)
             self.assertIsInstance(plot_desc.plot, BasePlotContainer)
-            self.assertGreater(len(plot_desc.plot.plots), 0)
-            for name, renderers in plot_desc.plot.plots.items():
-                for renderer in renderers:
-                    self.assertIsInstance(renderer, renderer_type)
+            self.assertGreater(len(plot_desc.plot.components), 0)
+            for renderer in plot_desc.plot.components:
+                self.assertIsInstance(renderer, renderer_type)
 
             if single_container:
                 self.assertIn(plot_desc.plot, container.container.components)
@@ -175,8 +174,8 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assert_plot_created(renderer_type=ScatterPlot)
         plot_desc = self.model.contained_plots[0]
         style = plot_desc.plot_config.plot_style
-        self.assertEqual(plot_desc.plot.plots[DEFAULT_RENDERER_NAME][0].color,
-                         DEFAULT_RENDERER_COLOR)
+        renderer = plot_desc.plot_factory.renderers[DEFAULT_RENDERER_NAME]
+        self.assertEqual(renderer.color, DEFAULT_RENDERER_COLOR)
 
         style.renderer_styles[0].color = "red"
         with self.assertTraitChanges(self.model, "contained_plots[]"):
@@ -184,8 +183,8 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
 
         self.assertNotIn(plot_desc, self.model.contained_plots)
         plot_desc = self.model.contained_plots[0]
-        self.assertEqual(plot_desc.plot.plots[DEFAULT_RENDERER_NAME][0].color,
-                         "red")
+        renderer = plot_desc.plot_factory.renderers[DEFAULT_RENDERER_NAME]
+        self.assertEqual(renderer.color, "red")
 
     def test_change_style_hist_num_bin_2_plot(self):
         """ Edit style button works: style does change and plot gets replaced.
@@ -197,10 +196,12 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         plot_desc2 = self.model.contained_plots[1]
 
         style = plot_desc2.plot_config.plot_style
-        bar_renderer2 = plot_desc2.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer2 = plot_desc2.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer2.fill_color, DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc2.plot.data.arrays["a"]), 10)
-        bar_renderer1 = plot_desc1.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer1 = plot_desc1.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer1.fill_color, DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc1.plot.data.arrays["a"]), 10)
 
@@ -211,7 +212,8 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
             plot_desc2.style_edited = True
 
         self.assertIn(plot_desc1, self.model.contained_plots)
-        bar_renderer1 = plot_desc1.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer1 = plot_desc1.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer1.fill_color,
                          DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc1.plot.data.arrays["a"]), 10)
@@ -220,7 +222,8 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertNotIn(plot_desc2, self.model.contained_plots)
         # and the new one that replaced it has the new properties requested:
         new_plot_desc2 = self.model.contained_plots[1]
-        bar_renderer2 = new_plot_desc2.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer2 = new_plot_desc2.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer2.fill_color, "red")
         self.assertEqual(len(new_plot_desc2.plot.data.arrays["a"]), 20)
 
@@ -252,7 +255,7 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.model._add_new_plot(self.config)
 
         plot = self.model.contained_plots[0].plot
-        plot_high = plot.index_mapper.range.high
+        plot_high = plot.x_axis.mapper.range.high
         self.assertEqual(self.config.plot_style.x_axis_style.range_high,
                          plot_high)
         self.assertEqual(self.config.plot_style.x_axis_style.auto_range_high,
@@ -271,7 +274,7 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertNotIn(plot_desc1, self.model.contained_plots)
         # and the new one that replaced it has the new properties requested:
         new_plot_desc1 = self.model.contained_plots[0]
-        plot_high = new_plot_desc1.plot.index_mapper.range.high
+        plot_high = new_plot_desc1.plot.x_axis.mapper.range.high
         self.assertAlmostEqual(plot_high, 6.5)
 
     def test_add_custom_plot_at_creation(self):
@@ -824,7 +827,7 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         # Make sure the basic scatter plot only has values above 2 for a:
         self.assertEqual(set(data["a"]), {3, 4})
         # Still 1 renderer:
-        self.assertEqual(len(chaco_plot.plots), 1)
+        self.assertEqual(len(chaco_plot.components), 1)
 
     def test_remove_data_on_colored_scatter(self):
         """ Test data/renderer updates when removing new data to data source
@@ -855,7 +858,7 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         assert_array_equal(data['ac'], np.array([4., 4.]))
 
         # Same number of renderers though some have no data:
-        self.assertEqual(len(chaco_plot.plots), NUM_D_VALUES)
+        self.assertEqual(len(chaco_plot.components), NUM_D_VALUES)
 
     def test_add_data_on_colored_scatter(self):
         """ Test data/renderer updates when adding new data to data source
@@ -888,7 +891,7 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         # The 'ac' key has changed (col a, where col d equals 'c'):
         assert_array_equal(data['ac'], np.array([1., 4., 4.]))
 
-        self.assertEqual(len(chaco_plot.plots), NUM_D_VALUES)
+        self.assertEqual(len(chaco_plot.components), NUM_D_VALUES)
 
     # Helper utilities --------------------------------------------------------
 

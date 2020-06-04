@@ -195,7 +195,8 @@ class BaseXYPlotStyle(HasTraits):
                 VGroup(*items,
                        show_border=True, label="Renderer controls"),
                 VGroup(
-                    Item("container_style"),
+                    Item("container_style", editor=InstanceEditor(),
+                         style="custom", show_label=False),
                     show_border=True, label="Container controls"
                 )
             )

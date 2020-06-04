@@ -94,7 +94,7 @@ class DataFramePlotManagerView(ModelView):
                          enabled_when="len(model.contained_plots) > 0"),
                 ),
             ),
-            resizable=True, width=800, scrollable=True
+            resizable=True, width=800, scrollable=True, height=1000
         )
         return view
 
