@@ -7,6 +7,9 @@ import pandas as pd
 import logging
 
 from traits.api import Any, Constant
+
+from app_common.chaco.plot_factory import create_line_plot
+
 from .plot_config import BAR_PLOT_TYPE
 from .bar_plot_style import IGNORE_DATA_DUPLICATES
 from .base_factories import StdXYPlotFactory
@@ -93,12 +96,14 @@ class BarPlotFactory(StdXYPlotFactory):
             x = bar_positions[i]
             x_data_name = ERROR_BAR_DATA_KEY_PREFIX + "{}_x".format(i)
             y_data_name = ERROR_BAR_DATA_KEY_PREFIX + "{}_y".format(i)
-            self.plot_data.set_data(x_data_name, [x, x])
-            self.plot_data.set_data(y_data_name,
-                                    [y_val+stddev/2., y_val-stddev/2.])
+            self.plot_data.set_data(x_data_name, np.array([x, x]))
+            y_array = np.array([y_val+stddev/2., y_val-stddev/2.])
+            self.plot_data.set_data(y_data_name, y_array)
             error_bar_renderer_name = "plot{}".format(i+1)
-            plot.plot((x_data_name, y_data_name), type="line",
-                      color=ERROR_BAR_COLOR, name=error_bar_renderer_name)
+            error_renderer = create_line_plot(data=(np.array([x, x]), y_array),
+                                              color=ERROR_BAR_COLOR)
+            plot.add(error_renderer)
+            self.renderers[error_bar_renderer_name] = error_renderer
 
     def _draw_error_bars_multi_renderer(self, plot):
         """ Add data and renderers for drawing error bars around bar heights.
@@ -118,12 +123,15 @@ class BarPlotFactory(StdXYPlotFactory):
                 y_data_name = ERROR_BAR_DATA_KEY_PREFIX + "{}_y".format(
                     renderer_num
                 )
-                self.plot_data.set_data(x_data_name, [x, x])
-                self.plot_data.set_data(y_data_name,
-                                        [y_val+stddev/2., y_val-stddev/2.])
+                x_array = np.array([x, x])
+                self.plot_data.set_data(x_data_name, x_array)
+                y_array = np.array([y_val+stddev/2., y_val-stddev/2.])
+                self.plot_data.set_data(y_data_name, y_array)
                 name = "plot{}".format(renderer_num)
-                plot.plot((x_data_name, y_data_name), type="line",
-                          color=ERROR_BAR_COLOR, name=name)
+                error_renderer = create_line_plot(data=(x_array, y_array),
+                                                  color=ERROR_BAR_COLOR)
+                plot.add(error_renderer)
+                self.renderers[name] = error_renderer
 
     def _compute_bar_width(self):
         """ Compute the width of each bar.
