@@ -110,8 +110,14 @@ class DataFramePlotManager(DataElement):
             if self not in self.source_analyzer.plot_manager_list:
                 self.source_analyzer.plot_manager_list.append(self)
 
+    def clear_all_plots(self):
+        """ Remove all contained plots.
+        """
+        self.delete_plots(self.contained_plots)
+        self.contained_plots = []
+
     def preprocess_plot_list(self, plot_list):
-        """ Preprocess the list of plots so they can be embeded in the manager.
+        """ Pre-process the list of plots so they can be embedded in manager.
 
         1. Expand MultiConfigurators into a list of single plot configurators.
         2. Convert Chaco containers and raw Configurators into descriptors.
@@ -464,7 +470,7 @@ class DataFramePlotManager(DataElement):
         self.data_source = self.source_analyzer.filtered_df
 
     def _data_source_changed(self, new_df):
-        """ Change the data source: update plot data & descriptions as needed.
+        """ Change the data source: update non-frozen plots.
 
         We can't rebuild the plots, because they are currently inserted in the
         enable container.
@@ -473,61 +479,48 @@ class DataFramePlotManager(DataElement):
          should we try to detect situations when a full rebuilding isn't
          necessary.
         """
-        for desc in self.contained_plots:
-            if desc.frozen or desc.plot is None:
+        contained_plots = self.contained_plots
+        for plot_desc in contained_plots:
+            if plot_desc.frozen or plot_desc.plot is None:
                 # The plot is not created yet or set to not change: skip
                 continue
 
+            # Keep a filter in sync:
             if self.source_analyzer:
-                desc.data_filter = self.source_analyzer.filter_exp
+                plot_desc.data_filter = self.source_analyzer.filter_exp
             else:
-                desc.data_filter = ""
+                plot_desc.data_filter = ""
 
-            config = desc.plot_config
+            config = plot_desc.plot_config
             config.data_source = new_df
-            old_factory = desc.plot_factory
-            factory = self._factory_from_config(config)
+            factory = plot_desc.plot_factory
 
-            # Rebuild the factory with all the required data ------------------
+            # Create a new factory to see what datasets need to be
+            # added/removed:
+            new_factory = self._factory_from_config(config)
 
-            new_plotdata = factory.plot_data.arrays
-            old_plotdata = desc.plot.data.arrays
-            new_data_added = set(new_plotdata.keys()) - set(old_plotdata.keys())  # noqa
+            new_data = new_factory.plot_data.arrays
+            existing_data = factory.plot_data.arrays
+            removed_datasets = set(existing_data.keys()) - set(new_data.keys())
 
-            # If some keys are missing in the new ArrayPlotData, set them as
-            # empty arrays so their renderers update too:
-            for key in set(old_plotdata.keys()) - set(new_plotdata.keys()):
-                new_plotdata[key] = np.array([])
+            # Update data and existing renderers
+            factory.plot_data.update_data(new_data)
+            factory.update_renderers_from_data(removed=removed_datasets)
 
-            desc.plot.data.update_data(new_plotdata)
+            # Add new renderers
+            new_descs = []
+            new_styles = []
+            desc_list = new_factory.renderer_desc
+            style_list = new_factory.plot_style.renderer_styles
+            existing_renderers = {(desc['x'], desc['y']) for desc in
+                                  factory.renderer_desc}
+            for desc, style in zip(desc_list, style_list):
+                if (desc['x'], desc['y']) not in existing_renderers:
+                    new_descs.append(desc)
+                    new_styles.append(style)
 
-            # If new data was added, add missing renderers --------------------
-
-            if isinstance(factory, ScatterPlotFactory) and new_data_added:
-                styles = factory.plot_style.renderer_styles
-                for style, renderer_desc in zip(styles, factory.renderer_desc):
-                    if renderer_desc in old_factory.renderer_desc:
-                        continue
-
-                    desc.plot.plot(
-                        (renderer_desc["x"], renderer_desc["y"]),
-                        type=style.renderer_type,
-                        name=renderer_desc["name"], **style.to_plot_kwargs()
-                    )
-
-            # Plot type specific updates --------------------------------------
-
-            elif isinstance(factory, HistogramPlotFactory):
-                x_arr = new_df[desc.x_col_name]
-                num_bins = factory.plot_style.num_bins
-                _, edges = factory.build_hist_data(desc.x_col_name, x_arr,
-                                                   num_bins)
-                # Recompute the bar width since bin edges changed
-                bar_width = factory.compute_bar_width(edges, num_bins)
-                desc.plot_factory.renderers[DEFAULT_RENDERER_NAME].bar_width =\
-                    bar_width
-
-            desc.plot_factory = factory
+            factory.append_new_renderers(desc_list=new_descs,
+                                         styles=new_styles)
 
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):

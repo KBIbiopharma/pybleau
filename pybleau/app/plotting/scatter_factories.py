@@ -29,10 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class ScatterPlotFactory(StdXYPlotFactory):
-    """ Factory to build a scatter plot.
-
-    It supports creating a plot with any number of scatter renderers, including
-    single-colored renderers.
+    """ Factory to build a potentially multi-renderer XY plot.
 
     This plot currently supports displaying many dimensions at once since it
     supports a legend tool to select parts of the data and a hover tool to
@@ -103,6 +100,16 @@ class ScatterPlotFactory(StdXYPlotFactory):
         add_scatter_inspectors(plot, datasets=renderer_data,
                                include_overlay=True, align="ul")
 
+    def update_renderer_from_data(self):
+        """ The plot_data was updated: update all renderers with the new data.
+        """
+        # Update exist
+        super(ScatterPlotFactory, self).update_renderer_from_data()
+
+        # Add new renderers as needed:
+
+        # Remove renderers as needed:
+
 
 class CmapScatterPlotFactory(ScatterPlotFactory):
     """ Factory to build a single scatter plot colormapped by a z array.
@@ -122,8 +129,13 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
 
     def add_colorbar(self, desc):
-        # FIXME: consolidate this and the base class implementation
+        """ Modify the descriptor's plot entry to add a color bar to it.
 
+        This is done by embedding the plot into an HPlotContainer and adding a
+        colorbar plot to the right.
+
+        FIXME: consolidate this and the base class implementation
+        """
         plot = desc["plot"]
         styles = self.plot_style.renderer_styles
         renderers = self.renderers.values()
@@ -163,7 +175,7 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         container.add(plot, colorbar)
         desc["plot"] = container
 
-    def build_renderer(self, desc, style):
+    def _build_renderer(self, desc, style):
         x = self.plot_data.get_data(desc["x"])
         y = self.plot_data.get_data(desc["y"])
         z = self.plot_data.get_data(desc["z"])

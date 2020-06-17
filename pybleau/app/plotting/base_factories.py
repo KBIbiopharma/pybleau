@@ -22,7 +22,7 @@ import logging
 from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
     Str
 from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, \
-    LinearMapper, LogMapper, OverlayPlotContainer, PlotAxis, PlotLabel
+    OverlayPlotContainer, PlotAxis, PlotLabel  # LinearMapper, LogMapper,
 from chaco.plot_factory import add_default_axes
 from chaco.tools.api import BroadcasterTool, LegendTool, PanTool, ZoomTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
@@ -34,7 +34,7 @@ from app_common.chaco.legend import Legend, LegendHighlighter
 
 from .plot_style import BaseXYPlotStyle
 from .renderer_style import STYLE_L_ORIENT, STYLE_R_ORIENT
-from .axis_style import LINEAR_AXIS_STYLE, LOG_AXIS_STYLE
+# from .axis_style import LINEAR_AXIS_STYLE, LOG_AXIS_STYLE
 
 SELECTION_COLOR = "red"
 
@@ -191,6 +191,9 @@ class BasePlotFactory(HasStrictTraits):
 class StdXYPlotFactory(BasePlotFactory):
     """ Factory to create a 2D plot with one of more renderers of the same kind
     """
+    #: Generated chaco plot containing all requested renderers
+    plot = Instance(OverlayPlotContainer)
+
     #: Number of DF columns involved in making the plot
     ndim = Int
 
@@ -202,6 +205,9 @@ class StdXYPlotFactory(BasePlotFactory):
 
     #: Colorbar built to describe the data's z dimension (for select types)
     colorbar = Instance(ColorBar)
+
+    #: Optional legend object to be added to the future plot
+    legend = Instance(Legend)
 
     def __init__(self, x_arr=None, y_arr=None, z_arr=None, hover_data=None,
                  **traits):
@@ -332,7 +338,7 @@ class StdXYPlotFactory(BasePlotFactory):
             Dictionary containing the generated plot and all the information
             about it to create a PlotDescriptor.
         """
-        plot = OverlayPlotContainer(
+        plot = self.plot = OverlayPlotContainer(
             **self.plot_style.container_style.to_traits()
         )
 
@@ -361,23 +367,25 @@ class StdXYPlotFactory(BasePlotFactory):
 
     def add_colorbar(self, desc):
         # FIXME: what plot factories need this? Reconcile with ScatterFactory.
-        if self.plot_style.container_style.include_colorbar:
-            plot = desc["plot"]
-            # Make more room for labels
-            plot.padding_right = 5
-            plot.padding_top = 25
+        if not self.plot_style.container_style.include_colorbar:
+            return
 
-            container = HPlotContainer(
-                self.plot_style.container_style.to_traits()
-            )
-            container.add(plot, self.colorbar)
-            container.padding_right = sum([comp.padding_right
-                                           for comp in container.components])
-            container.bgcolor = "transparent"
-            desc["plot"] = container
+        plot = desc["plot"]
+        # Make more room for labels
+        plot.padding_right = 5
+        plot.padding_top = 25
+
+        container = HPlotContainer(
+            self.plot_style.container_style.to_traits()
+        )
+        container.add(plot, self.colorbar)
+        container.padding_right = sum([comp.padding_right
+                                       for comp in container.components])
+        container.bgcolor = "transparent"
+        desc["plot"] = container
 
     def add_tools(self, plot):
-        """ Add pan and zoom tools.
+        """ Add all tools specified in plot_tools list to provided plot.
         """
         broadcaster = BroadcasterTool()
 
@@ -399,9 +407,7 @@ class StdXYPlotFactory(BasePlotFactory):
                 broadcaster.tools.append(zoom)
 
     def add_renderers(self, plot):
-        """ Add all renderers to the plot container.
-
-        TODO: use log/lin styling info to create axis objects.
+        """ Add all renderers to provided plot container.
         """
         styles = self.plot_style.renderer_styles
         if len(styles) != len(self.renderer_desc):
@@ -411,36 +417,51 @@ class StdXYPlotFactory(BasePlotFactory):
             raise ValueError(msg)
 
         for i, (desc, style) in enumerate(zip(self.renderer_desc, styles)):
-            style.renderer_name = desc["name"]
-            renderer = self.build_renderer(desc, style)
-            plot.add(renderer)
-            self.renderers[desc["name"]] = renderer
+            first_renderer = i == 0
+            self.add_renderer(plot, desc, style, first_renderer=first_renderer)
 
-            if i == 0:
+        self._align_all_renderers(plot)
+
+    def add_renderer(self, plot, desc, style, first_renderer=False):
+        """ Create and add to plot renderer described by desc and style.
+
+        FIXME: use log/lin styling info to create axis objects.
+        """
+        style.renderer_name = desc["name"]
+        renderer = self._build_renderer(desc, style)
+        plot.add(renderer)
+        self.renderers[desc["name"]] = renderer
+
+        if first_renderer:
+            # if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
+            #     x_mapper_klass = LogMapper
+            # else:
+            #     x_mapper_klass = LinearMapper
+
+            left_axis, bottom_axis = add_default_axes(renderer)
+            # Add to plot (displays) and keep a handle on the axis objects:
+            plot.x_axis = bottom_axis
+            plot.y_axis = left_axis
+        else:
+            if style.orientation == STYLE_R_ORIENT and not \
+                    hasattr(plot, "second_y_axis"):
                 # if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
-                #     x_mapper_klass = LogMapper
+                #     mapper_klass = LogMapper
                 # else:
-                #     x_mapper_klass = LinearMapper
+                #     mapper_klass = LinearMapper
 
-                left_axis, bottom_axis = add_default_axes(renderer)
-                # Add to plot (displays) and keep a handle on the axis objects:
-                plot.x_axis = bottom_axis
-                plot.y_axis = left_axis
-            else:
-                if style.orientation == STYLE_R_ORIENT and not \
-                        hasattr(plot, "second_y_axis"):
-                    # if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
-                    #     mapper_klass = LogMapper
-                    # else:
-                    #     mapper_klass = LinearMapper
+                second_y_axis = PlotAxis(component=renderer,
+                                         orientation="right")
+                renderer.underlays.append(second_y_axis)
+                # Keep a handle on the axis object:
+                plot.second_y_axis = second_y_axis
 
-                    second_y_axis = PlotAxis(component=renderer,
-                                             orientation="right")
-                    renderer.underlays.append(second_y_axis)
-                    # Keep a handle on the axis object:
-                    plot.second_y_axis = second_y_axis
+        return renderer
 
-        # Align all renderers in index and value dimension:
+    def _align_all_renderers(self, plot):
+        """ Align all renderers in index and value dimension.
+        """
+        styles = self.plot_style.renderer_styles
         all_renderers = self.renderers.values()
         align_renderers(all_renderers, plot.x_axis, dim="index")
         if hasattr(plot, "second_y_axis"):
@@ -453,23 +474,96 @@ class StdXYPlotFactory(BasePlotFactory):
         else:
             align_renderers(all_renderers, plot.y_axis, dim="value")
 
-    def build_renderer(self, desc, style):
+    def _build_renderer(self, desc, style):
+        """ Invoke appropriate renderer factory to build and return renderer.
+        """
         renderer_maker = RENDERER_MAKER[style.renderer_type]
         x = self.plot_data.get_data(desc["x"])
         y = self.plot_data.get_data(desc["y"])
         return renderer_maker(data=(x, y), **style.to_plot_kwargs())
 
     def set_legend(self, plot, align="ur", padding=10, drag_button="right"):
-        """ Add legend and make it relocatable & clickable.
+        """ Add legend and make it relocatable & clickable if tools requested.
         """
         # Make sure plot list in legend doesn't include error bar renderers:
         # legend_labels = [desc["name"] for desc in self.renderer_desc]
         legend = Legend(component=plot, padding=padding, align=align,
                         title=self.z_axis_title)  # , labels=legend_labels
         legend.plots = self.renderers
+        legend.visible = True
+        plot.overlays.append(legend)
+        self.legend = legend
+
         if "legend" in self.plot_tools:
             legend.tools.append(LegendTool(component=legend,
                                            drag_button=drag_button))
             legend.tools.append(LegendHighlighter(component=legend))
-            legend.visible = True
-            plot.overlays.append(legend)
+
+    # Post creation renderer management methods -------------------------------
+
+    def update_renderers_from_data(self, removed=None):
+        """ The plot_data was updated: update/remove existing renderers.
+        """
+        if removed is None:
+            removed = []
+
+        rend_desc_map = {}
+        for desc in self.renderer_desc:
+            rend_desc_map[desc["name"]] = desc
+
+        rend_name_list = list(self.renderers.keys())
+        for name in rend_name_list:
+            renderer = self.renderers[name]
+            desc = rend_desc_map[name]
+
+            both_removed = desc["x"] in removed and desc["y"] in removed
+            one_removed = (desc["x"] in removed and desc["y"] not in removed) \
+                or (desc["x"] not in removed and desc["y"] in removed)
+            if both_removed:
+                self.remove_renderer(desc)
+            elif one_removed:
+                msg = "Unable to update the renderer {}: the data seems to be"\
+                      " incomplete because x was set as removed and not y or" \
+                      " vice versa. Removed keys: {}. Please report this " \
+                      "issue.".format(desc["name"], removed)
+                logger.error(msg)
+                raise ValueError(msg)
+            else:
+                x = self.plot_data.get_data(desc["x"])
+                y = self.plot_data.get_data(desc["y"])
+                renderer.index.set_data(x)
+                renderer.value.set_data(y)
+
+    def remove_renderer(self, rend_desc):
+        """ Remove renderer described by provided descriptor from current plot.
+        """
+        rend_name = rend_desc["name"]
+        renderer = self.renderers.pop(rend_name)
+
+        self.plot.remove(renderer)
+
+        rend_idx = 0
+        for desc in self.renderer_desc:
+            if desc["name"] == rend_name:
+                self.renderer_desc.pop(rend_idx)
+                self.plot_style.renderer_styles.pop(rend_idx)
+                break
+
+            rend_idx += 1
+
+        if self.legend:
+            self.legend.plots.pop(rend_name)
+
+    def append_new_renderers(self, desc_list, styles):
+        """ Append new renderers to an existing factory plot.
+        """
+        num_existing_renderers = len(self.renderer_desc)
+        for i, (rend_desc, rend_style) in enumerate(zip(desc_list, styles)):
+            rend_idx = num_existing_renderers + i
+            renderer = self.add_renderer(self.plot, rend_desc, rend_style,
+                                         first_renderer=rend_idx == 0)
+            self.renderer_desc.append(rend_desc)
+            self.plot_style.renderer_styles.append(rend_style)
+
+            if self.legend:
+                self.legend.plots[rend_desc["name"]] = renderer
