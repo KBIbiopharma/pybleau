@@ -137,12 +137,16 @@ class BasePlotFactory(HasStrictTraits):
             else:
                 tick_generator = DefaultTickGenerator()
 
-            bottom_axis = LabelAxis(plot, orientation="bottom",
+            first_renderer = plot.components[0]
+            bottom_axis = LabelAxis(first_renderer, orientation="bottom",
                                     labels=[str(x) for x in x_labels],
                                     positions=np.arange(len(x_labels)),
                                     label_rotation=label_rotation,
                                     tick_generator=tick_generator)
             plot.x_axis = bottom_axis
+            # Replace in the underlay list too:
+            plot.underlays.pop(0)
+            plot.underlays.insert(0, bottom_axis)
 
         plot.x_axis.title = self.x_axis_title
         font_size = self.plot_style.x_axis_style.title_style.font_size
@@ -439,9 +443,12 @@ class StdXYPlotFactory(BasePlotFactory):
             #     x_mapper_klass = LinearMapper
 
             left_axis, bottom_axis = add_default_axes(renderer)
-            # Add to plot (displays) and keep a handle on the axis objects:
+            # Keep a handle on the axis objects and move all axis in plot's
+            # underlays:
             plot.x_axis = bottom_axis
             plot.y_axis = left_axis
+            renderer.underlays = []
+            plot.underlays = [bottom_axis, left_axis]
         else:
             if style.orientation == STYLE_R_ORIENT and not \
                     hasattr(plot, "second_y_axis"):
@@ -452,9 +459,9 @@ class StdXYPlotFactory(BasePlotFactory):
 
                 second_y_axis = PlotAxis(component=renderer,
                                          orientation="right")
-                renderer.underlays.append(second_y_axis)
-                # Keep a handle on the axis object:
+                # Keep a handle on the axis object and display
                 plot.second_y_axis = second_y_axis
+                plot.underlays.append(second_y_axis)
 
         return renderer
 
