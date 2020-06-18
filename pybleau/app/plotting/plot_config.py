@@ -599,6 +599,8 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         style = BaseColorXYPlotStyle(colorize_by_float=self.colorize_by_float)
         style.renderer_styles = [self.renderer_style_klass()
                                  for _ in range(num_renderer)]
+        if self.colorize_by_float:
+            style.container_style.include_colorbar = True
         return style
 
 
@@ -648,7 +650,7 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
     """
     plot_type = Constant(HEATMAP_PLOT_TYPE)
 
-    plot_style = Instance(HeatmapPlotStyle, ())
+    plot_style = Instance(HeatmapPlotStyle)
 
     def traits_view(self):
         enum_data_columns = EnumEditor(values=self._available_columns)
@@ -692,6 +694,11 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
         return self.data_source.pivot_table(index=self.y_col_name,
                                             columns=self.x_col_name,
                                             values=self.z_col_name).values
+
+    def _plot_style_default(self):
+        style = HeatmapPlotStyle()
+        style.container_style.include_colorbar = True
+        return style
 
 
 def col_name_to_title(col_name):

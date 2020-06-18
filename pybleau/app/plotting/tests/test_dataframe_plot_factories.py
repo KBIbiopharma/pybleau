@@ -44,6 +44,8 @@ except ImportError as e:
 
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
+CMAPED_FACTORIES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
+
 LEN = 16
 
 TEST_DF = DataFrame({"a": [1, 2, 3, 4] * (LEN//4),
@@ -63,7 +65,10 @@ TEST_DF = DataFrame({"a": [1, 2, 3, 4] * (LEN//4),
                      # Same as above but as a string:
                      "j": ["A", "B", "C", "D"] * (LEN // 4),
                      "k": sorted(list("abcdefgh") * 2),
-                     "l": sorted(list("abcd") * 4)})
+                     "l": sorted(list("abcd") * 4),
+                     "m": random.randn(LEN),
+                     "n": random.randn(LEN),
+                     })
 
 msg = "No UI backend to paint into"
 
@@ -77,14 +82,14 @@ class BaseTestMakePlot(object):
 
     def assert_valid_plot(self, plot, desc, num_renderers=1, renderer_name="",
                           factory=None, test_view=True):
-        if isinstance(plot, HPlotContainer):
-            is_cmapped = True
-            colorbar = plot.plot_components[1]
+
+        is_cmapped = desc["plot_type"] in CMAPED_FACTORIES
+        if is_cmapped:
+            self.assertIsInstance(plot, HPlotContainer)
+            colorbar = plot.components[1]
             self.assertIsInstance(colorbar, ColorBar)
             self.assertIsInstance(colorbar.color_mapper, ColorMapper)
             plot = plot.components[0]
-        else:
-            is_cmapped = False
 
         self.assertIsInstance(plot, OverlayPlotContainer)
         self.assertIsInstance(desc, dict)
@@ -1031,7 +1036,6 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         self.config_class = HeatmapPlotConfigurator
         config = self.config_class(data_source=TEST_DF)
         self.style = config.plot_style
-        self.style.container_style.include_colorbar = True
         self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
                         'plot_style': self.style}
 
