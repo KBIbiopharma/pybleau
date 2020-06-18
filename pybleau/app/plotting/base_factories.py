@@ -198,9 +198,6 @@ class StdXYPlotFactory(BasePlotFactory):
     #: Generated chaco plot containing all requested renderers
     plot = Instance(OverlayPlotContainer)
 
-    #: Number of DF columns involved in making the plot
-    ndim = Int
-
     #: List of plot_data keys to plot in pairs, one pair per renderer
     renderer_desc = List(Dict)
 
@@ -232,11 +229,6 @@ class StdXYPlotFactory(BasePlotFactory):
         if self.plot_data is None:
             self.initialize_plot_data(x_arr=x_arr, y_arr=y_arr, z_arr=z_arr,
                                       **hover_data)
-
-        if self.z_col_name:
-            self.ndim = 3
-        else:
-            self.ndim = 2
 
         self.adjust_plot_style(x_arr=x_arr, y_arr=y_arr, z_arr=z_arr)
 
@@ -334,13 +326,7 @@ class StdXYPlotFactory(BasePlotFactory):
         return col_name + hue_name
 
     def generate_plot(self):
-        """ Generate and return a line plot & a dict describing its properties.
-
-        Returns
-        -------
-        dict
-            Dictionary containing the generated plot and all the information
-            about it to create a PlotDescriptor.
+        """ Generate and return a dict containing a plot and its properties.
         """
         plot = self.plot = OverlayPlotContainer(
             **self.plot_style.container_style.to_traits()
@@ -363,7 +349,7 @@ class StdXYPlotFactory(BasePlotFactory):
                     plot_title=self.plot_title, x_col_name=self.x_col_name,
                     y_col_name=self.y_col_name, x_axis_title=self.x_axis_title,
                     y_axis_title=self.y_axis_title, z_col_name=self.z_col_name,
-                    z_axis_title=self.z_axis_title, ndim=self.ndim)
+                    z_axis_title=self.z_axis_title)
 
         if self.plot_style.container_style.include_colorbar:
             self.generate_colorbar(desc)
@@ -443,8 +429,7 @@ class StdXYPlotFactory(BasePlotFactory):
             #     x_mapper_klass = LinearMapper
 
             left_axis, bottom_axis = add_default_axes(renderer)
-            # Keep a handle on the axis objects and move all axis in plot's
-            # underlays:
+            # Emulate chaco.Plot interface:
             plot.x_axis = bottom_axis
             plot.y_axis = left_axis
             renderer.underlays = []
@@ -574,3 +559,8 @@ class StdXYPlotFactory(BasePlotFactory):
 
             if self.legend:
                 self.legend.plots[rend_desc["name"]] = renderer
+
+    # Traits initialization methods -------------------------------------------
+
+    def _plot_tools_default(self):
+        return {"zoom", "pan", "legend"}

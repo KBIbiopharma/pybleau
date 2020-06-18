@@ -26,9 +26,6 @@ logger = logging.getLogger(__name__)
 class BarPlotFactory(StdXYPlotFactory):
     """ Factory to build a bar plot.
     """
-    #: Plot type as used by Plot.plot
-    plot_type_name = Constant("bar")
-
     #: Plot type as selected by user
     plot_type = Constant(BAR_PLOT_TYPE)
 
@@ -212,11 +209,6 @@ class BarPlotFactory(StdXYPlotFactory):
         return super(BarPlotFactory, self)._plot_data_multi_renderer(
             x_arr=x_arr, y_arr=y_arr, z_arr=z_arr, **adtl_arrays
         )
-
-    # Trait initialization methods --------------------------------------------
-
-    def _plot_tools_default(self):
-        return {"zoom", "pan", "legend"}
 
 
 def _split_avg_for_bar_heights(x_arr, y_arr, force_index=None):

@@ -8,7 +8,7 @@ import logging
 
 from traits.api import Constant, Tuple
 from chaco.api import ArrayPlotData, ColorBar, ColormappedSelectionOverlay, \
-    HPlotContainer, LinearMapper, ScatterInspectorOverlay
+    LinearMapper, ScatterInspectorOverlay
 from chaco.tools.api import RangeSelection, RangeSelectionOverlay
 
 from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
@@ -35,17 +35,11 @@ class ScatterPlotFactory(StdXYPlotFactory):
     supports a legend tool to select parts of the data and a hover tool to
     display any number of additional columns.
     """
-    #: Plot type as used by Plot.plot
-    plot_type_name = Constant("scatter")
-
     #: Plot type as selected by user
     plot_type = Constant(SCATTER_PLOT_TYPE)
 
     #: Inspector tool and overlay to query/listen to for events
     inspector = Tuple
-
-    def _plot_tools_default(self):
-        return {"zoom", "pan", "click_selector", "legend", "hover"}
 
     def add_tools(self, plot):
         super(ScatterPlotFactory, self).add_tools(plot)
@@ -100,15 +94,11 @@ class ScatterPlotFactory(StdXYPlotFactory):
         add_scatter_inspectors(plot, datasets=renderer_data,
                                include_overlay=True, align="ul")
 
-    def update_renderer_from_data(self):
-        """ The plot_data was updated: update all renderers with the new data.
-        """
-        # Update exist
-        super(ScatterPlotFactory, self).update_renderer_from_data()
+    # Traits initialization methods -------------------------------------------
 
-        # Add new renderers as needed:
-
-        # Remove renderers as needed:
+    def _plot_tools_default(self):
+        base_tools = super(ScatterPlotFactory, self)._plot_tools_default()
+        return base_tools | {"click_selector", "hover"}
 
 
 class CmapScatterPlotFactory(ScatterPlotFactory):
@@ -121,13 +111,6 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         scatter renderers, for example when colorizing using a column of
         discrete values.
     """
-    #: Plot type as used by Plot.plot
-    plot_type_name = Constant("cmap_scatter")
-
-    def _plot_tools_default(self):
-        # No need for a legend
-        return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
-
     def generate_colorbar(self, desc):
         """ Generate the colorbar to display along side the plot.
         """
@@ -199,6 +182,11 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
                                       for col in self.hover_col_names})
         add_scatter_inspectors(plot, datasets=renderer_data,
                                include_overlay=True, align="ul")
+
+    # Traits initialization methods -------------------------------------------
+
+    def _plot_tools_default(self):
+        return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
 
 
 def create_cmap_scatter_colorbar(color_mapper, select_tool=False):
