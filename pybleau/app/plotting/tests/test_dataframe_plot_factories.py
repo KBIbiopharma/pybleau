@@ -674,8 +674,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         assert_array_almost_equal(plot.data.arrays["kT"], arange(8) + 0.4)
 
         self.force_plot_rendering(plot)
-        labels = [x.text for x in plot.x_axis.ticklabel_cache]
-        self.assertEqual(labels, list("abcdefgh"))
+        labels = {x.text for x in plot.x_axis.ticklabel_cache}
+        self.assertLessEqual(labels, set("abcdefgh"))
 
     def test_colors_from_str_str_index_aggregation_1_value(self):
         self.style.data_duplicate = "mean"
@@ -760,6 +760,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_error_bars_present(factory, num_error_bars)
 
     def test_colors_from_bool_str_index_with_aggregation_and_error_bars(self):
+        """ Bar plot of str vs float, aggregated on bool, w/ error bars.
+        """
         self.style.data_duplicate = "mean"
         self.style.show_error_bars = True
 
@@ -792,6 +794,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_error_bars_present(factory, num_error_bars)
 
     def test_colors_from_str_bool_index_with_aggregation_and_error_bars(self):
+        """ Bar plot of bool vs float, aggregated on str, w/ error bars.
+        """
         self.style.data_duplicate = "mean"
         self.style.show_error_bars = True
 
@@ -823,6 +827,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_error_bars_present(factory, num_error_bars)
 
     def test_colors_from_bool_str_index_no_aggregation(self):
+        """ Un-aggregated bar plot of bool vs float.
+        """
         x_arr, y_arr = self.compute_x_y_arrays_split_by("k", "c", "h")
         # Z column, so recompute the style:
         config = self.config_class(data_source=TEST_DF, z_col_name="h")
@@ -838,10 +844,12 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         assert_array_almost_equal(plot.data.arrays["kFalse"], arange(8))
         assert_array_almost_equal(plot.data.arrays["kTrue"], arange(8)+0.4)
         self.force_plot_rendering(plot)
-        labels = [x.text for x in plot.x_axis.ticklabel_cache]
-        self.assertEqual(labels, list("abcdefgh"))
+        labels = {x.text for x in plot.x_axis.ticklabel_cache}
+        self.assertLessEqual(labels, set("abcdefgh"))
 
     def test_colors_from_bool_str_index_with_aggregation(self):
+        """ Bar plot of str vs float, aggregated on bool.
+        """
         self.style.data_duplicate = "mean"
 
         x_arr, y_arr = self.compute_x_y_arrays_split_by("d", "c", "h")
@@ -936,9 +944,9 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assert_valid_plot(plot, desc)
         self.assertIsInstance(plot.x_axis.tick_generator, DefaultTickGenerator)
         self.force_plot_rendering(plot)
-        # Ticks are decimated: every other label isn't displayed:
-        self.assertEqual(set(plot.x_axis._tick_label_list),
-                         set(TEST_DF["e"][::2]))
+        # Ticks are decimated: not every label is displayed:
+        self.assertLess(set(plot.x_axis._tick_label_list), set(TEST_DF["e"]))
+        self.assertNotEqual(plot.x_axis._tick_label_list, [])
 
     def test_str_index_do_force_all_ticks(self):
         """ String index ticks are NOT decimated w/ show_all_x_ticks=True.
@@ -1149,7 +1157,11 @@ class BaseScatterPlotTools(object):
         self.assertIn("pan", factory.plot_tools)
         self.assertIn("zoom", factory.plot_tools)
 
-        first_renderer = plot.components[0]
+        try:
+            first_renderer = plot.components[0]
+        except Exception:
+            import pdb ; pdb.set_trace()
+
         # tools added to renderers via the broadcaster tool:
         self.assertGreaterEqual(len(first_renderer.tools), 1)
         broadcaster_tool = first_renderer.tools[0]
@@ -1364,6 +1376,7 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
         self.config_class = ScatterPlotConfigurator
         self.config = self.config_class(data_source=TEST_DF, z_col_name="b")
         self.style = self.config.plot_style
+        self.style.container_style.include_colorbar = True
         self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
                         'plot_style': self.style}
 
@@ -1385,6 +1398,7 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
 
         self.assert_zoom_pan_tools_present(factory, plot)
         self.assert_click_selector_present(factory, plot)
+        self.assert_colorbar_tool_present(factory, plot)
 
     def test_tools_present_colored_scatter_by_float_with_hover_col(self):
         """ Tools present for scatter plot colored by float column and hover.
@@ -1393,18 +1407,18 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
         factory.hover_col_names = ["a", "b"]
         desc = self.factory.generate_plot()
         container = desc["plot"]
-        plot = container.plot_components[0]
+        plot = container.components[0]
 
         self.assert_zoom_pan_tools_present(factory, plot)
         self.assert_click_selector_present(factory, plot)
         self.assert_hover_tool_present(factory, plot)
+        self.assert_colorbar_tool_present(factory, plot)
 
     # Utilities ---------------------------------------------------------------
 
     def assert_colorbar_tool_present(self, factory, plot):
         self.assertIn("colorbar_selector", factory.plot_tools)
-        for name, renderer in plot.plots.items():
-            renderer = renderer[0]
+        for renderer in plot.components:
             # First overlay is the click_inspector tool's:
             self.assertIsInstance(renderer.overlays[1],
                                   ColormappedSelectionOverlay)
