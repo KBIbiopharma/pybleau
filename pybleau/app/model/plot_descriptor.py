@@ -26,9 +26,6 @@ class PlotDescriptor(HasStrictTraits):
     # PlotManager.
     container_idx = Any
 
-    #: Number of dimensions, that's number of columns involved to make the plot
-    ndim = Int
-
     #: Filter expression applied to the source_data to build this plot
     data_filter = Str
 

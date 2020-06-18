@@ -60,7 +60,7 @@ class PlotDescriptor_Serializer(DataElement_Serializer):
         # PlotConfigurator it contains since the plots are rebuilt from the
         # config
         return ['visible', "data_filter", "plot_config", "frozen",
-                "container_idx", "id", "ndim", "plot_type"]
+                "container_idx", "id", "plot_type"]
 
 
 class BaseSinglePlotConfigurator_Serializer(DataElement_Serializer):
