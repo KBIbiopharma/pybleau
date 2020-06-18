@@ -210,4 +210,5 @@ class ContourStyle_Serializer(Serializer):
 class PlotContainerStyle_Serializer(Serializer):
     def attr_names_to_serialize(self, obj):
         return ["padding_left", "padding_right", "padding_top",
-                "padding_bottom", "border_visible", "include_colorbar"]
+                "padding_bottom", "border_visible", "include_colorbar",
+                "bgcolor"]
