@@ -1,7 +1,7 @@
 
 from chaco.base_plot_container import BasePlotContainer
 from traits.api import Any, Bool, Button, Enum, Event, HasStrictTraits, \
-    Instance, Int, Str
+    Instance, Str
 
 from pybleau.app.plotting.plot_config import BasePlotConfigurator
 from pybleau.app.plotting.base_factories import BasePlotFactory

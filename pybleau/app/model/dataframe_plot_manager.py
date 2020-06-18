@@ -231,7 +231,7 @@ class DataFramePlotManager(DataElement):
                     self._add_raw_plot(desc, position=i, list_op="replace")
             except Exception as e:
                 tb = extract_traceback()
-                msg = "Failed to recreate the plot number {} ({} named {} of " \
+                msg = "Failed to recreate the plot number {} ({} named {} of "\
                       "'{}' vs '{}', z_col '{}').\nError was {}. Traceback " \
                       "was:\n{}"
                 msg = msg.format(i, desc.plot_type, desc.plot_title,
