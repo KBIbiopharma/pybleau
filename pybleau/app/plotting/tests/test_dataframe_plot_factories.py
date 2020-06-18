@@ -1103,7 +1103,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         self.assertEqual(len(main_plot.components), num_renderers)
         self.assertIsInstance(main_plot.components[0], self.renderer_class)
         if with_contours:
-            self.assertIsInstance(main_plot.plots["plot1"][0], ContourLinePlot)
+            self.assertIsInstance(main_plot.components[1], ContourLinePlot)
 
 
 class BaseScatterPlotTools(object):

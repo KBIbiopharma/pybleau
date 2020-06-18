@@ -7,7 +7,7 @@ import logging
 from traits.api import Constant
 from chaco.api import ColorBar, DataRange1D, LinearMapper, PlotAxis
 
-from app_common.chaco.plot_factory import create_img_plot
+from app_common.chaco.plot_factory import create_contour_plot, create_img_plot
 
 from .plot_config import HEATMAP_PLOT_TYPE
 from .base_factories import DEFAULT_RENDERER_NAME, StdXYPlotFactory
@@ -59,9 +59,13 @@ class HeatmapPlotFactory(StdXYPlotFactory):
         self.plot_style.colorbar_high = z_arr.max()
 
     def add_renderers(self, plot):
+        if not len(self.plot_style.renderer_styles) == 1:
+            msg = "Only 1 renderer supported in image plots."
+            raise ValueError(msg)
+
         renderer_style = self.plot_style.renderer_styles[0]
         data = self.plot_data.get_data(TWO_D_DATA_NAME)
-        renderer = create_img_plot(data=data, cell_plot=True,
+        renderer = create_img_plot(data=data,
                                    **renderer_style.to_plot_kwargs())
         plot.add(renderer)
         plot.x_axis = PlotAxis(component=renderer,
@@ -106,9 +110,14 @@ class HeatmapPlotFactory(StdXYPlotFactory):
         renderer_style = self.plot_style.renderer_styles[0]
         xbounds = renderer_style.xbounds
         ybounds = renderer_style.ybounds
-        plot.contour_plot(TWO_D_DATA_NAME, type="line",
-                          xbounds=xbounds, ybounds=ybounds,
-                          levels=self.plot_style.contour_style.contour_levels,
-                          styles=self.plot_style.contour_style.contour_styles,
-                          widths=self.plot_style.contour_style.contour_widths,
-                          alpha=self.plot_style.contour_style.contour_alpha)
+
+        data = self.plot_data.get_data(TWO_D_DATA_NAME)
+        renderer = create_contour_plot(
+            data=data, type="line", xbounds=xbounds, ybounds=ybounds,
+            levels=self.plot_style.contour_style.contour_levels,
+            styles=self.plot_style.contour_style.contour_styles,
+            widths=self.plot_style.contour_style.contour_widths,
+            alpha=self.plot_style.contour_style.contour_alpha
+        )
+
+        plot.add(renderer)
