@@ -119,8 +119,8 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
                 colorize_by_float=False
             )
             config_list = [self]
-            self.y_axis_title = "auto"
-            self.second_y_axis_title = "auto"
+            self.y_axis_title = ", ".join(self.y_col_names)
+            self.second_y_axis_title = ""
 
         return config_list
 
@@ -143,7 +143,7 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
 
 
 class MultiHistogramPlotConfigurator(BaseMultiPlotConfigurator):
-    """ Configurator to create multiple histograms.
+    """ Configurator to create multiple histograms (in multiple containers).
     """
     #: Type of the series of plots being created
     plot_type = Constant(MULTI_HIST_PLOT_TYPE)
