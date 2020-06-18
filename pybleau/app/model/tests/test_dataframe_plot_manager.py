@@ -31,67 +31,35 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.model.plot_descriptor import CUSTOM_PLOT_TYPE, \
         PlotDescriptor
     from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-    from pybleau.app.plotting.api import HistogramPlotConfigurator, \
-        LinePlotConfigurator, MultiHistogramPlotConfigurator, \
-        ScatterPlotConfigurator
+    from pybleau.app.plotting.api import BarPlotConfigurator, \
+        HistogramPlotConfigurator, LinePlotConfigurator, \
+        MultiHistogramPlotConfigurator, ScatterPlotConfigurator
     from pybleau.app.plotting.scatter_factories import \
         SELECTION_METADATA_NAME, DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR
     from pybleau.app.plotting.base_factories import DEFAULT_RENDERER_NAME
     from pybleau.app.plotting.renderer_style import DEFAULT_RENDERER_COLOR
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
+    from pybleau.app.utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
+        HEATMAP_PLOT_TYPE
 
 
 TEST_DF = DataFrame({"a": [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
                      "b": [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],
                      "c": [1, 2, 3, 4, 2, 3, 1, 1, 4, 4, 5, 6, 4, 4, 5, 6],
-                     "d": list("ababcabcdabcdeab")},
+                     "d": list("ababcabcdabcdeab"),
+                     "e": range(16)
+                     },
                     dtype="float")
 
 NUM_D_VALUES = len(set(TEST_DF["d"]))
 
 msg = "No UI backend to paint into or missing kiwisolver package"
 
+CMAP_PLOT_TYPES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
+
 
 class BasePlotManagerTools(UnittestTools):
 
-    # Helper utilities --------------------------------------------------------
-
-    def assert_plot_created(self, num_plots=1, container_idx=0,
-                            num_plot_in_container=None, single_container=True,
-                            renderer_type=None):
-
-        if renderer_type is None:
-            renderer_type = AbstractPlotRenderer
-
-        if num_plot_in_container is None:
-            num_plot_in_container = num_plots
-
-        self.assertEqual(len(self.model.contained_plots), num_plots)
-        container = self.model.canvas_manager.container_managers[
-            container_idx
-        ]
-        self.assertEqual(len(container.plot_map), num_plot_in_container)
-
-        for i in range(num_plots):
-            plot_desc = self.model.contained_plots[0]
-            self.assertIsInstance(plot_desc, PlotDescriptor)
-            self.assertIsInstance(plot_desc.id, string_types)
-            self.assertIsInstance(plot_desc.plot, BasePlotContainer)
-            self.assertGreater(len(plot_desc.plot.components), 0)
-            for renderer in plot_desc.plot.components:
-                self.assertIsInstance(renderer, renderer_type)
-
-            if single_container:
-                self.assertIn(plot_desc.plot, container.container.components)
-
-    def assert_no_plot_in_container(self, idx):
-        container = self.model.canvas_manager.container_managers[idx]
-        self.assertEqual(container.plot_map, {})
-        self.assertEqual(container.container.components, [])
-
-
-@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
-class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
     def setUp(self):
         self.model = DataFramePlotManager(data_source=TEST_DF)
         # Basic configurator for a histogram plot:
@@ -114,6 +82,49 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.config4.y_col_name = "b"
         self.config4.z_col_name = "d"
 
+    # Helper utilities --------------------------------------------------------
+
+    def assert_plot_created(self, num_plots=1, container_idx=0,
+                            num_plot_in_container=None, single_container=True,
+                            renderer_type=None, num_renderers=1):
+
+        if renderer_type is None:
+            renderer_type = AbstractPlotRenderer
+
+        if num_plot_in_container is None:
+            num_plot_in_container = num_plots
+
+        self.assertEqual(len(self.model.contained_plots), num_plots)
+        container = self.model.canvas_manager.container_managers[
+            container_idx
+        ]
+        self.assertEqual(len(container.plot_map), num_plot_in_container)
+
+        for plot_desc in self.model.contained_plots:
+            self.assertIsInstance(plot_desc, PlotDescriptor)
+            self.assertIsInstance(plot_desc.id, string_types)
+            self.assertIsInstance(plot_desc.plot, BasePlotContainer)
+            if plot_desc.plot_type in CMAP_PLOT_TYPES:
+                self.assertEqual(len(plot_desc.plot.components), 2)
+                plot = plot_desc.plot.components[0]
+            else:
+                plot = plot_desc.plot
+
+            self.assertEqual(len(plot.components), num_renderers)
+            for renderer in plot.components:
+                self.assertIsInstance(renderer, renderer_type)
+
+            if single_container:
+                self.assertIn(plot_desc.plot, container.container.components)
+
+    def assert_no_plot_in_container(self, idx):
+        container = self.model.canvas_manager.container_managers[idx]
+        self.assertEqual(container.plot_map, {})
+        self.assertEqual(container.container.components, [])
+
+
+@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
     def test_create_manager(self):
         self.assertIsInstance(self.model, DataFramePlotManager)
         self.assertEqual(len(self.model.canvas_manager.container_managers),
@@ -138,6 +149,23 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertEqual(plot_desc.x_col_name, "a")
         self.assertEqual(plot_desc.plot_title, "Plot")
 
+    def test_add_bar_plot(self):
+        config = BarPlotConfigurator(data_source=TEST_DF,
+                                     plot_title="Plot")
+        config.x_col_name = "e"
+        config.y_col_name = "b"
+
+        self.model._add_new_plot(config)
+        self.assert_plot_created(renderer_type=BarPlot, container_idx=0)
+        # Plot is nowhere else:
+        for i in range(1, DEFAULT_NUM_CONTAINERS):
+            self.assert_no_plot_in_container(i)
+
+        plot_desc = self.model.contained_plots[0]
+        self.assertEqual(plot_desc.x_col_name, "e")
+        self.assertEqual(plot_desc.y_col_name, "b")
+        self.assertEqual(plot_desc.plot_title, "Plot")
+
     def test_add_lineplot(self):
         config = LinePlotConfigurator(data_source=TEST_DF,
                                       plot_title="Plot")
@@ -158,6 +186,37 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertEqual(plot_desc.y_col_name, "b")
         self.assertEqual(plot_desc.plot_title, "Plot")
 
+    def test_add_colored_scatter(self):
+        config = ScatterPlotConfigurator(data_source=TEST_DF,
+                                         plot_title="Plot")
+        config.x_col_name = "a"
+        config.y_col_name = "b"
+        config.z_col_name = "d"
+
+        self.model._add_new_plot(config)
+        self.assert_plot_created(renderer_type=ScatterPlot,
+                                 num_renderers=NUM_D_VALUES)
+        plot_desc = self.model.contained_plots[0]
+        self.assertEqual(plot_desc.x_col_name, "a")
+        self.assertEqual(plot_desc.y_col_name, "b")
+        self.assertEqual(plot_desc.z_col_name, "d")
+        self.assertEqual(plot_desc.plot_title, "Plot")
+
+    def test_add_cmap_scatter(self):
+        config = ScatterPlotConfigurator(data_source=TEST_DF,
+                                         plot_title="Plot")
+        config.x_col_name = "a"
+        config.y_col_name = "b"
+        config.z_col_name = "e"
+
+        self.model._add_new_plot(config)
+        self.assert_plot_created(renderer_type=ScatterPlot)
+        plot_desc = self.model.contained_plots[0]
+        self.assertEqual(plot_desc.x_col_name, "a")
+        self.assertEqual(plot_desc.y_col_name, "b")
+        self.assertEqual(plot_desc.z_col_name, "e")
+        self.assertEqual(plot_desc.plot_title, "Plot")
+
     def test_add_multi_histograms(self):
         config = MultiHistogramPlotConfigurator(data_source=TEST_DF,
                                                 plot_title="Plot {i}")
@@ -172,6 +231,10 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         plot_desc = self.model.contained_plots[1]
         self.assertEqual(plot_desc.x_col_name, "b")
         self.assertEqual(plot_desc.plot_title, "Plot 2")
+
+
+@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
 
     def test_change_style_color_1_scatter(self):
         self.model._add_new_plot(self.config3)
@@ -417,13 +480,7 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
-class TestPlotManagerMultiContainerHandling(TestCase, BasePlotManagerTools):
-    def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
-        # Basic configurator for a histogram plot:
-        self.config = HistogramPlotConfigurator(data_source=TEST_DF,
-                                                plot_title="Plot")
-        self.config.x_col_name = "a"
+class TestPlotManagerMultiContainerHandling(BasePlotManagerTools, TestCase):
 
     def test_move_plot_to_new_row(self):
         config = self.config
@@ -607,9 +664,7 @@ class TestPlotManagerMultiContainerHandling(TestCase, BasePlotManagerTools):
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
-class TestPlotManagerCreateWithPlots(TestCase, BasePlotManagerTools):
-    def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
 
     def test_create_with_contained_plot_no_datasource(self):
         config = HistogramPlotConfigurator(data_source=TEST_DF,

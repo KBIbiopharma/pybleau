@@ -6,6 +6,7 @@ from traits.api import Any, Bool, Button, Enum, Event, HasStrictTraits, \
 from pybleau.app.plotting.plot_config import BasePlotConfigurator
 from pybleau.app.plotting.base_factories import BasePlotFactory
 from ..plotting.api import PLOT_TYPES
+from ..utils.string_definitions import CMAP_SCATTER_PLOT_TYPE
 
 CONTAINER_IDX_REMOVAL = "delete"
 
@@ -39,7 +40,7 @@ class PlotDescriptor(HasStrictTraits):
     plot_factory = Instance(BasePlotFactory)
 
     #: Type of plot
-    plot_type = Enum(PLOT_TYPES + [CUSTOM_PLOT_TYPE])
+    plot_type = Enum(PLOT_TYPES + [CMAP_SCATTER_PLOT_TYPE, CUSTOM_PLOT_TYPE])
 
     #: Title of the plot
     plot_title = Str
