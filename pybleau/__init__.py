@@ -3,7 +3,7 @@ from subprocess import check_output
 from collections import namedtuple
 
 
-__version__ = "0.4.8.dev0"
+__version__ = "0.5.0.dev0"
 
 
 try:
@@ -21,12 +21,12 @@ except Exception:
 
 
 # API version of the version:
-_VersionInfo = namedtuple("_VersionInfo", ["version", "build_res_net_model"])
+_VersionInfo = namedtuple("_VersionInfo", ["version", "build"])
 
 
 def _repr_version_info(self):
     """ __repr__ for a _VersionInfo object. """
-    return "version: {}, build_res_net_model: {}".format(self.version,
+    return "version: {}, build: {}".format(self.version,
                                                          self.build)
 
 
