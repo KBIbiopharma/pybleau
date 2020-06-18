@@ -116,6 +116,13 @@ class scatterRendererStyleDeSerializer(dataElementDeSerializer):
         return ScatterRendererStyle
 
 
+class cmapScatterRendererStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.renderer_style import \
+            CmapScatterRendererStyle
+        return CmapScatterRendererStyle
+
+
 class barRendererStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.renderer_style import BarRendererStyle
