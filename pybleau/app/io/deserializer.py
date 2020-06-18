@@ -150,3 +150,10 @@ class contourStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.contour_style import ContourStyle
         return ContourStyle
+
+
+class plotContainerStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.plot_container_style import \
+            PlotContainerStyle
+        return PlotContainerStyle
