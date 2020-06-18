@@ -365,22 +365,20 @@ class StdXYPlotFactory(BasePlotFactory):
                     y_axis_title=self.y_axis_title, z_col_name=self.z_col_name,
                     z_axis_title=self.z_axis_title, ndim=self.ndim)
 
-        self.add_colorbar(desc)
+        if self.plot_style.container_style.include_colorbar:
+            self.add_colorbar(desc)
 
         return desc
 
     def add_colorbar(self, desc):
         # FIXME: what plot factories need this? Reconcile with ScatterFactory.
-        if not self.plot_style.container_style.include_colorbar:
-            return
-
         plot = desc["plot"]
         # Make more room for labels
         plot.padding_right = 5
         plot.padding_top = 25
 
         container = HPlotContainer(
-            self.plot_style.container_style.to_traits()
+            **self.plot_style.container_style.to_traits()
         )
         container.add(plot, self.colorbar)
         container.padding_right = sum([comp.padding_right

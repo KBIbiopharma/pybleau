@@ -5,7 +5,9 @@ from __future__ import print_function, division
 import logging
 
 from traits.api import Constant
-from chaco.api import ColorBar, DataRange1D, LinearMapper
+from chaco.api import ColorBar, DataRange1D, LinearMapper, PlotAxis
+
+from app_common.chaco.plot_factory import create_img_plot
 
 from .plot_config import HEATMAP_PLOT_TYPE
 from .base_factories import DEFAULT_RENDERER_NAME, StdXYPlotFactory
@@ -58,9 +60,20 @@ class HeatmapPlotFactory(StdXYPlotFactory):
 
     def add_renderers(self, plot):
         renderer_style = self.plot_style.renderer_styles[0]
-        renderer = plot.img_plot(TWO_D_DATA_NAME,
-                                 **renderer_style.to_plot_kwargs())[0]
-        self.generate_colorbar(renderer, plot)
+        data = self.plot_data.get_data(TWO_D_DATA_NAME)
+        renderer = create_img_plot(data=data, cell_plot=True,
+                                   **renderer_style.to_plot_kwargs())
+        plot.add(renderer)
+        plot.x_axis = PlotAxis(component=renderer,
+                               orientation="bottom")
+        plot.y_axis = PlotAxis(component=renderer,
+                               orientation="left")
+        plot.underlays.append(plot.x_axis)
+        plot.underlays.append(plot.y_axis)
+
+        if self.plot_style.container_style.include_colorbar:
+            self.generate_colorbar(renderer, plot)
+
         if self.plot_style.contour_style.add_contours:
             self.generate_contours(plot)
 
