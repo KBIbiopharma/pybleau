@@ -15,7 +15,7 @@ from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
     DataframeScatterInspector
 from app_common.chaco.plot_factory import create_cmap_scatter_plot
 
-from .plot_config import SCATTER_PLOT_TYPE
+from .plot_config import CMAP_SCATTER_PLOT_TYPE, SCATTER_PLOT_TYPE
 from .renderer_style import REND_TYPE_CMAP_SCAT
 from .base_factories import StdXYPlotFactory
 
@@ -111,6 +111,9 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         scatter renderers, for example when colorizing using a column of
         discrete values.
     """
+    #: Plot type as selected by user
+    plot_type = Constant(CMAP_SCATTER_PLOT_TYPE)
+
     def generate_colorbar(self, desc):
         """ Generate the colorbar to display along side the plot.
         """

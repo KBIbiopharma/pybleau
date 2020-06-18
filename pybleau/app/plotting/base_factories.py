@@ -93,8 +93,8 @@ class BasePlotFactory(HasStrictTraits):
     #: Label to display along the z-axis
     z_axis_title = Str
 
-    #: list of tools requested on the plot
-    plot_tools = Set({"zoom", "pan"})
+    #: list of tools requested on the plot/renderers
+    plot_tools = Set
 
     #: Inspector tool and overlay to hover over or select scatter data points
     inspector = Any
@@ -358,7 +358,7 @@ class StdXYPlotFactory(BasePlotFactory):
         return desc
 
     def add_colorbar(self, desc):
-        """ A colorbar was created. Embed it together with the plot.
+        """ Need a colorbar. Embed it together with plot & replace in desc.
         """
         plot = desc["plot"]
         # Make more room for labels
@@ -518,7 +518,7 @@ class StdXYPlotFactory(BasePlotFactory):
                       " incomplete because x was set as removed and not y or" \
                       " vice versa. Removed keys: {}. Please report this " \
                       "issue.".format(desc["name"], removed)
-                logger.error(msg)
+                logger.exception(msg)
                 raise ValueError(msg)
             else:
                 x = self.plot_data.get_data(desc["x"])
