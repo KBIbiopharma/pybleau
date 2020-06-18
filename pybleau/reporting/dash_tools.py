@@ -20,7 +20,8 @@ def analysis_file2dash_reporter(analysis_filepath, include_explorers=True,
 
     reporter = DashReporter(**report_kw)
     report_elements = []
-    content = json.load(open(analysis_filepath))
+    with open(analysis_filepath) as f:
+        content = json.load(f)
 
     # Rebuild the datasets:
     datasets_data = content[DATASETS_KEY]
