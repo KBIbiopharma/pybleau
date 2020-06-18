@@ -3,8 +3,8 @@
 """
 import logging
 
-from traits.api import Any, Bool, Dict, Enum, Float, HasTraits, Instance, \
-    List, on_trait_change, Property
+from traits.api import Any, Bool, Callable, Dict, Enum, Float, HasTraits, \
+    Instance, List, on_trait_change, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
 
@@ -64,7 +64,7 @@ class BaseXYPlotStyle(HasTraits):
     view_kw = Dict
 
     #: Range value transformation function for eg. to avoid non-sensical digits
-    _range_transform = Any
+    range_transform = Callable
 
     def initialize_axis_ranges(self, plot, x_mapper=None, y_mapper=None,
                                second_y_mapper=None):
@@ -75,7 +75,7 @@ class BaseXYPlotStyle(HasTraits):
             second_y_mapper=second_y_mapper
         )
 
-        transform = self._range_transform
+        transform = self.range_transform
 
         if x_mapper:
             x_axis_style = self.x_axis_style
@@ -97,7 +97,7 @@ class BaseXYPlotStyle(HasTraits):
     def _init_second_y_axis_style_range(self, second_y_mapper):
         """ Initialize the secondary y axis range.
         """
-        transform = self._range_transform
+        transform = self.range_transform
 
         second_y_axis_style = self.second_y_axis_style
         second_y_axis_style.range_low = transform(second_y_mapper.range.low)
@@ -270,10 +270,8 @@ class BaseXYPlotStyle(HasTraits):
             title="Plot Styling",
         )
 
-    def __range_transform_default(self):
-        def transform(x):
-            return x
-        return transform
+    def _range_transform_default(self):
+        return lambda x: x
 
 
 class BaseColorXYPlotStyle(BaseXYPlotStyle):

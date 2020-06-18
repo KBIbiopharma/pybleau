@@ -148,7 +148,8 @@ class TestPlotStyleBehaviors(TestCase):
         self.assertEqual(style.y_axis_style.auto_range_high, 4.1)
 
         # Initialize rounding numbers at the integer level:
-        style.initialize_axis_ranges(plot, transform=0)
+        style.range_transform = lambda x: int(x)
+        style.initialize_axis_ranges(plot)
 
         self.assertEqual(style.x_axis_style.range_low, 1)
         self.assertEqual(style.x_axis_style.range_high, 2)
