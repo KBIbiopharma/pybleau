@@ -1,7 +1,6 @@
 import pandas as pd
 import logging
 from uuid import UUID
-import numpy as np
 
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
@@ -17,9 +16,7 @@ from .plot_descriptor import CONTAINER_IDX_REMOVAL, CUSTOM_PLOT_TYPE, \
     PlotDescriptor
 from ..plotting.plot_config import BaseSinglePlotConfigurator
 from ..plotting.plot_factories import DEFAULT_FACTORIES, \
-    DISCONNECTED_SELECTION_COLOR, HistogramPlotFactory, ScatterPlotFactory, \
-    SELECTION_COLOR, SELECTION_METADATA_NAME
-from ..plotting.base_factories import DEFAULT_RENDERER_NAME
+    DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR, SELECTION_METADATA_NAME
 from ..plotting.api import HEATMAP_PLOT_TYPE
 from ..model.multi_canvas_manager import MultiCanvasManager
 

@@ -8,7 +8,7 @@ from numpy.testing import assert_array_almost_equal
 from traits.testing.unittest_tools import UnittestTools
 
 try:
-    from chaco.api import BarPlot, LinePlot, Plot, PlotGraphicsContext, \
+    from chaco.api import BarPlot, LinePlot, PlotGraphicsContext, \
         ScatterInspectorOverlay, ScatterPlot
     from chaco.tools.api import BetterSelectingZoom
     from chaco.tools.broadcaster import BroadcasterTool
@@ -36,8 +36,6 @@ try:
     from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
     from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HeatmapPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
-    from pybleau.app.plotting.multi_plot_config import \
-        MultiLinePlotConfigurator
     from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
         LineRendererStyle
 

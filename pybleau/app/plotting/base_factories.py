@@ -19,8 +19,7 @@ import numpy as np
 import pandas as pd
 import logging
 
-from traits.api import Any, Dict, HasStrictTraits, Instance, Int, List, Set, \
-    Str
+from traits.api import Any, Dict, HasStrictTraits, Instance, List, Set, Str
 from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, \
     OverlayPlotContainer, PlotAxis, PlotLabel  # LinearMapper, LogMapper,
 from chaco.plot_factory import add_default_axes

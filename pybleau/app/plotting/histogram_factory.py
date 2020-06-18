@@ -6,7 +6,7 @@ from __future__ import print_function, division
 import numpy as np
 import logging
 
-from traits.api import Array, Constant, Instance, Int, Str
+from traits.api import Array, Constant, Instance, Str
 from chaco.api import ArrayPlotData
 
 from .plot_config import HIST_PLOT_TYPE
