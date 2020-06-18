@@ -113,7 +113,7 @@ class HeatmapPlotConfigurator_Serializer(BaseSinglePlotConfigurator_Serializer):
 class BaseXYPlotStyle_Serializer(Serializer):
     def attr_names_to_serialize(self, obj):
         return ['title_style', 'renderer_styles', 'x_axis_style',
-                'y_axis_style', "container_style"]  #, "second_y_axis_style"
+                'y_axis_style', "container_style", "second_y_axis_style"]
 
 
 class BaseColorXYPlotStyle_Serializer(BaseXYPlotStyle_Serializer):
