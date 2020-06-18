@@ -1157,10 +1157,7 @@ class BaseScatterPlotTools(object):
         self.assertIn("pan", factory.plot_tools)
         self.assertIn("zoom", factory.plot_tools)
 
-        try:
-            first_renderer = plot.components[0]
-        except Exception:
-            import pdb ; pdb.set_trace()
+        first_renderer = plot.components[0]
 
         # tools added to renderers via the broadcaster tool:
         self.assertGreaterEqual(len(first_renderer.tools), 1)

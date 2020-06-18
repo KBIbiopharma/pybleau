@@ -1,5 +1,5 @@
 
-from traits.api import Enum, Instance
+from traits.api import Bool, Enum, Instance
 from traitsui.api import HGroup, InstanceEditor, Item, VGroup
 
 from .plot_style import BaseColorXYPlotStyle, SPECIFIC_CONFIG_CONTROL_LABEL
@@ -13,6 +13,8 @@ class HeatmapPlotStyle(BaseColorXYPlotStyle):
     interpolation = Enum("nearest", "bilinear", "bicubic")
 
     contour_style = Instance(ContourStyle, ())
+
+    _second_y_axis_present = Bool
 
     def _get_specific_view_elements(self):
         return [

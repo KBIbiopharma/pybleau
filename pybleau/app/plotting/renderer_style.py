@@ -29,7 +29,7 @@ REND_TYPE_CMAP_SCAT = "cmap_scatter"
 class BaseRendererStyle(HasStrictTraits):
     """ Styling object for customizing scatter renderers.
     """
-    #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
+    #: Name of the renderer type, used to select the renderer factory.
     renderer_type = ""
 
     #: Name of the renderer as referenced in the plot container.
@@ -71,14 +71,6 @@ class BaseXYRendererStyle(BaseRendererStyle):
 
     #: Which y-axis to be displayed along
     orientation = Enum([STYLE_L_ORIENT, STYLE_R_ORIENT])
-
-    def traits_view(self):
-        view = self.view_klass(
-            VGroup(
-                *self.general_view_elements
-            ),
-        )
-        return view
 
     # Traits property getter/setter -------------------------------------------
 

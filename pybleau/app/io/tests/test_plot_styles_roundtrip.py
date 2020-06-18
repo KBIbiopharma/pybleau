@@ -1,6 +1,5 @@
 
 from unittest import TestCase
-from traits.testing.unittest_tools import UnittestTools
 
 from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
@@ -16,7 +15,7 @@ from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
 
 
-class BaseSerialDataTest(UnittestTools):
+class BaseSerialDataTest(object):
 
     def setUp(self):
         title_style = TitleStyle(font_size=12, font_name="roman")
