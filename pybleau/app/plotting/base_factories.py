@@ -366,12 +366,14 @@ class StdXYPlotFactory(BasePlotFactory):
                     z_axis_title=self.z_axis_title, ndim=self.ndim)
 
         if self.plot_style.container_style.include_colorbar:
+            self.generate_colorbar(desc)
             self.add_colorbar(desc)
 
         return desc
 
     def add_colorbar(self, desc):
-        # FIXME: what plot factories need this? Reconcile with ScatterFactory.
+        """ A colorbar was created. Embed it together with the plot.
+        """
         plot = desc["plot"]
         # Make more room for labels
         plot.padding_right = 5

@@ -128,13 +128,8 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         # No need for a legend
         return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
 
-    def add_colorbar(self, desc):
-        """ Modify the descriptor's plot entry to add a color bar to it.
-
-        This is done by embedding the plot into an HPlotContainer and adding a
-        colorbar plot to the right.
-
-        FIXME: consolidate this and the base class implementation
+    def generate_colorbar(self, desc):
+        """ Generate the colorbar to display along side the plot.
         """
         plot = desc["plot"]
         styles = self.plot_style.renderer_styles
@@ -158,7 +153,7 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
                                                     selection_type="mask")
             cmap_renderer.overlays.append(selection)
 
-        # Add a colorbar:
+        # Create the actual colorbar:
 
         colorbar = create_cmap_scatter_colorbar(cmap_renderer.color_mapper,
                                                 select_tool=select_tool)
@@ -166,14 +161,7 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         colorbar.title = self.z_axis_title
         colorbar.padding_top = plot.padding_top
         colorbar.padding_bottom = plot.padding_bottom
-
-        # Create a container to position the plot and the colorbar side-by-side
-        container_traits = self.plot_style.container_style.to_traits()
-        container_traits["bgcolor"] = "transparent"
-        container_traits["border_visible"] = False
-        container = HPlotContainer(use_backbuffer=True, **container_traits)
-        container.add(plot, colorbar)
-        desc["plot"] = container
+        self.colorbar = colorbar
 
     def _build_renderer(self, desc, style):
         x = self.plot_data.get_data(desc["x"])

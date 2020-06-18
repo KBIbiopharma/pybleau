@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class HeatmapPlotFactory(StdXYPlotFactory):
-    """ Factory to build a heatmap plot.
+    """ Factory to build a plot with a heatmap renderer.
     """
     plot_type = Constant(HEATMAP_PLOT_TYPE)
 
@@ -75,15 +75,15 @@ class HeatmapPlotFactory(StdXYPlotFactory):
         plot.underlays.append(plot.x_axis)
         plot.underlays.append(plot.y_axis)
 
-        if self.plot_style.container_style.include_colorbar:
-            self.generate_colorbar(renderer, plot)
-
         if self.plot_style.contour_style.add_contours:
             self.generate_contours(plot)
 
-    def generate_colorbar(self, renderer, plot):
+    def generate_colorbar(self, desc):
         """ Generate the colorbar to be displayed along side the main plot.
         """
+        plot = desc["plot"]
+        renderer = plot.components[0]
+
         colormap = renderer.color_mapper
         # Constant mapper for the color bar so that the colors stay the same
         # even when data changes
