@@ -30,7 +30,7 @@ class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
 
 class plotDescriptorDeSerializer(dataElementDeSerializer):
 
-    protocol_version = 1
+    protocol_version = 2
 
     def _klass_default(self):
         from pybleau.app.model.plot_descriptor import PlotDescriptor

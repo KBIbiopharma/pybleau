@@ -44,7 +44,7 @@ class DataFramePlotManager_Serializer(DataElement_Serializer):
 
 class PlotDescriptor_Serializer(DataElement_Serializer):
 
-    protocol_version = 1
+    protocol_version = 2
 
     def get_instance_data(self, obj):
         data = super(PlotDescriptor_Serializer, self).get_instance_data(obj)
