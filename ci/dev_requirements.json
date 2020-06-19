@@ -4,6 +4,5 @@
 	"ipython4",
 	"nose",
 	"pip",
-	"setuptools",
-	"xlwt"
+	"setuptools"
 ]
