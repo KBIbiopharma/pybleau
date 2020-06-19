@@ -122,6 +122,8 @@ class BasePlotFactory(HasStrictTraits):
         self._set_title_label(plot)
 
     def _set_x_axis_labels(self, plot):
+        """ Set the x axis title, tick labels and styles.
+        """
         x_labels = self.x_labels
         if x_labels:
             # if x_labels set, axis labels shouldn't be generated from the
@@ -153,6 +155,8 @@ class BasePlotFactory(HasStrictTraits):
         plot.x_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_y_axis_labels(self, plot):
+        """ Set the y axis title and style.
+        """
         if self.y_axis_title == "auto":
             styles = self.plot_style.renderer_styles
             plot.y_axis.title = ", ".join(
@@ -166,6 +170,8 @@ class BasePlotFactory(HasStrictTraits):
         plot.y_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_second_y_axis_labels(self, plot):
+        """ Set the secondary y axis title and style.
+        """
         if not hasattr(plot, "second_y_axis"):
             return
 
@@ -175,7 +181,7 @@ class BasePlotFactory(HasStrictTraits):
                 [desc["y"] for style, desc in zip(styles, self.renderer_desc)
                  if style.orientation == STYLE_R_ORIENT])
         else:
-            plot.y_axis.title = self.second_y_axis_title
+            plot.second_y_axis.title = self.second_y_axis_title
 
         font_size = self.plot_style.second_y_axis_style.title_style.font_size
         font_name = self.plot_style.second_y_axis_style.title_style.font_name
