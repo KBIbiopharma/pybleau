@@ -1,0 +1,9 @@
+[
+	"coverage",
+	"flake8",
+	"ipython4",
+	"nose",
+	"pip",
+	"setuptools",
+	"xlwt"
+]

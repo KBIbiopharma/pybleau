@@ -1,0 +1,18 @@
+[
+  "apptools",
+  "chaco",
+  "dash",
+  "kiwisolver",
+  "matplotlib",
+  "pandas",
+  "plotly",
+  "pytables",
+  "python_pptx",
+  "pyqt",
+  "qt",
+  "seaborn",
+  "traits",
+  "traitsui",
+  "xlrd",
+  "xlwt"
+]
