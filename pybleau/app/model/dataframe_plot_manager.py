@@ -17,12 +17,15 @@ from .plot_descriptor import CONTAINER_IDX_REMOVAL, CUSTOM_PLOT_TYPE, \
 from ..plotting.plot_config import BaseSinglePlotConfigurator
 from ..plotting.plot_factories import DEFAULT_FACTORIES, \
     DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR, SELECTION_METADATA_NAME
-from ..plotting.api import HEATMAP_PLOT_TYPE
+from ..utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
+    HEATMAP_PLOT_TYPE
 from ..model.multi_canvas_manager import MultiCanvasManager
 
 logger = logging.getLogger(__name__)
 
 DATA_COLUMN_TYPES = ["Input", "Output", "Index"]
+
+CMAP_PLOT_TYPES = [CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE]
 
 
 class DataFramePlotManager(DataElement):
@@ -560,40 +563,39 @@ class DataFramePlotManager(DataElement):
 
     @on_trait_change("contained_plots:plot_title", post_init=True)
     def update_plot_title(self, plot_desc, attr_name, old, new_title):
+        plot = self._get_overlay_plot_cont_from_desc(plot_desc)
+        plot.title.text = new_title
         container = self.canvas_manager.get_container_for_plot(plot_desc)
-        if plot_desc.plot_type == HEATMAP_PLOT_TYPE:
-            plot = plot_desc.plot.components[0]
-        else:
-            plot = plot_desc.plot
-
-        plot.title = new_title
         container.refresh_container()
 
     @on_trait_change("contained_plots:x_axis_title", post_init=True)
     def update_plot_x_title(self, plot_desc, attr_name, old, new_title):
+        plot = self._get_overlay_plot_cont_from_desc(plot_desc)
+        plot.x_axis.title = new_title
         container = self.canvas_manager.get_container_for_plot(plot_desc)
-        if plot_desc.plot_type == HEATMAP_PLOT_TYPE:
-            plot = plot_desc.plot.components[0]
-        else:
-            plot = plot_desc.plot
-
-        plot.index_axis.title = new_title
         container.refresh_container()
 
     @on_trait_change("contained_plots:y_axis_title", post_init=True)
     def update_plot_y_title(self, plot_desc, attr_name, old, new_title):
+        plot = self._get_overlay_plot_cont_from_desc(plot_desc)
+        plot.y_axis.title = new_title
         container = self.canvas_manager.get_container_for_plot(plot_desc)
-        if plot_desc.plot_type == HEATMAP_PLOT_TYPE:
-            plot = plot_desc.plot.components[0]
-        else:
-            plot = plot_desc.plot
+        container.refresh_container()
 
-        plot.value_axis.title = new_title
+    @on_trait_change("contained_plots:second_y_axis_title", post_init=True)
+    def update_plot_second_y_title(self, plot_desc, attr_name, old, new_title):
+        container = self.canvas_manager.get_container_for_plot(plot_desc)
+        plot = self._get_overlay_plot_cont_from_desc(plot_desc)
+
+        if not hasattr(plot, "second_y_axis"):
+            return
+
+        plot.second_y_axis.title = new_title
         container.refresh_container()
 
     @on_trait_change("contained_plots:z_axis_title", post_init=True)
     def update_plot_z_title(self, plot_desc, attr_name, old, new_title):
-        if plot_desc.plot_type == HEATMAP_PLOT_TYPE:
+        if plot_desc.plot_type in CMAP_PLOT_TYPES:
             container = self.canvas_manager.get_container_for_plot(plot_desc)
             # Change the plot's colorbar:
             plot_desc.plot.components[1]._axis.title = new_title
@@ -642,8 +644,19 @@ class DataFramePlotManager(DataElement):
             object.plot.request_redraw()
             self.sync_all_inspectors()
 
+    # Private interface methods -----------------------------------------------
+
     def _get_source_analyzer_id(self):
         return self.source_analyzer.uuid
+
+    def _get_overlay_plot_cont_from_desc(self, plot_desc):
+        """ Extract OverlayPlotContainer corresponding to provided descriptor.
+        """
+        if plot_desc.plot_type in CMAP_PLOT_TYPES:
+            # Unpack it from the HPlotContainer it's in:
+            return plot_desc.plot.components[0]
+        else:
+            return plot_desc.plot
 
     # Traits initialization methods -------------------------------------------
 
