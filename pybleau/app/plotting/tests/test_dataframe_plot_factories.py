@@ -8,10 +8,12 @@ from numpy.testing import assert_array_almost_equal
 from traits.testing.unittest_tools import UnittestTools
 
 try:
-    from chaco.api import BarPlot, LinePlot, Plot, PlotGraphicsContext, \
+    from chaco.api import BarPlot, LinePlot, PlotGraphicsContext, \
         ScatterInspectorOverlay, ScatterPlot
+    from chaco.tools.api import BetterSelectingZoom
+    from chaco.tools.broadcaster import BroadcasterTool
     from chaco.color_mapper import ColorMapper
-    from chaco.plot_containers import HPlotContainer
+    from chaco.plot_containers import HPlotContainer, OverlayPlotContainer
     from chaco.color_bar import ColorBar
     from chaco.cmap_image_plot import CMapImagePlot
     from chaco.contour_line_plot import ContourLinePlot
@@ -34,8 +36,6 @@ try:
     from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
     from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HeatmapPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
-    from pybleau.app.plotting.multi_plot_config import \
-        MultiLinePlotConfigurator
     from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
         LineRendererStyle
 
@@ -43,6 +43,8 @@ except ImportError as e:
     print("ERROR: Module imports failed with error: {}".format(e))
 
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
+
+CMAPED_FACTORIES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
 
 LEN = 16
 
@@ -63,7 +65,10 @@ TEST_DF = DataFrame({"a": [1, 2, 3, 4] * (LEN//4),
                      # Same as above but as a string:
                      "j": ["A", "B", "C", "D"] * (LEN // 4),
                      "k": sorted(list("abcdefgh") * 2),
-                     "l": sorted(list("abcd") * 4)})
+                     "l": sorted(list("abcd") * 4),
+                     "m": random.randn(LEN),
+                     "n": random.randn(LEN),
+                     })
 
 msg = "No UI backend to paint into"
 
@@ -75,34 +80,30 @@ class BaseTestMakePlot(object):
 
     # Helpers -----------------------------------------------------------------
 
-    def assert_valid_plot(self, plot, desc, num_renderers=1, main_renderer="",
-                          test_view=True):
-        if isinstance(plot, HPlotContainer):
-            is_cmapped = True
-            colorbar = plot.plot_components[1]
+    def assert_valid_plot(self, plot, desc, num_renderers=1, renderer_name="",
+                          factory=None, test_view=True):
+
+        is_cmapped = desc["plot_type"] in CMAPED_FACTORIES
+        if is_cmapped:
+            self.assertIsInstance(plot, HPlotContainer)
+            colorbar = plot.components[1]
             self.assertIsInstance(colorbar, ColorBar)
             self.assertIsInstance(colorbar.color_mapper, ColorMapper)
-            plot = plot.plot_components[0]
-        else:
-            is_cmapped = False
+            plot = plot.components[0]
 
-        self.assertIsInstance(plot, Plot)
+        self.assertIsInstance(plot, OverlayPlotContainer)
         self.assertIsInstance(desc, dict)
-        self.assertIs(desc["plot"], plot)
         if not is_cmapped:
             self.assertEqual(desc["plot_type"], self.type)
 
         self.assertTrue(desc['visible'])
-        self.assertEqual(len(plot.plots), num_renderers)
-        for plot_list in plot.plots.values():
-            self.assertEqual(len(plot_list), 1)
-
-        if not main_renderer:
-            main_renderer = list(plot.plots.values())[0][0]
+        self.assertEqual(len(plot.components), num_renderers)
+        if not renderer_name:
+            renderer = plot.components[0]
         else:
-            main_renderer = plot.plots[main_renderer][0]
+            renderer = factory.renderers[renderer_name]
 
-        self.assertIsInstance(main_renderer, self.renderer_class)
+        self.assertIsInstance(renderer, self.renderer_class)
 
         if test_view:
             # Test that we can bring that plot up in a UI:
@@ -123,7 +124,8 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
     def test_histogram_simple_array(self):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           **self.hist_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
         self.assertEqual(len(plot.data.arrays['a']), 10)
         self.assertAlmostEqual(plot.data.arrays['a'][0], 1.15)
@@ -133,7 +135,8 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
         self.hist_kw['plot_style'].num_bins = 20
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           **self.hist_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
         self.assertEqual(len(plot.data.arrays['a']), 20)
 
@@ -141,7 +144,8 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
         self.hist_kw['plot_style'].bin_limits = (0, 10)
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           **self.hist_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
         # Range change
         self.assertAlmostEqual(plot.data.arrays['a'][0], 0.5)
@@ -150,12 +154,14 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
     def test_histogram_array_with_nan(self):
         factory = self.plot_factory_klass(x_col_name="b", x_arr=TEST_DF["b"],
                                           **self.hist_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
 
     def test_make_histgram_no_style(self):
         factory = self.plot_factory_klass(x_col_name="b", x_arr=TEST_DF["b"])
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
 
     def test_make_histogram_from_style_object(self):
@@ -163,7 +169,8 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
 
         factory = self.plot_factory_klass(x_col_name="b", x_arr=TEST_DF["b"],
                                           plot_style=style)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
 
     # Helpers -----------------------------------------------------------------
@@ -181,7 +188,8 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
 
     def test_plot_fail_no_y(self):
@@ -198,14 +206,16 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
         factory = self.plot_factory_klass(x_col_name="b", x_arr=TEST_DF["b"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
 
     def test_plot_array_with_nan_along_y(self):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           y_col_name="b", y_arr=TEST_DF["b"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
 
     def test_with_str_color_dimension(self):
@@ -216,7 +226,8 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           z_col_name="d", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         d_values = TEST_DF["d"].unique()
         self.assert_valid_plot(plot, desc, num_renderers=len(d_values))
         self.assert_renderers_have_distinct_colors(plot)
@@ -229,7 +240,8 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         h_values = TEST_DF["h"].unique()
         self.assert_valid_plot(plot, desc, num_renderers=len(h_values))
 
@@ -242,7 +254,8 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           z_col_name="c", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         c_values = TEST_DF["c"].unique()
         self.assert_valid_plot(plot, desc, num_renderers=len(c_values))
         self.assert_renderers_have_distinct_colors(plot)
@@ -256,8 +269,8 @@ class BaseTestMakeXYPlot(BaseTestMakePlot):
         else:
             color_attr = 'color'
 
-        color_list = [getattr(plot.plots[name][0], color_attr)
-                      for name in plot.plots]
+        color_list = [getattr(renderer, color_attr)
+                      for renderer in plot.components]
         self.assertEqual(len(color_list), len(set(color_list)))
 
     def compute_x_y_arrays_split_by(self, x_col, y_col, z_col):
@@ -354,7 +367,8 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
         self.assert_renderers_have_distinct_colors(plot)
 
@@ -369,7 +383,8 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
         self.assert_renderers_have_distinct_colors(plot)
 
@@ -385,7 +400,8 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
         self.assert_renderers_have_distinct_colors(plot)
 
@@ -424,11 +440,11 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
 
-        plot, desc = factory.generate_plot()
-
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
         # distance between x values is 1, so bar width is BAR_SQUEEZE_FACTOR
-        renderer = plot.plots['plot0'][0]
+        renderer = plot.components[0]
         self.assertEqual(renderer.bar_width, BAR_SQUEEZE_FACTOR)
 
     def test_unique_str_index_no_aggregation(self):
@@ -436,10 +452,11 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_valid_plot(plot, desc)
-        renderer = plot.plots['plot0'][0]
+        renderer = plot.components[0]
         assert_array_almost_equal(plot.data.arrays["e"],
                                   arange(len(TEST_DF["e"])))
         self.assertEqual(renderer.bar_width, 0.5)
@@ -454,7 +471,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="a", y_arr=TEST_DF["a"][:1],  # noqa
                                           **self.plot_kw)
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
         for arr in plot.data.arrays:
             self.assertEqual(len(arr), 1)
@@ -464,7 +482,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_valid_plot(plot, desc)
         assert_array_almost_equal(plot.data.arrays["d"], arange(LEN))
@@ -477,7 +496,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_valid_plot(plot, desc)
         d_values = set(TEST_DF["d"])
@@ -492,7 +512,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
             **self.plot_kw
         )
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_valid_plot(plot, desc)
         # Index overwritten to be a list of ints:
@@ -506,7 +527,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_valid_plot(plot, desc)
         # Index overwritten to be a list of ints:
@@ -522,7 +544,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_valid_plot(plot, desc)
         # Index overwritten to be a list of ints:
@@ -543,7 +566,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
             y_arr=TEST_DF["a"], x_labels=[True, False], **self.plot_kw
         )
 
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_valid_plot(plot, desc)
         # Index overwritten to be a list of ints:
@@ -561,7 +585,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
 
         # Make sure all e values are presenting along the index axis
@@ -580,7 +605,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="d", x_arr=TEST_DF["d"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
         self.assert_bar_height_averaged(plot)
 
@@ -590,7 +616,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           x_labels=list("edcba"),
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
         self.assert_bar_height_averaged(plot, reverse_order=True)
 
@@ -601,16 +628,17 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="d", x_arr=TEST_DF["d"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         num_bars = len(TEST_DF["d"].unique())
         self.assert_valid_plot(plot, desc, num_renderers=1+num_bars,
-                               main_renderer="plot0")
+                               factory=factory, renderer_name="plot0")
         self.assert_bar_height_averaged(plot)
         # Make sure the error bar renderers are there too:
         for i in range(len(TEST_DF["d"].unique())):
             key = "plot{}".format(i+1)
-            self.assertIn(key, plot.plots)
-            self.assertIsInstance(plot.plots[key][0], LinePlot)
+            self.assertIn(key, factory.renderers)
+            self.assertIsInstance(factory.renderers[key], LinePlot)
 
     def test_colors_from_str_int_index_no_aggregation(self):
         x_arr, y_arr = self.compute_x_y_arrays_split_by("b2", "c", "j")
@@ -621,7 +649,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="b2", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="j", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         j_values = set(TEST_DF["j"])
         self.assert_valid_plot(plot, desc, num_renderers=len(j_values))
@@ -639,7 +668,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="k", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         hue_values = set(TEST_DF["i"])
         self.assert_valid_plot(plot, desc, num_renderers=len(hue_values))
@@ -647,8 +677,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         assert_array_almost_equal(plot.data.arrays["kT"], arange(8) + 0.4)
 
         self.force_plot_rendering(plot)
-        labels = [x.text for x in plot.x_axis.ticklabel_cache]
-        self.assertEqual(labels, list("abcdefgh"))
+        labels = {x.text for x in plot.x_axis.ticklabel_cache}
+        self.assertLessEqual(labels, set("abcdefgh"))
 
     def test_colors_from_str_str_index_aggregation_1_value(self):
         self.style.data_duplicate = "mean"
@@ -661,7 +691,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="l", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="j", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         j_values = set(TEST_DF["j"])
         self.assert_valid_plot(plot, desc, num_renderers=len(j_values))
@@ -687,7 +718,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="d", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         i_values = set(TEST_DF["i"])
         d_values = set(TEST_DF["d"])
         self.assert_valid_plot(plot, desc, num_renderers=len(i_values))
@@ -712,7 +744,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="l", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         hue_values = set(TEST_DF["i"])
         x_values = set(TEST_DF["l"])
         # 1 for the bars, and len(x_values) for the error bars:
@@ -727,9 +760,11 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, sorted(x_values))
 
         num_error_bars = len(hue_values) * len(x_values)
-        self.assert_error_bars_present(plot, num_error_bars)
+        self.assert_error_bars_present(factory, num_error_bars)
 
     def test_colors_from_bool_str_index_with_aggregation_and_error_bars(self):
+        """ Bar plot of str vs float, aggregated on bool, w/ error bars.
+        """
         self.style.data_duplicate = "mean"
         self.style.show_error_bars = True
 
@@ -742,7 +777,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="l", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         hue_values = set(TEST_DF["h"])
         x_values = set(TEST_DF["l"])
         # 1 for the bars, and len(x_values) for the error bars:
@@ -758,9 +794,11 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, sorted(x_values))
 
         num_error_bars = len(hue_values) * len(x_values)
-        self.assert_error_bars_present(plot, num_error_bars)
+        self.assert_error_bars_present(factory, num_error_bars)
 
     def test_colors_from_str_bool_index_with_aggregation_and_error_bars(self):
+        """ Bar plot of bool vs float, aggregated on str, w/ error bars.
+        """
         self.style.data_duplicate = "mean"
         self.style.show_error_bars = True
 
@@ -773,7 +811,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="h", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         hue_values = set(TEST_DF["i"])
         x_values = set(TEST_DF["h"])
         # 1 for the bars, and len(x_values) for the error bars:
@@ -788,9 +827,11 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         self.assertEqual(labels, sorted([str(x) for x in x_values]))
 
         num_error_bars = len(hue_values) * len(x_values)
-        self.assert_error_bars_present(plot, num_error_bars)
+        self.assert_error_bars_present(factory, num_error_bars)
 
     def test_colors_from_bool_str_index_no_aggregation(self):
+        """ Un-aggregated bar plot of bool vs float.
+        """
         x_arr, y_arr = self.compute_x_y_arrays_split_by("k", "c", "h")
         # Z column, so recompute the style:
         config = self.config_class(data_source=TEST_DF, z_col_name="h")
@@ -799,16 +840,19 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="k", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=2)
 
         assert_array_almost_equal(plot.data.arrays["kFalse"], arange(8))
         assert_array_almost_equal(plot.data.arrays["kTrue"], arange(8)+0.4)
         self.force_plot_rendering(plot)
-        labels = [x.text for x in plot.x_axis.ticklabel_cache]
-        self.assertEqual(labels, list("abcdefgh"))
+        labels = {x.text for x in plot.x_axis.ticklabel_cache}
+        self.assertLessEqual(labels, set("abcdefgh"))
 
     def test_colors_from_bool_str_index_with_aggregation(self):
+        """ Bar plot of str vs float, aggregated on bool.
+        """
         self.style.data_duplicate = "mean"
 
         x_arr, y_arr = self.compute_x_y_arrays_split_by("d", "c", "h")
@@ -819,7 +863,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="d", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="h", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         i_values = set(TEST_DF["i"])
         d_values = set(TEST_DF["d"])
@@ -844,7 +889,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="h", x_arr=x_arr,
                                           y_col_name="c", y_arr=y_arr,
                                           z_col_name="i", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=2)
 
         # Index overwritten to be a list of ints:
@@ -871,7 +917,8 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
                                           z_col_name="i",
                                           x_labels=[True, False],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=2)
 
         # Index overwritten to be a list of ints:
@@ -895,13 +942,14 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
-        self.force_plot_rendering(plot)
         self.assertIsInstance(plot.x_axis.tick_generator, DefaultTickGenerator)
-        # Ticks are decimated: every other label isn't displayed:
-        self.assertEqual(set(plot.x_axis._tick_label_list),
-                         set(TEST_DF["e"][::2]))
+        self.force_plot_rendering(plot)
+        # Ticks are decimated: not every label is displayed:
+        self.assertLess(set(plot.x_axis._tick_label_list), set(TEST_DF["e"]))
+        self.assertNotEqual(plot.x_axis._tick_label_list, [])
 
     def test_str_index_do_force_all_ticks(self):
         """ String index ticks are NOT decimated w/ show_all_x_ticks=True.
@@ -911,10 +959,11 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         factory = self.plot_factory_klass(x_col_name="e", x_arr=TEST_DF["e"],
                                           y_col_name="a", y_arr=TEST_DF["a"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
-        self.force_plot_rendering(plot)
         self.assertIsInstance(plot.x_axis.tick_generator, ShowAllTickGenerator)
+        self.force_plot_rendering(plot)
         self.assertEqual(set(plot.x_axis._tick_label_list), set(TEST_DF["e"]))
 
     # utilities ---------------------------------------------------------------
@@ -926,25 +975,26 @@ class TestMakeBarPlot(BaseTestMakeXYPlot, TestCase, UnittestTools):
         height = plot.outer_height
         gc = PlotGraphicsContext((width, height), dpi=72)
         gc.render_component(plot)
+        return gc
 
     def assert_x_axis_labels_equal(self, plot, expected):
         with temp_bringup_ui_for(wrap_chaco_plot(plot)):
             self.assertEqual(plot.x_axis.labels, expected)
 
-    def assert_error_bars_present(self, plot, num_error_bars):
+    def assert_error_bars_present(self, factory, num_error_bars):
 
         for i in range(num_error_bars):
             key = "plot{}".format(i)
-            self.assertIn(key, plot.plots)
-            self.assertIsInstance(plot.plots[key][0], LinePlot)
-            if plot.legend:
+            self.assertIn(key, factory.renderers)
+            self.assertIsInstance(factory.renderers[key], LinePlot)
+            if factory.legend:
                 # Make sure the error bars are not present in the legend:
-                self.assertNotIn(key, plot.legend.labels)
+                self.assertNotIn(key, factory.legend.labels)
 
-        error_bar_x_data = [x for x in plot.data.arrays
+        error_bar_x_data = [x for x in factory.plot.data.arrays
                             if x.startswith(ERROR_BAR_DATA_KEY_PREFIX) and
                             x.endswith("_x")]
-        error_bar_y_data = [x for x in plot.data.arrays
+        error_bar_y_data = [x for x in factory.plot.data.arrays
                             if x.startswith(ERROR_BAR_DATA_KEY_PREFIX) and
                             x.endswith("_y")]
         self.assertEqual(len(error_bar_x_data), num_error_bars)
@@ -998,7 +1048,8 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
                                           y_col_name="b2", y_arr=y_arr,
                                           z_col_name="c", z_arr=z_arr,
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, with_contours=False)
 
     def test_create_with_interpolation(self):
@@ -1010,7 +1061,8 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
                                           y_col_name="b2", y_arr=y_arr,
                                           z_col_name="c", z_arr=z_arr,
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, with_contours=False)
 
     def test_create_with_contour(self):
@@ -1021,7 +1073,8 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
                                           y_col_name="b2", y_arr=y_arr,
                                           z_col_name="c", z_arr=z_arr,
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_valid_plot(plot, desc, with_contours=True)
 
     # Helpers -----------------------------------------------------------------
@@ -1034,34 +1087,33 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
                                     values=z_col_name).values
         return x_arr, y_arr, z_arr
 
-    def assert_valid_plot(self, plot, desc, with_contours=False):
-        """ Overridden since plot container generated instead of Plot.
+    def assert_valid_plot(self, container, desc, with_contours=False):
+        """ Overridden since container plot generated instead of Plot.
         """
-        self.assertIsInstance(plot, HPlotContainer)
+        self.assertIsInstance(container, HPlotContainer)
         self.assertIsInstance(desc, dict)
-        self.assertIs(desc["plot"], plot)
+        self.assertIs(desc["plot"], container)
         self.assertEqual(desc["plot_type"], self.type)
         self.assertTrue(desc['visible'])
 
-        # 2 plot areas in the container
-        self.assertEqual(len(plot.plot_components), 2)
+        # 2 container areas in the container
+        self.assertEqual(len(container.components), 2)
 
-        main_plot = plot.plot_components[0]
-        self.assertIsInstance(main_plot, Plot)
-        self.assertIsInstance(plot.plot_components[1], ColorBar)
+        main_plot = container.components[0]
+        self.assertIsInstance(main_plot, OverlayPlotContainer)
+        self.assertIsInstance(container.components[1], ColorBar)
 
-        # Normally only the image plot in the main plot, except if contours are
-        # turned on:
+        # Normally only the image container in the main container, except if
+        # contours are turned on:
         if with_contours:
             num_renderers = 2
         else:
             num_renderers = 1
 
-        self.assertEqual(len(main_plot.plots), num_renderers)
-        self.assertIsInstance(main_plot.plots["plot0"][0],
-                              self.renderer_class)
+        self.assertEqual(len(main_plot.components), num_renderers)
+        self.assertIsInstance(main_plot.components[0], self.renderer_class)
         if with_contours:
-            self.assertIsInstance(main_plot.plots["plot1"][0], ContourLinePlot)
+            self.assertIsInstance(main_plot.components[1], ContourLinePlot)
 
 
 class BaseScatterPlotTools(object):
@@ -1086,12 +1138,16 @@ class BaseScatterPlotTools(object):
 
     def assert_no_tools(self, plot):
         self.assertEqual(plot.tools, [])
-        self.assertEqual(plot.legend.tools, [])
-        # Legend and title:
-        self.assertEqual(len(plot.overlays), 2)
-        for renderers in plot.plots.values():
-            for renderer in renderers:
-                self.assertEqual(renderer.tools, [])
+        if hasattr(plot, "legend"):
+            self.assertFalse(plot.legend.tools, [])
+            # Legend and title:
+            self.assertEqual(len(plot.overlays), 2)
+        else:
+            self.assertEqual(len(plot.overlays), 1)
+
+        for renderer in plot.components:
+            self.assertIsInstance(renderer.tools[0], BroadcasterTool)
+            self.assertEqual(renderer.tools[0].tools, [])
 
     def assert_zoom_pan_tools_present(self, factory=None, plot=None):
         if factory is None:
@@ -1101,30 +1157,36 @@ class BaseScatterPlotTools(object):
             plot = self.plot
 
         self.assertIn("pan", factory.plot_tools)
-        self.assertGreaterEqual(len(plot.tools), 1)
-        self.assertIsInstance(plot.tools[0], PanTool)
-
         self.assertIn("zoom", factory.plot_tools)
-        klasses = {o.__class__.__name__ for o in plot.overlays}
-        self.assertIn("BetterSelectingZoom", klasses)
 
-    def assert_legend_with_tool(self, factory=None, plot=None,
-                                color_values=None):
+        first_renderer = plot.components[0]
+
+        # tools added to renderers via the broadcaster tool:
+        self.assertGreaterEqual(len(first_renderer.tools), 1)
+        broadcaster_tool = first_renderer.tools[0]
+        self.assertIsInstance(broadcaster_tool, BroadcasterTool)
+
+        num_renderers = len(plot.components)
+        pan_tools = [tool for tool in broadcaster_tool.tools
+                     if isinstance(tool, PanTool)]
+        zoom_tools = [tool for tool in broadcaster_tool.tools
+                      if isinstance(tool, BetterSelectingZoom)]
+        self.assertEqual(len(pan_tools), num_renderers)
+        self.assertEqual(len(zoom_tools), num_renderers)
+
+    def assert_legend_with_tool(self, factory=None):
         if factory is None:
             factory = self.factory
 
-        if plot is None:
-            plot = self.plot
-
-        if color_values is None:
-            color_values = TEST_DF["d"]
-
         self.assertIn("legend", factory.plot_tools)
-        self.assertTrue(plot.legend.visible)
-        self.assertEqual(set(plot.legend.plots.keys()), set(color_values))
-        self.assertEqual(len(plot.legend.tools), 2)
-        self.assertIsInstance(plot.legend.tools[0], LegendTool)
-        self.assertIsInstance(plot.legend.tools[1], LegendHighlighter)
+        legend = factory.legend
+        self.assertIsNotNone(legend)
+        self.assertTrue(legend.visible)
+        color_values = TEST_DF["d"]
+        self.assertEqual(set(legend.plots.keys()), set(color_values))
+        self.assertEqual(len(legend.tools), 2)
+        self.assertIsInstance(legend.tools[0], LegendTool)
+        self.assertIsInstance(legend.tools[1], LegendHighlighter)
 
     def assert_click_selector_present(self, factory=None, plot=None):
         if factory is None:
@@ -1135,12 +1197,10 @@ class BaseScatterPlotTools(object):
 
         self.assertIn("click_selector", factory.plot_tools)
 
-        for name, renderers in plot.plots.items():
-            renderer = renderers[0]
-            self.assertEqual(len(renderer.tools), 1)
-            # It's a DataFrameInspector because it can then drive both click
-            # and hover events/tools:
-            self.assertIsInstance(renderer.tools[0], DataframeScatterInspector)
+        for renderer in plot.components:
+            # Broadcaster tool also there for first renderer:
+            tool_types = [tool.__class__.__name__ for tool in renderer.tools]
+            self.assertIn("DataframeScatterInspector", tool_types)
             self.assertGreaterEqual(len(renderer.overlays), 1)
             self.assertIsInstance(renderer.overlays[0],
                                   ScatterInspectorOverlay)
@@ -1151,10 +1211,16 @@ class BaseScatterPlotTools(object):
         self.assertIn("DataframeScatterOverlay", klasses)
 
         overlay_inspectors = set(plot.overlays[-1].inspectors)
-        for name, renderer in plot.plots.items():
-            renderer = renderer[0]
-            self.assertEqual(len(renderer.tools), 1)
-            inspector = renderer.tools[0]
+        for i, renderer in enumerate(plot.components):
+            # In addition to the inspector tool, there is the broadcaster for
+            # zooming/panning for the first renderer:
+            if i == 0:
+                self.assertEqual(len(renderer.tools), 2)
+                inspector = renderer.tools[1]
+            else:
+                self.assertEqual(len(renderer.tools), 1)
+                inspector = renderer.tools[0]
+
             self.assertIsInstance(inspector, DataframeScatterInspector)
             self.assertIn(inspector, overlay_inspectors)
 
@@ -1174,15 +1240,16 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
             x_col_name="a", x_arr=TEST_DF["a"].values,
             y_col_name="c", y_arr=TEST_DF["c"].values, **self.plot_kw
         )
-        self.plot, desc = self.factory.generate_plot()
+        desc = self.factory.generate_plot()
+        self.plot = desc["plot"]
 
     def test_tools_present_default(self):
         """ By default, zoom, pan, click selector and legend tools.
         """
         self.assert_zoom_pan_tools_present()
         self.assert_click_selector_present()
-        # No legend tool per se since only 1 renderer
-        self.assertFalse(self.plot.legend.visible)
+        # No legend since only 1 renderer
+        self.assertIsNone(self.factory.legend)
 
         self.assertIn("hover", self.factory.plot_tools)
         # But by default, no hover columns so no overlay:
@@ -1194,7 +1261,8 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
             y_col_name="c", y_arr=TEST_DF["c"].values,
             hover_col_names=["a"], **self.plot_kw
         )
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_hover_tool_present(factory, plot)
 
     def test_request_no_tools_present(self):
@@ -1203,7 +1271,8 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
             y_col_name="c", y_arr=TEST_DF["c"].values, plot_tools=set(),
             **self.plot_kw
         )
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_no_tools(plot)
 
     def test_request_no_inspector_tools_present_basic_scatter(self):
@@ -1212,15 +1281,15 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
             y_col_name="c", y_arr=TEST_DF["c"].values,
             plot_tools={"pan", "zoom"}, **self.plot_kw
         )
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         self.assert_zoom_pan_tools_present()
-        # Pan is a tool
-        self.assertEqual(len(plot.tools), 1)
-        # Zoom is an overlay, just like the plot title and legend
-        self.assertEqual(len(plot.overlays), 3)
-        for renderers in plot.plots.values():
-            for renderer in renderers:
-                self.assertEqual(renderer.tools, [])
+        renderer = plot.components[0]
+        # Just the broadcaster tool:
+        self.assertEqual(len(renderer.tools), 1)
+        self.assertIsInstance(renderer.tools[0], BroadcasterTool)
+        # Just a title overlay:
+        self.assertEqual(len(plot.overlays), 1)
 
     def test_tools_present_colored_scatter_by_str(self):
         """ Tools present on scatter when color dimension specified.
@@ -1231,10 +1300,11 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=all_x_arr,
                                           y_col_name="b", y_arr=all_y_arr,
                                           z_col_name="d", **self.plot_kw)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_zoom_pan_tools_present()
-        self.assert_legend_with_tool(factory, plot)
+        self.assert_legend_with_tool(factory)
         self.assert_click_selector_present(factory, plot)
 
     def test_tools_present_colored_scatter_by_str_and_hover(self):
@@ -1247,10 +1317,11 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
             x_col_name="a", x_arr=all_x_arr, y_col_name="b", y_arr=all_y_arr,
             z_col_name="d", hover_col_names=["a", "b", "d"], **self.plot_kw
         )
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_zoom_pan_tools_present(factory, plot)
-        self.assert_legend_with_tool(factory, plot)
+        self.assert_legend_with_tool(factory)
         self.assert_click_selector_present(factory, plot)
         self.assert_hover_tool_present(factory, plot)
 
@@ -1266,7 +1337,8 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
             x_col_name="a", x_arr=all_x_arr, y_col_name="b", y_arr=all_y_arr,
             z_col_name="d", hover_col_names=["a", "b", "d"], **self.plot_kw
         )
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
 
         self.assert_zoom_pan_tools_present(factory, plot)
         self.assert_click_selector_present(factory, plot)
@@ -1276,7 +1348,7 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         # Default marker is a circle of size 6:
         self.assertEqual(self.style.renderer_styles[0].marker, "circle")
         self.assertEqual(self.style.renderer_styles[0].marker_size, 6)
-        renderer = list(self.plot.plots.values())[0][0]
+        renderer = self.plot.components[0]
         inspector_overlay = renderer.overlays[0]
         self.assertEqual(inspector_overlay.selection_marker, "circle")
         self.assertEqual(inspector_overlay.selection_marker_size, 6)
@@ -1288,8 +1360,9 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         factory = self.plot_factory_klass(x_col_name="a", x_arr=TEST_DF["a"],
                                           y_col_name="c", y_arr=TEST_DF["c"],
                                           **self.plot_kw)
-        plot, desc = factory.generate_plot()
-        renderer = list(plot.plots.values())[0][0]
+        desc = factory.generate_plot()
+        plot = desc["plot"]
+        renderer = plot.components[0]
         inspector_overlay = renderer.overlays[0]
         self.assertEqual(inspector_overlay.selection_marker, "square")
         self.assertEqual(inspector_overlay.selection_marker_size, 9)
@@ -1302,6 +1375,7 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
         self.config_class = ScatterPlotConfigurator
         self.config = self.config_class(data_source=TEST_DF, z_col_name="b")
         self.style = self.config.plot_style
+        self.style.container_style.include_colorbar = True
         self.plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
                         'plot_style': self.style}
 
@@ -1311,7 +1385,8 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
             y_col_name="c", y_arr=TEST_DF["c"],
             z_col_name="b", z_arr=TEST_DF["b"], **self.plot_kw
         )
-        self.container, desc = self.factory.generate_plot()
+        desc = self.factory.generate_plot()
+        self.container = desc["plot"]
 
     def test_tools_present_colored_scatter_by_float(self):
         """ Tools present when building a scatter plot colored by float column.
@@ -1322,25 +1397,27 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
 
         self.assert_zoom_pan_tools_present(factory, plot)
         self.assert_click_selector_present(factory, plot)
+        self.assert_colorbar_tool_present(factory, plot)
 
     def test_tools_present_colored_scatter_by_float_with_hover_col(self):
         """ Tools present for scatter plot colored by float column and hover.
         """
         factory = self.factory
         factory.hover_col_names = ["a", "b"]
-        container, desc = self.factory.generate_plot()
-        plot = container.plot_components[0]
+        desc = self.factory.generate_plot()
+        container = desc["plot"]
+        plot = container.components[0]
 
         self.assert_zoom_pan_tools_present(factory, plot)
         self.assert_click_selector_present(factory, plot)
         self.assert_hover_tool_present(factory, plot)
+        self.assert_colorbar_tool_present(factory, plot)
 
     # Utilities ---------------------------------------------------------------
 
     def assert_colorbar_tool_present(self, factory, plot):
         self.assertIn("colorbar_selector", factory.plot_tools)
-        for name, renderer in plot.plots.items():
-            renderer = renderer[0]
+        for renderer in plot.components:
             # First overlay is the click_inspector tool's:
             self.assertIsInstance(renderer.overlays[1],
                                   ColormappedSelectionOverlay)

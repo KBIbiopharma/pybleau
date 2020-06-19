@@ -6,6 +6,10 @@ from traitsui.api import HGroup, InstanceEditor, Item, RangeEditor, VGroup, \
 
 from .title_style import TitleStyle
 
+LINEAR_AXIS_STYLE = "linear"
+
+LOG_AXIS_STYLE = "log"
+
 
 class AxisStyle(HasStrictTraits):
 
@@ -38,7 +42,7 @@ class AxisStyle(HasStrictTraits):
     reset_range = Button("Reset")
 
     #: Selector for the scaling of the axis: log or linear?
-    scaling = Enum("linear", "log")
+    scaling = Enum(LINEAR_AXIS_STYLE, LOG_AXIS_STYLE)
 
     #: View klass. Override to customize the views, for example their icon
     view_klass = Any(default_value=View)

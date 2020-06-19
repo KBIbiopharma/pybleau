@@ -3,11 +3,10 @@
 """
 import logging
 
-from traits.api import Any, Bool, Dict, Enum, Float, HasTraits, Instance, \
-    List, on_trait_change, Property
+from traits.api import Any, Bool, Callable, Dict, Enum, Float, HasTraits, \
+    Instance, List, on_trait_change, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
-from chaco.api import Plot
 
 from ..utils.chaco_colors import ALL_MPL_PALETTES
 from .axis_style import AxisStyle
@@ -16,7 +15,7 @@ from .renderer_style import BaseRendererStyle, LineRendererStyle, \
     ScatterRendererStyle
 from ..utils.chaco_colors import generate_chaco_colors
 from ..utils.string_definitions import DEFAULT_DIVERG_PALETTE
-
+from .plot_container_style import PlotContainerStyle
 
 SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
 
@@ -36,11 +35,21 @@ class BaseXYPlotStyle(HasTraits):
     #: Font used to draw the plot title
     title_style = Instance(TitleStyle, ())
 
+    #: Styling for the plot container
+    container_style = Instance(PlotContainerStyle, ())
+
     #: Styling elements for the x-axis
     x_axis_style = Instance(AxisStyle)
 
-    #: Styling elements for the x-axis
+    #: Styling elements for the y-axis
     y_axis_style = Instance(AxisStyle)
+
+    #: Styling elements for the secondary y-axis
+    second_y_axis_style = Instance(AxisStyle)
+
+    #: Whether there is a renderer to be displayed on the secondary y-axis
+    _second_y_axis_present = Property(Bool,
+                                      depends_on="renderer_styles.orientation")
 
     #: View klass. Override to customize the view, for example its icon
     view_klass = Any(default_value=View)
@@ -54,53 +63,88 @@ class BaseXYPlotStyle(HasTraits):
     #: Keywords passed to create the view
     view_kw = Dict
 
+    #: Range value transformation function for eg. to avoid non-sensical digits
+    range_transform = Callable
+
     def initialize_axis_ranges(self, plot, x_mapper=None, y_mapper=None,
-                               transform=None):
-        """ Initialize the axis ranges from provided Plot or renderer.
+                               second_y_mapper=None):
+        """ Initialize all axis ranges from provided Plot (container).
         """
-        if transform is None:
-            def transform(x):
-                return x
+        x_mapper, y_mapper, second_y_mapper = self._get_plot_mappers(
+            plot, x_mapper=x_mapper, y_mapper=y_mapper,
+            second_y_mapper=second_y_mapper
+        )
 
-        elif isinstance(transform, int):
-            ndigits = transform
+        transform = self.range_transform
 
-            def transform(x):
-                return round(x, ndigits)
-
-        if x_mapper is None:
-            if isinstance(plot, Plot):
-                x_mapper = plot.x_axis.mapper
-            else:
-                msg = "Unsupported plot type: {}".format(type(plot))
-                logger.exception(msg)
-                raise ValueError(msg)
-
-        if y_mapper is None:
-            if isinstance(plot, Plot):
-                y_mapper = plot.y_axis.mapper
-            else:
-                msg = "Unsupported plot type: {}".format(type(plot))
-                logger.exception(msg)
-                raise ValueError(msg)
-
-        # Apply transform for e.g. to avoid polluting UI w/ non-sensical digits
         if x_mapper:
-            self.x_axis_style.range_low = transform(x_mapper.range.low)
-            self.x_axis_style.auto_range_low = self.x_axis_style.range_low
-            self.x_axis_style.range_high = transform(x_mapper.range.high)
-            self.x_axis_style.auto_range_high = self.x_axis_style.range_high
+            x_axis_style = self.x_axis_style
+            x_axis_style.range_low = transform(x_mapper.range.low)
+            x_axis_style.auto_range_low = x_axis_style.range_low
+            x_axis_style.range_high = transform(x_mapper.range.high)
+            x_axis_style.auto_range_high = x_axis_style.range_high
+
         if y_mapper:
-            self.y_axis_style.range_low = transform(y_mapper.range.low)
-            self.y_axis_style.auto_range_low = self.y_axis_style.range_low
-            self.y_axis_style.range_high = transform(y_mapper.range.high)
-            self.y_axis_style.auto_range_high = self.y_axis_style.range_high
+            y_axis_style = self.y_axis_style
+            y_axis_style.range_low = transform(y_mapper.range.low)
+            y_axis_style.auto_range_low = y_axis_style.range_low
+            y_axis_style.range_high = transform(y_mapper.range.high)
+            y_axis_style.auto_range_high = y_axis_style.range_high
+
+        if second_y_mapper:
+            self._init_second_y_axis_style_range(second_y_mapper)
+
+    def _init_second_y_axis_style_range(self, second_y_mapper):
+        """ Initialize the secondary y axis range.
+        """
+        transform = self.range_transform
+
+        second_y_axis_style = self.second_y_axis_style
+        second_y_axis_style.range_low = transform(second_y_mapper.range.low)
+        second_y_axis_style.auto_range_low = second_y_axis_style.range_low
+        second_y_axis_style.range_high = transform(second_y_mapper.range.high)
+        second_y_axis_style.auto_range_high = second_y_axis_style.range_high
+
+    def apply_axis_ranges(self, plot, x_mapper=None, y_mapper=None,
+                          second_y_mapper=None):
+        """ Apply to the plot's mappers the ranges stored in this style object.
+        """
+        x_mapper, y_mapper, second_y_mapper = self._get_plot_mappers(
+            plot, x_mapper=x_mapper, y_mapper=y_mapper,
+            second_y_mapper=second_y_mapper
+        )
+
+        x_mapper.range.low = self.x_axis_style.range_low
+        x_mapper.range.high = self.x_axis_style.range_high
+        y_mapper.range.low = self.y_axis_style.range_low
+        y_mapper.range.high = self.y_axis_style.range_high
+
+        if second_y_mapper:
+            second_y_axis_style = self.second_y_axis_style
+            sec_low = second_y_axis_style.range_low
+            sec_high = second_y_axis_style.range_high
+            if sec_low == sec_high:
+                # It was never initialized:
+                self._init_second_y_axis_style_range(second_y_mapper)
+            else:
+                second_y_mapper.range.low = second_y_axis_style.range_low
+                second_y_mapper.range.high = second_y_axis_style.range_high
+
+    def traits_view(self):
+        view = self.view_klass(
+            *self.view_elements,
+            **self.view_kw
+        )
+        return view
 
     # Traits property getter/setter -------------------------------------------
 
-    def traits_view(self):
-        view = self.view_klass(*self.view_elements, **self.view_kw)
-        return view
+    def _get__second_y_axis_present(self):
+        for style in self.renderer_styles:
+            if style.orientation == "right":
+                return True
+
+        return False
 
     def _get_specific_view_elements(self):
         return []
@@ -140,13 +184,26 @@ class BaseXYPlotStyle(HasTraits):
                              style="custom", show_label=False),
                         show_border=True, label="Y-axis controls"
                     ),
+                    VGroup(
+                        Item("second_y_axis_style", editor=InstanceEditor(),
+                             style="custom", show_label=False),
+                        show_border=True, label="Secondary Y-axis controls",
+                        visible_when="_second_y_axis_present"
+                    ),
                     show_border=True, label="Axis controls"
                 ),
                 VGroup(*items,
                        show_border=True, label="Renderer controls"),
+                VGroup(
+                    Item("container_style", editor=InstanceEditor(),
+                         style="custom", show_label=False),
+                    show_border=True, label="Container controls"
+                )
             )
         ]
         return elemens
+
+    # Private interface -------------------------------------------------------
 
     @staticmethod
     def _make_group_for_renderer(trait_name, renderer_name=""):
@@ -167,6 +224,34 @@ class BaseXYPlotStyle(HasTraits):
             show_border=True, label=renderer_name
         )
 
+    def _get_plot_mappers(self, plot, x_mapper=None, y_mapper=None,
+                          second_y_mapper=None):
+        """ Retrieve the plot's mappers to synchronize with the style.
+        """
+        missing_mapper_msg = "The plot is missing the attribute {}. Please " \
+                             "provide the mapper explicitly"
+        if x_mapper is None:
+            if hasattr(plot, "x_axis"):
+                x_mapper = plot.x_axis.mapper
+            else:
+                msg = missing_mapper_msg.format("x_axis")
+                logger.exception(msg)
+                raise ValueError(msg)
+
+        if y_mapper is None:
+            if hasattr(plot, "y_axis"):
+                y_mapper = plot.y_axis.mapper
+            else:
+                msg = missing_mapper_msg.format("y_axis")
+                logger.exception(msg)
+                raise ValueError(msg)
+
+        if second_y_mapper is None:
+            if hasattr(plot, "second_y_axis"):
+                second_y_mapper = plot.second_y_axis.mapper
+
+        return x_mapper, y_mapper, second_y_mapper
+
     # Traits initialization methods -------------------------------------------
 
     def _x_axis_style_default(self):
@@ -175,12 +260,18 @@ class BaseXYPlotStyle(HasTraits):
     def _y_axis_style_default(self):
         return AxisStyle(axis_name="Y")
 
+    def _second_y_axis_style_default(self):
+        return AxisStyle(axis_name="Second. Y")
+
     def _view_kw_default(self):
         return dict(
             resizable=True,
             buttons=OKCancelButtons,
             title="Plot Styling",
         )
+
+    def _range_transform_default(self):
+        return lambda x: x
 
 
 class BaseColorXYPlotStyle(BaseXYPlotStyle):

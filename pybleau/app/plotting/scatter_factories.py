@@ -8,13 +8,15 @@ import logging
 
 from traits.api import Constant, Tuple
 from chaco.api import ArrayPlotData, ColorBar, ColormappedSelectionOverlay, \
-    HPlotContainer, LinearMapper, ScatterInspectorOverlay
+    LinearMapper, ScatterInspectorOverlay
 from chaco.tools.api import RangeSelection, RangeSelectionOverlay
 
 from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
     DataframeScatterInspector
+from app_common.chaco.plot_factory import create_cmap_scatter_plot
 
-from .plot_config import SCATTER_PLOT_TYPE
+from .plot_config import CMAP_SCATTER_PLOT_TYPE, SCATTER_PLOT_TYPE
+from .renderer_style import REND_TYPE_CMAP_SCAT
 from .base_factories import StdXYPlotFactory
 
 SELECTION_COLOR = "red"
@@ -27,39 +29,31 @@ logger = logging.getLogger(__name__)
 
 
 class ScatterPlotFactory(StdXYPlotFactory):
-    """ Factory to build a scatter plot.
+    """ Factory to build a potentially multi-renderer XY plot.
 
     This plot currently supports displaying many dimensions at once since it
     supports a legend tool to select parts of the data and a hover tool to
     display any number of additional columns.
     """
-    #: Plot type as used by Plot.plot
-    plot_type_name = Constant("scatter")
-
     #: Plot type as selected by user
     plot_type = Constant(SCATTER_PLOT_TYPE)
 
     #: Inspector tool and overlay to query/listen to for events
     inspector = Tuple
 
-    def _plot_tools_default(self):
-        return {"zoom", "pan", "click_selector", "legend", "hover"}
+    def add_tools(self, plot):
+        super(ScatterPlotFactory, self).add_tools(plot)
 
-    def generate_plot(self):
-        plot, desc = super(ScatterPlotFactory, self).generate_plot()
         if "click_selector" in self.plot_tools:
             self.add_click_selector_tool(plot)
 
         if "hover" in self.plot_tools:
             self.add_hover_display_tool(plot)
 
-        return plot, desc
-
     def add_click_selector_tool(self, plot):
         """ Add scatter point click tool to select points.
         """
-        for i, renderer_name in enumerate(plot.plots):
-            renderer = plot.plots[renderer_name][0]
+        for i, renderer in enumerate(plot.components):
             marker_size = self.plot_style.renderer_styles[i].marker_size
             marker = self.plot_style.renderer_styles[i].marker
             inspector_tool = DataframeScatterInspector(
@@ -100,6 +94,12 @@ class ScatterPlotFactory(StdXYPlotFactory):
         add_scatter_inspectors(plot, datasets=renderer_data,
                                include_overlay=True, align="ul")
 
+    # Traits initialization methods -------------------------------------------
+
+    def _plot_tools_default(self):
+        base_tools = super(ScatterPlotFactory, self)._plot_tools_default()
+        return base_tools | {"click_selector", "hover"}
+
 
 class CmapScatterPlotFactory(ScatterPlotFactory):
     """ Factory to build a single scatter plot colormapped by a z array.
@@ -111,18 +111,27 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         scatter renderers, for example when colorizing using a column of
         discrete values.
     """
-    #: Plot type as used by Plot.plot
-    plot_type_name = Constant("cmap_scatter")
+    #: Plot type as selected by user
+    plot_type = Constant(CMAP_SCATTER_PLOT_TYPE)
 
-    def _plot_tools_default(self):
-        # No need for a legend
-        return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
+    def generate_colorbar(self, desc):
+        """ Generate the colorbar to display along side the plot.
+        """
+        plot = desc["plot"]
+        styles = self.plot_style.renderer_styles
+        renderers = self.renderers.values()
+        cmap_renderers = [rend for rend, style in zip(renderers, styles)
+                          if style.renderer_type == REND_TYPE_CMAP_SCAT]
+        if len(cmap_renderers) > 1:
+            msg = "Unable to generate a colorbar since there are more than 1" \
+                  " cmap renderer."
+            logger.warning(msg)
+        elif len(cmap_renderers) == 0:
+            msg = "No cmap renderer, no colorbar to make."
+            logger.warning(msg)
 
-    def generate_plot(self):
-        # FIXME: move the plot title to the container level.
+        cmap_renderer = cmap_renderers[0]
 
-        plot, desc = super(CmapScatterPlotFactory, self).generate_plot()
-        cmap_renderer = plot.plots["cmap_scatter"][0]
         select_tool = "colorbar_selector" in self.plot_tools
         if select_tool:
             selection = ColormappedSelectionOverlay(cmap_renderer,
@@ -130,29 +139,22 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
                                                     selection_type="mask")
             cmap_renderer.overlays.append(selection)
 
-        # Add a colorbar:
-        colorbar = create_cmap_scatter_colorbar(plot.color_mapper,
+        # Create the actual colorbar:
+
+        colorbar = create_cmap_scatter_colorbar(cmap_renderer.color_mapper,
                                                 select_tool=select_tool)
         colorbar.plot = cmap_renderer
         colorbar.title = self.z_axis_title
         colorbar.padding_top = plot.padding_top
         colorbar.padding_bottom = plot.padding_bottom
+        self.colorbar = colorbar
 
-        # Create a container to position the plot and the colorbar side-by-side
-        container = HPlotContainer(use_backbuffer=True)
-        container.add(plot)
-        container.add(colorbar)
-        container.bgcolor = "lightgray"
-        return container, desc
-
-    def add_renderers(self, plot):
-        renderer_styles = self.plot_style.renderer_styles
-        assert len(renderer_styles) == len(self.renderer_desc)
-
-        for desc, style in zip(self.renderer_desc, renderer_styles):
-            style.renderer_name = desc["name"]
-            plot.plot((desc["x"], desc["y"], desc["z"]), type="cmap_scatter",
-                      name=desc["name"], **style.to_plot_kwargs())
+    def _build_renderer(self, desc, style):
+        x = self.plot_data.get_data(desc["x"])
+        y = self.plot_data.get_data(desc["y"])
+        z = self.plot_data.get_data(desc["z"])
+        return create_cmap_scatter_plot(data=(x, y, z),
+                                        **style.to_plot_kwargs())
 
     def initialize_plot_data(self, x_arr=None, y_arr=None, z_arr=None,
                              **adtl_arrays):
@@ -184,12 +186,17 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         add_scatter_inspectors(plot, datasets=renderer_data,
                                include_overlay=True, align="ul")
 
+    # Traits initialization methods -------------------------------------------
 
-def create_cmap_scatter_colorbar(colormap, select_tool=False):
+    def _plot_tools_default(self):
+        return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
+
+
+def create_cmap_scatter_colorbar(color_mapper, select_tool=False):
     """ Create a fancy colorbar for a CMAP scatter plot, with a selection tool.
     """
-    colorbar = ColorBar(index_mapper=LinearMapper(range=colormap.range),
-                        color_mapper=colormap,
+    colorbar = ColorBar(index_mapper=LinearMapper(range=color_mapper.range),
+                        color_mapper=color_mapper,
                         orientation='v',
                         resizable='v',
                         width=30,

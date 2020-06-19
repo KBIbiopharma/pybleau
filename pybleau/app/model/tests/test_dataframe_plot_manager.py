@@ -1,12 +1,13 @@
 from unittest import TestCase, skipIf
 from pandas import DataFrame
 import os
-import numpy as np
 from numpy.testing import assert_array_equal
 from six import string_types
 
+from chaco.api import Legend
 from pandas.testing import assert_frame_equal
 from traits.testing.unittest_tools import UnittestTools
+from pybleau.app.plotting.plot_config import BaseSinglePlotConfigurator
 
 try:
     import kiwisolver  # noqa
@@ -30,34 +31,62 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.model.plot_descriptor import CUSTOM_PLOT_TYPE, \
         PlotDescriptor
     from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-    from pybleau.app.plotting.api import HistogramPlotConfigurator, \
-        LinePlotConfigurator, MultiHistogramPlotConfigurator, \
-        ScatterPlotConfigurator
+    from pybleau.app.plotting.api import BarPlotConfigurator, \
+        HistogramPlotConfigurator, LinePlotConfigurator, \
+        MultiHistogramPlotConfigurator, ScatterPlotConfigurator
     from pybleau.app.plotting.scatter_factories import \
         SELECTION_METADATA_NAME, DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR
     from pybleau.app.plotting.base_factories import DEFAULT_RENDERER_NAME
     from pybleau.app.plotting.renderer_style import DEFAULT_RENDERER_COLOR
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
+    from pybleau.app.utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
+        HEATMAP_PLOT_TYPE
 
 
 TEST_DF = DataFrame({"a": [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
                      "b": [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],
                      "c": [1, 2, 3, 4, 2, 3, 1, 1, 4, 4, 5, 6, 4, 4, 5, 6],
-                     "d": list("ababcabcdabcdeab")},
+                     "d": list("ababcabcdabcdeab"),
+                     "e": range(16)
+                     },
                     dtype="float")
 
 NUM_D_VALUES = len(set(TEST_DF["d"]))
 
 msg = "No UI backend to paint into or missing kiwisolver package"
 
+CMAP_PLOT_TYPES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
+
 
 class BasePlotManagerTools(UnittestTools):
+
+    def setUp(self):
+        self.model = DataFramePlotManager(data_source=TEST_DF)
+        # Basic configurator for a histogram plot:
+        self.config = HistogramPlotConfigurator(data_source=TEST_DF,
+                                                plot_title="Plot")
+        self.config.x_col_name = "a"
+
+        self.config2 = HistogramPlotConfigurator(data_source=TEST_DF,
+                                                 plot_title="Plot 2")
+        self.config2.x_col_name = "a"
+
+        self.config3 = ScatterPlotConfigurator(data_source=TEST_DF,
+                                               plot_title="Plot")
+        self.config3.x_col_name = "a"
+        self.config3.y_col_name = "b"
+
+        self.config4 = ScatterPlotConfigurator(data_source=TEST_DF,
+                                               plot_title="Plot")
+        self.config4.x_col_name = "a"
+        self.config4.y_col_name = "b"
+        self.config4.z_col_name = "d"
 
     # Helper utilities --------------------------------------------------------
 
     def assert_plot_created(self, num_plots=1, container_idx=0,
                             num_plot_in_container=None, single_container=True,
-                            renderer_type=None):
+                            renderer_type=None, num_renderers=1):
 
         if renderer_type is None:
             renderer_type = AbstractPlotRenderer
@@ -71,15 +100,19 @@ class BasePlotManagerTools(UnittestTools):
         ]
         self.assertEqual(len(container.plot_map), num_plot_in_container)
 
-        for i in range(num_plots):
-            plot_desc = self.model.contained_plots[0]
+        for plot_desc in self.model.contained_plots:
             self.assertIsInstance(plot_desc, PlotDescriptor)
             self.assertIsInstance(plot_desc.id, string_types)
             self.assertIsInstance(plot_desc.plot, BasePlotContainer)
-            self.assertGreater(len(plot_desc.plot.plots), 0)
-            for name, renderers in plot_desc.plot.plots.items():
-                for renderer in renderers:
-                    self.assertIsInstance(renderer, renderer_type)
+            if plot_desc.plot_type in CMAP_PLOT_TYPES:
+                self.assertEqual(len(plot_desc.plot.components), 2)
+                plot = plot_desc.plot.components[0]
+            else:
+                plot = plot_desc.plot
+
+            self.assertEqual(len(plot.components), num_renderers)
+            for renderer in plot.components:
+                self.assertIsInstance(renderer, renderer_type)
 
             if single_container:
                 self.assertIn(plot_desc.plot, container.container.components)
@@ -91,18 +124,7 @@ class BasePlotManagerTools(UnittestTools):
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
-class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
-    def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
-        # Basic configurator for a histogram plot:
-        self.config = HistogramPlotConfigurator(data_source=TEST_DF,
-                                                plot_title="Plot")
-        self.config.x_col_name = "a"
-
-        self.config2 = HistogramPlotConfigurator(data_source=TEST_DF,
-                                                 plot_title="Plot 2")
-        self.config2.x_col_name = "a"
-
+class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
     def test_create_manager(self):
         self.assertIsInstance(self.model, DataFramePlotManager)
         self.assertEqual(len(self.model.canvas_manager.container_managers),
@@ -127,6 +149,23 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertEqual(plot_desc.x_col_name, "a")
         self.assertEqual(plot_desc.plot_title, "Plot")
 
+    def test_add_bar_plot(self):
+        config = BarPlotConfigurator(data_source=TEST_DF,
+                                     plot_title="Plot")
+        config.x_col_name = "e"
+        config.y_col_name = "b"
+
+        self.model._add_new_plot(config)
+        self.assert_plot_created(renderer_type=BarPlot, container_idx=0)
+        # Plot is nowhere else:
+        for i in range(1, DEFAULT_NUM_CONTAINERS):
+            self.assert_no_plot_in_container(i)
+
+        plot_desc = self.model.contained_plots[0]
+        self.assertEqual(plot_desc.x_col_name, "e")
+        self.assertEqual(plot_desc.y_col_name, "b")
+        self.assertEqual(plot_desc.plot_title, "Plot")
+
     def test_add_lineplot(self):
         config = LinePlotConfigurator(data_source=TEST_DF,
                                       plot_title="Plot")
@@ -140,15 +179,42 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertEqual(plot_desc.plot_title, "Plot")
 
     def test_add_scatter(self):
+        self.model._add_new_plot(self.config3)
+        self.assert_plot_created(renderer_type=ScatterPlot)
+        plot_desc = self.model.contained_plots[0]
+        self.assertEqual(plot_desc.x_col_name, "a")
+        self.assertEqual(plot_desc.y_col_name, "b")
+        self.assertEqual(plot_desc.plot_title, "Plot")
+
+    def test_add_colored_scatter(self):
         config = ScatterPlotConfigurator(data_source=TEST_DF,
                                          plot_title="Plot")
         config.x_col_name = "a"
         config.y_col_name = "b"
+        config.z_col_name = "d"
+
+        self.model._add_new_plot(config)
+        self.assert_plot_created(renderer_type=ScatterPlot,
+                                 num_renderers=NUM_D_VALUES)
+        plot_desc = self.model.contained_plots[0]
+        self.assertEqual(plot_desc.x_col_name, "a")
+        self.assertEqual(plot_desc.y_col_name, "b")
+        self.assertEqual(plot_desc.z_col_name, "d")
+        self.assertEqual(plot_desc.plot_title, "Plot")
+
+    def test_add_cmap_scatter(self):
+        config = ScatterPlotConfigurator(data_source=TEST_DF,
+                                         plot_title="Plot")
+        config.x_col_name = "a"
+        config.y_col_name = "b"
+        config.z_col_name = "e"
+
         self.model._add_new_plot(config)
         self.assert_plot_created(renderer_type=ScatterPlot)
         plot_desc = self.model.contained_plots[0]
         self.assertEqual(plot_desc.x_col_name, "a")
         self.assertEqual(plot_desc.y_col_name, "b")
+        self.assertEqual(plot_desc.z_col_name, "e")
         self.assertEqual(plot_desc.plot_title, "Plot")
 
     def test_add_multi_histograms(self):
@@ -166,17 +232,17 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertEqual(plot_desc.x_col_name, "b")
         self.assertEqual(plot_desc.plot_title, "Plot 2")
 
-    def test_change_style_color_1_plot(self):
-        config = ScatterPlotConfigurator(data_source=TEST_DF,
-                                         plot_title="Plot")
-        config.x_col_name = "a"
-        config.y_col_name = "b"
-        self.model._add_new_plot(config)
+
+@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
+
+    def test_change_style_color_1_scatter(self):
+        self.model._add_new_plot(self.config3)
         self.assert_plot_created(renderer_type=ScatterPlot)
         plot_desc = self.model.contained_plots[0]
         style = plot_desc.plot_config.plot_style
-        self.assertEqual(plot_desc.plot.plots[DEFAULT_RENDERER_NAME][0].color,
-                         DEFAULT_RENDERER_COLOR)
+        renderer = plot_desc.plot_factory.renderers[DEFAULT_RENDERER_NAME]
+        self.assertEqual(renderer.color, DEFAULT_RENDERER_COLOR)
 
         style.renderer_styles[0].color = "red"
         with self.assertTraitChanges(self.model, "contained_plots[]"):
@@ -184,8 +250,24 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
 
         self.assertNotIn(plot_desc, self.model.contained_plots)
         plot_desc = self.model.contained_plots[0]
-        self.assertEqual(plot_desc.plot.plots[DEFAULT_RENDERER_NAME][0].color,
-                         "red")
+        renderer = plot_desc.plot_factory.renderers[DEFAULT_RENDERER_NAME]
+        self.assertEqual(renderer.color, "red")
+
+    def test_change_style_color_colored_scatter(self):
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+        rend_styles = desc.plot_config.plot_style.renderer_styles
+        colors = [style.color for style in rend_styles]
+        self.assertEqual(len(colors), len(set(colors)))
+
+        style = rend_styles[1]
+        style.color = "blue"
+        with self.assertTraitChanges(self.model, "contained_plots[]"):
+            desc.style_edited = True
+
+        plot_desc = self.model.contained_plots[0]
+        renderer = plot_desc.plot.components[1]
+        self.assertEqual(renderer.color, "blue")
 
     def test_change_style_hist_num_bin_2_plot(self):
         """ Edit style button works: style does change and plot gets replaced.
@@ -193,14 +275,15 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.model._add_new_plot(self.config)
         self.model._add_new_plot(self.config2)
 
-        plot_desc1 = self.model.contained_plots[0]
-        plot_desc2 = self.model.contained_plots[1]
+        plot_desc1, plot_desc2 = self.model.contained_plots
 
         style = plot_desc2.plot_config.plot_style
-        bar_renderer2 = plot_desc2.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer2 = plot_desc2.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer2.fill_color, DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc2.plot.data.arrays["a"]), 10)
-        bar_renderer1 = plot_desc1.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer1 = plot_desc1.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer1.fill_color, DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc1.plot.data.arrays["a"]), 10)
 
@@ -211,7 +294,8 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
             plot_desc2.style_edited = True
 
         self.assertIn(plot_desc1, self.model.contained_plots)
-        bar_renderer1 = plot_desc1.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer1 = plot_desc1.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer1.fill_color,
                          DEFAULT_RENDERER_COLOR)
         self.assertEqual(len(plot_desc1.plot.data.arrays["a"]), 10)
@@ -220,7 +304,8 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertNotIn(plot_desc2, self.model.contained_plots)
         # and the new one that replaced it has the new properties requested:
         new_plot_desc2 = self.model.contained_plots[1]
-        bar_renderer2 = new_plot_desc2.plot.plots[DEFAULT_RENDERER_NAME][0]
+        bar_renderer2 = new_plot_desc2.plot_factory.renderers[
+            DEFAULT_RENDERER_NAME]
         self.assertEqual(bar_renderer2.fill_color, "red")
         self.assertEqual(len(new_plot_desc2.plot.data.arrays["a"]), 20)
 
@@ -252,7 +337,7 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.model._add_new_plot(self.config)
 
         plot = self.model.contained_plots[0].plot
-        plot_high = plot.index_mapper.range.high
+        plot_high = plot.x_axis.mapper.range.high
         self.assertEqual(self.config.plot_style.x_axis_style.range_high,
                          plot_high)
         self.assertEqual(self.config.plot_style.x_axis_style.auto_range_high,
@@ -271,8 +356,45 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertNotIn(plot_desc1, self.model.contained_plots)
         # and the new one that replaced it has the new properties requested:
         new_plot_desc1 = self.model.contained_plots[0]
-        plot_high = new_plot_desc1.plot.index_mapper.range.high
+        plot_high = new_plot_desc1.plot.x_axis.mapper.range.high
         self.assertAlmostEqual(plot_high, 6.5)
+
+    def test_change_style_y_axis(self):
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+        rend_styles = desc.plot_config.plot_style.renderer_styles
+        self.assertFalse(hasattr(desc.plot, "second_y_axis"))
+        renderer = desc.plot.components[1]
+        self.assert_renderer_aligned(renderer, desc.plot.y_axis, dim="value")
+
+        style = rend_styles[1]
+        style.orientation = "right"
+        desc.style_edited = True
+        # Recollect the descriptor since it was replaced:
+        desc = self.model.contained_plots[0]
+        self.assertTrue(hasattr(desc.plot, "second_y_axis"))
+        self.assert_renderer_aligned(renderer, desc.plot.second_y_axis,
+                                     dim="value")
+
+    def test_change_style_y_axis_back(self):
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+        rend_styles = desc.plot_config.plot_style.renderer_styles
+        self.assertFalse(hasattr(desc.plot, "second_y_axis"))
+
+        style = rend_styles[1]
+        style.orientation = "right"
+        desc.style_edited = True
+        desc = self.model.contained_plots[0]
+        self.assertTrue(hasattr(desc.plot, "second_y_axis"))
+
+        style.orientation = "left"
+        desc.style_edited = True
+        desc = self.model.contained_plots[0]
+        renderer = desc.plot.components[1]
+        self.assert_renderer_aligned(renderer, desc.plot.y_axis,
+                                     dim="value")
+        self.assertFalse(hasattr(desc.plot, "second_y_axis"))
 
     def test_add_custom_plot_at_creation(self):
         cust_plot1 = self.create_custom_plot()
@@ -310,8 +432,6 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
         self.assertIn(cust_plot1, container.components)
 
     def test_add_custom_plot_as_descriptor_after_creation(self):
-        from pybleau.app.plotting.plot_config import BaseSinglePlotConfigurator
-
         model = DataFramePlotManager(data_source=TEST_DF)
 
         plot = self.create_custom_plot()
@@ -340,6 +460,16 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
 
     # Utility methods ---------------------------------------------------------
 
+    def assert_renderer_aligned(self, renderer, axis, dim="index"):
+        axis_range = axis.mapper.range
+        if dim == "index":
+            rend_range = renderer.index_mapper.range
+        else:
+            rend_range = renderer.value_mapper.range
+
+        self.assertEqual(rend_range.low, axis_range.low)
+        self.assertEqual(rend_range.high, axis_range.high)
+
     def create_custom_plot(self):
         cust_plot = Plot(ArrayPlotData(x=[1, 2, 3], y=[1, 2, 3]))
         cust_plot.plot(("x", "y"))
@@ -350,13 +480,7 @@ class TestPlotManagerAddUpdatePlots(TestCase, BasePlotManagerTools):
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
-class TestPlotManagerMultiContainerHandling(TestCase, BasePlotManagerTools):
-    def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
-        # Basic configurator for a histogram plot:
-        self.config = HistogramPlotConfigurator(data_source=TEST_DF,
-                                                plot_title="Plot")
-        self.config.x_col_name = "a"
+class TestPlotManagerMultiContainerHandling(BasePlotManagerTools, TestCase):
 
     def test_move_plot_to_new_row(self):
         config = self.config
@@ -540,9 +664,7 @@ class TestPlotManagerMultiContainerHandling(TestCase, BasePlotManagerTools):
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
-class TestPlotManagerCreateWithPlots(TestCase, BasePlotManagerTools):
-    def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
 
     def test_create_with_contained_plot_no_datasource(self):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
@@ -805,6 +927,26 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         self.assertEqual(data0[HISTOGRAM_Y_LABEL].sum(), len(TEST_DF) // 2)
         self.assertEqual(data1[HISTOGRAM_Y_LABEL].sum(), len(TEST_DF) // 2)
 
+    def test_update_line_on_data_update(self):
+
+        config = LinePlotConfigurator(data_source=TEST_DF,
+                                      plot_title="Plot")
+        config.x_col_name = "a"
+        config.y_col_name = "b"
+        self.model._add_new_plot(config)
+
+        self.assert_plot_created()
+        self.assert_renderer_data_is_from_df(TEST_DF)
+
+        plot = self.model.contained_plots[0].plot
+        new_df = self.model.data_source.query("a > 2")
+        self.model.data_source = new_df
+
+        # Make sure the plot still contains 1 renderer...
+        self.assertEqual(len(plot.components), 1)
+        # ... using the reduced data:
+        self.assert_renderer_data_is_from_df(new_df)
+
     def test_update_scatter_on_data_update(self):
 
         config = ScatterPlotConfigurator(data_source=TEST_DF,
@@ -814,17 +956,16 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         self.model._add_new_plot(config)
 
         self.assert_plot_created()
+        self.assert_renderer_data_is_from_df(TEST_DF)
 
-        chaco_plot = self.model.contained_plots[0].plot
-        data = chaco_plot.data
+        plot = self.model.contained_plots[0].plot
         new_df = self.model.data_source.query("a > 2")
-        with self.assertTraitChanges(data, "data_changed", 1):
-            self.model.data_source = new_df
+        self.model.data_source = new_df
 
-        # Make sure the basic scatter plot only has values above 2 for a:
-        self.assertEqual(set(data["a"]), {3, 4})
-        # Still 1 renderer:
-        self.assertEqual(len(chaco_plot.plots), 1)
+        # Make sure the plot still contains 1 renderer...
+        self.assertEqual(len(plot.components), 1)
+        # ... using the reduced data:
+        self.assert_renderer_data_is_from_df(new_df)
 
     def test_remove_data_on_colored_scatter(self):
         """ Test data/renderer updates when removing new data to data source
@@ -834,28 +975,15 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         self.model._add_new_plot(config)
 
         self.assert_plot_created()
-        chaco_plot = self.model.contained_plots[0].plot
-        data = chaco_plot.data
-        # Initial state of the aa key (col a, where col d equals 'a'):
-        assert_array_equal(data['aa'], np.array([1., 3., 2., 2., 3.]))
-        # Initial state of the ac key (col a, where col d equals 'c'):
-        assert_array_equal(data['ac'], np.array([1., 4., 4.]))
+        plot = self.model.contained_plots[0].plot
 
-        data_list = set(data.arrays.keys())
+        self.assert_renderer_data_consistent(plot, TEST_DF)
+
         new_df = self.model.data_source.query("a > 2")
-
         # Make sure that changing the source DF changes the data for all plots:
-        with self.assertTraitChanges(data, "data_changed", 1):
-            self.model.data_source = new_df
+        self.model.data_source = new_df
 
-        self.assertEqual(set(data.arrays.keys()), data_list)
-        # The 'aa' key has changed (col a, where col d equals 'a'):
-        assert_array_equal(data['aa'], np.array([3., 3.]))
-        # The 'ac' key has changed (col a, where col d equals 'c'):
-        assert_array_equal(data['ac'], np.array([4., 4.]))
-
-        # Same number of renderers though some have no data:
-        self.assertEqual(len(chaco_plot.plots), NUM_D_VALUES)
+        self.assert_renderer_data_consistent(plot, new_df)
 
     def test_add_data_on_colored_scatter(self):
         """ Test data/renderer updates when adding new data to data source
@@ -867,30 +995,39 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
                                          z_col_name="d")
         model._add_new_plot(config)
 
-        chaco_plot = model.contained_plots[0].plot
-        data = chaco_plot.data
-        # Initial state of the aa key (col a, where col d equals 'a'):
-        assert_array_equal(data['aa'], np.array([3., 3.]))
-        # Initial state of the ac key (col a, where col d equals 'c'):
-        assert_array_equal(data['ac'], np.array([4., 4.]))
+        plot = model.contained_plots[0].plot
 
-        data_list = set(data.arrays.keys())
+        self.assert_renderer_data_consistent(plot, reduced_df)
 
         # Make sure that changing the source DF changes the data for all plots:
-        with self.assertTraitChanges(data, "data_changed", 1):
-            model.data_source = TEST_DF
+        model.data_source = TEST_DF
 
-        # New datasets added now that the full DF is included"
-        self.assertGreater(set(data.arrays.keys()), data_list)
-
-        # The 'aa' key has changed (col a, where col d equals 'a'):
-        assert_array_equal(data['aa'], np.array([1., 3., 2., 2., 3.]))
-        # The 'ac' key has changed (col a, where col d equals 'c'):
-        assert_array_equal(data['ac'], np.array([1., 4., 4.]))
-
-        self.assertEqual(len(chaco_plot.plots), NUM_D_VALUES)
+        self.assert_renderer_data_consistent(plot, TEST_DF)
 
     # Helper utilities --------------------------------------------------------
+
+    def assert_renderer_data_consistent(self, plot, df, coloring_col="d"):
+        grp = df.groupby(by="d")
+        renderers = plot.components
+        for i, color in enumerate(sorted(set(df[coloring_col]))):
+            subdf = grp.get_group(color)
+            self.assert_renderer_data_is_from_df(subdf,
+                                                 renderer=renderers[i])
+
+        self.assertEqual(len(plot.components), len(set(df[coloring_col])))
+        for overlay in plot.overlays:
+            if isinstance(overlay, Legend):
+                self.assertEqual(set(overlay.plots.keys()),
+                                 set(df[coloring_col]))
+                break
+
+    def assert_renderer_data_is_from_df(self, df, renderer=None, index_key="a",
+                                        value_key="b"):
+        if renderer is None:
+            renderer = self.model.contained_plots[0].plot.components[0]
+
+        assert_array_equal(renderer.index._data, df[index_key].values)
+        assert_array_equal(renderer.value._data, df[value_key].values)
 
     def assert_plot_created(self, num_plots=1):
         self.assertEqual(len(self.model.contained_plots), num_plots)

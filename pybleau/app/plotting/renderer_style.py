@@ -15,11 +15,21 @@ DEFAULT_MARKER_SIZE = 6
 
 DEFAULT_LINE_WIDTH = 1.3
 
+STYLE_L_ORIENT = "left"
+
+STYLE_R_ORIENT = "right"
+
+REND_TYPE_LINE = "line"
+
+REND_TYPE_SCAT = "scatter"
+
+REND_TYPE_CMAP_SCAT = "cmap_scatter"
+
 
 class BaseRendererStyle(HasStrictTraits):
     """ Styling object for customizing scatter renderers.
     """
-    #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
+    #: Name of the renderer type, used to select the renderer factory.
     renderer_type = ""
 
     #: Name of the renderer as referenced in the plot container.
@@ -33,13 +43,21 @@ class BaseRendererStyle(HasStrictTraits):
     view_klass = Any(default_value=View)
 
     #: List of attributes to convert to kwargs for the Plot.plot method
-    dict_keys = List(Str)
+    dict_keys = List
 
     def to_plot_kwargs(self):
         """ Supports converting renderer styles into a dict of kwargs for the
-        Plot.plot() method.
+        renderer factory function/method.
         """
-        return {key: getattr(self, key) for key in self.dict_keys}
+        kwargs = {}
+        for key in self.dict_keys:
+            if isinstance(key, tuple):
+                key, target_key = key
+            else:
+                target_key = key
+
+            kwargs[target_key] = getattr(self, key)
+        return kwargs
 
 
 class BaseXYRendererStyle(BaseRendererStyle):
@@ -52,15 +70,7 @@ class BaseXYRendererStyle(BaseRendererStyle):
     alpha = Range(value=1., low=0., high=1.)
 
     #: Which y-axis to be displayed along
-    orientation = Enum(["left", "right"])
-
-    def traits_view(self):
-        view = self.view_klass(
-            VGroup(
-                *self.general_view_elements
-            ),
-        )
-        return view
+    orientation = Enum([STYLE_L_ORIENT, STYLE_R_ORIENT])
 
     # Traits property getter/setter -------------------------------------------
 
@@ -84,7 +94,7 @@ class ScatterRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing scatter renderers.
     """
     #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
-    renderer_type = "scatter"
+    renderer_type = REND_TYPE_SCAT
 
     #: The type of marker to use
     marker = Trait("circle", MarkerNameDict,
@@ -114,7 +124,7 @@ class ScatterRendererStyle(BaseXYRendererStyle):
 class CmapScatterRendererStyle(ScatterRendererStyle):
 
     #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
-    renderer_type = "cmap_scatter"
+    renderer_type = REND_TYPE_CMAP_SCAT
 
     #: Name of the palette to pick colors from in z direction
     color_palette = Enum(ALL_CHACO_PALETTES)
@@ -158,7 +168,7 @@ class CmapScatterRendererStyle(ScatterRendererStyle):
 class LineRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing line renderers.
     """
-    renderer_type = "line"
+    renderer_type = REND_TYPE_LINE
 
     line_width = Float(DEFAULT_LINE_WIDTH)
 
@@ -168,8 +178,8 @@ class LineRendererStyle(BaseXYRendererStyle):
         view = self.view_klass(
             VGroup(
                 HGroup(
-                    Item('line_width'),
-                    Item('line_style', style="custom"),
+                    Item('line_width', label="Line width"),
+                    Item('line_style', label="Line style", style="custom"),
                 ),
                 *self.general_view_elements
             ),
@@ -178,7 +188,8 @@ class LineRendererStyle(BaseXYRendererStyle):
 
     def _dict_keys_default(self):
         general_items = super(LineRendererStyle, self)._dict_keys_default()
-        return general_items + ["line_width", "line_style"]
+        new = [("line_width", "width"), ("line_style", "dash")]
+        return general_items + new
 
 
 class BarRendererStyle(BaseXYRendererStyle):

@@ -1,11 +1,11 @@
 import pandas as pd
 import logging
 from uuid import UUID
-import numpy as np
 
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
-from chaco.api import BasePlotContainer, HPlotContainer, Plot
+from chaco.api import BasePlotContainer, HPlotContainer, OverlayPlotContainer,\
+    Plot
 
 from app_common.std_lib.sys_utils import extract_traceback
 from app_common.chaco.constraints_plot_container_manager import \
@@ -16,9 +16,7 @@ from .plot_descriptor import CONTAINER_IDX_REMOVAL, CUSTOM_PLOT_TYPE, \
     PlotDescriptor
 from ..plotting.plot_config import BaseSinglePlotConfigurator
 from ..plotting.plot_factories import DEFAULT_FACTORIES, \
-    DISCONNECTED_SELECTION_COLOR, HistogramPlotFactory, ScatterPlotFactory, \
-    SELECTION_COLOR, SELECTION_METADATA_NAME
-from ..plotting.base_factories import DEFAULT_RENDERER_NAME
+    DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR, SELECTION_METADATA_NAME
 from ..plotting.api import HEATMAP_PLOT_TYPE
 from ..model.multi_canvas_manager import MultiCanvasManager
 
@@ -94,10 +92,9 @@ class DataFramePlotManager(DataElement):
         # Support passing a custom Chaco plot/container to the list of
         # contained plots:
         if "contained_plots" in traits:
-            for i, desc in enumerate(traits["contained_plots"]):
-                if isinstance(desc, BasePlotContainer):
-                    new_desc = embed_plot_in_desc(desc)
-                    traits["contained_plots"][i] = new_desc
+            contained_plots = self.preprocess_plot_list(
+                traits["contained_plots"])
+            traits["contained_plots"] = contained_plots
 
         super(DataFramePlotManager, self).__init__(**traits)
 
@@ -109,6 +106,44 @@ class DataFramePlotManager(DataElement):
         if self.source_analyzer:
             if self not in self.source_analyzer.plot_manager_list:
                 self.source_analyzer.plot_manager_list.append(self)
+
+    def clear_all_plots(self):
+        """ Remove all contained plots.
+        """
+        self.delete_plots(self.contained_plots)
+        self.contained_plots = []
+
+    def preprocess_plot_list(self, plot_list):
+        """ Pre-process the list of plots so they can be embedded in manager.
+
+        1. Expand MultiConfigurators into a list of single plot configurators.
+        2. Convert Chaco containers and raw Configurators into descriptors.
+        """
+        from ..plotting.multi_plot_config import BaseMultiPlotConfigurator
+
+        if not plot_list:
+            return
+
+        contained_plots = []
+        for i, desc in enumerate(plot_list):
+            if isinstance(desc, BasePlotContainer):
+                new_desc = embed_plot_in_desc(desc)
+                contained_plots.append(new_desc)
+            elif isinstance(desc, BaseMultiPlotConfigurator):
+                config_list = desc.to_config_list()
+                contained_plots += [PlotDescriptor.from_config(x)
+                                    for x in config_list]
+            elif isinstance(desc, PlotDescriptor) and \
+                    isinstance(desc.plot_config, BaseMultiPlotConfigurator):
+                config_list = desc.plot_config.to_config_list()
+                contained_plots += [PlotDescriptor.from_config(x)
+                                    for x in config_list]
+            elif isinstance(desc, BaseSinglePlotConfigurator):
+                contained_plots.append(PlotDescriptor.from_config(desc))
+            else:
+                contained_plots.append(desc)
+
+        return contained_plots
 
     # Public interface --------------------------------------------------------
 
@@ -196,10 +231,12 @@ class DataFramePlotManager(DataElement):
                     self._add_raw_plot(desc, position=i, list_op="replace")
             except Exception as e:
                 tb = extract_traceback()
-                msg = "Failed to recreate the plot number {} ({} of '{}' vs " \
-                      "'{}', z_col '{}').\nError was {}. Traceback was:\n{}"
-                msg = msg.format(i, desc.plot_type, desc.x_col_name,
-                                 desc.y_col_name, desc.z_col_name, e, tb)
+                msg = "Failed to recreate the plot number {} ({} named {} of "\
+                      "'{}' vs '{}', z_col '{}').\nError was {}. Traceback " \
+                      "was:\n{}"
+                msg = msg.format(i, desc.plot_type, desc.plot_title,
+                                 desc.x_col_name, desc.y_col_name,
+                                 desc.z_col_name, e, tb)
                 logger.error(msg)
                 self.failed_plots.append(desc)
 
@@ -282,7 +319,8 @@ class DataFramePlotManager(DataElement):
             position = self.next_plot_id
 
         factory = self._factory_from_config(config)
-        plot, desc = factory.generate_plot()
+        desc = factory.generate_plot()
+        plot = desc["plot"]
         if initial_creation:
             self._initialize_config_plot_ranges(config, plot)
         else:
@@ -329,9 +367,10 @@ class DataFramePlotManager(DataElement):
     def _initialize_config_plot_ranges(self, config, plot):
         """ Initialize the styler's range attributes from the created plot.
         """
+        # Collect the plot instance which holds the mappers to initialize from:
         if isinstance(plot, HPlotContainer):
             for comp in plot.components:
-                if isinstance(comp, Plot):
+                if isinstance(comp, OverlayPlotContainer):
                     plot = comp
                     break
 
@@ -341,10 +380,14 @@ class DataFramePlotManager(DataElement):
         """ Apply the styler's range attributes to the created plot.
         """
         style = config.plot_style
-        plot.index_mapper.range.low = style.x_axis_style.range_low
-        plot.index_mapper.range.high = style.x_axis_style.range_high
-        plot.value_mapper.range.low = style.y_axis_style.range_low
-        plot.value_mapper.range.high = style.y_axis_style.range_high
+        # Collect the plot instance which holds the mappers to apply to:
+        if isinstance(plot, HPlotContainer):
+            for comp in plot.components:
+                if isinstance(comp, OverlayPlotContainer):
+                    plot = comp
+                    break
+
+        style.apply_axis_ranges(plot)
 
     def _factory_from_config(self, config):
         """ Return plot factory capable of building a plot described by config.
@@ -426,7 +469,7 @@ class DataFramePlotManager(DataElement):
         self.data_source = self.source_analyzer.filtered_df
 
     def _data_source_changed(self, new_df):
-        """ Change the data source: update plot data & descriptions as needed.
+        """ Change the data source: update non-frozen plots.
 
         We can't rebuild the plots, because they are currently inserted in the
         enable container.
@@ -435,60 +478,48 @@ class DataFramePlotManager(DataElement):
          should we try to detect situations when a full rebuilding isn't
          necessary.
         """
-        for desc in self.contained_plots:
-            if desc.frozen or desc.plot is None:
+        contained_plots = self.contained_plots
+        for plot_desc in contained_plots:
+            if plot_desc.frozen or plot_desc.plot is None:
                 # The plot is not created yet or set to not change: skip
                 continue
 
+            # Keep a filter in sync:
             if self.source_analyzer:
-                desc.data_filter = self.source_analyzer.filter_exp
+                plot_desc.data_filter = self.source_analyzer.filter_exp
             else:
-                desc.data_filter = ""
+                plot_desc.data_filter = ""
 
-            config = desc.plot_config
+            config = plot_desc.plot_config
             config.data_source = new_df
-            old_factory = desc.plot_factory
-            factory = self._factory_from_config(config)
+            factory = plot_desc.plot_factory
 
-            # Rebuild the factory with all the required data ------------------
+            # Create a new factory to see what datasets need to be
+            # added/removed:
+            new_factory = self._factory_from_config(config)
 
-            new_plotdata = factory.plot_data.arrays
-            old_plotdata = desc.plot.data.arrays
-            new_data_added = set(new_plotdata.keys()) - set(old_plotdata.keys())  # noqa
+            new_data = new_factory.plot_data.arrays
+            existing_data = factory.plot_data.arrays
+            removed_datasets = set(existing_data.keys()) - set(new_data.keys())
 
-            # If some keys are missing in the new ArrayPlotData, set them as
-            # empty arrays so their renderers update too:
-            for key in set(old_plotdata.keys()) - set(new_plotdata.keys()):
-                new_plotdata[key] = np.array([])
+            # Update data and existing renderers
+            factory.plot_data.update_data(new_data)
+            factory.update_renderers_from_data(removed=removed_datasets)
 
-            desc.plot.data.update_data(new_plotdata)
+            # Add new renderers
+            new_descs = []
+            new_styles = []
+            desc_list = new_factory.renderer_desc
+            style_list = new_factory.plot_style.renderer_styles
+            existing_renderers = {(desc['x'], desc['y']) for desc in
+                                  factory.renderer_desc}
+            for desc, style in zip(desc_list, style_list):
+                if (desc['x'], desc['y']) not in existing_renderers:
+                    new_descs.append(desc)
+                    new_styles.append(style)
 
-            # If new data was added, add missing renderers --------------------
-
-            if isinstance(factory, ScatterPlotFactory) and new_data_added:
-                styles = factory.plot_style.renderer_styles
-                for style, renderer_desc in zip(styles, factory.renderer_desc):
-                    if renderer_desc in old_factory.renderer_desc:
-                        continue
-
-                    desc.plot.plot(
-                        (renderer_desc["x"], renderer_desc["y"]),
-                        type=style.renderer_type,
-                        name=renderer_desc["name"], **style.to_plot_kwargs()
-                    )
-
-            # Plot type specific updates --------------------------------------
-
-            elif isinstance(factory, HistogramPlotFactory):
-                x_arr = new_df[desc.x_col_name]
-                num_bins = factory.plot_style.num_bins
-                _, edges = factory.build_hist_data(desc.x_col_name, x_arr,
-                                                   num_bins)
-                # Recompute the bar width since bin edges changed
-                bar_width = factory.compute_bar_width(edges, num_bins)
-                desc.plot.plots[DEFAULT_RENDERER_NAME].bar_width = bar_width
-
-            desc.plot_factory = factory
+            factory.append_new_renderers(desc_list=new_descs,
+                                         styles=new_styles)
 
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):

@@ -5,7 +5,9 @@ from __future__ import print_function, division
 import logging
 
 from traits.api import Constant
-from chaco.api import ColorBar, DataRange1D, LinearMapper
+from chaco.api import ColorBar, DataRange1D, LinearMapper, PlotAxis
+
+from app_common.chaco.plot_factory import create_contour_plot, create_img_plot
 
 from .plot_config import HEATMAP_PLOT_TYPE
 from .base_factories import DEFAULT_RENDERER_NAME, StdXYPlotFactory
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class HeatmapPlotFactory(StdXYPlotFactory):
-    """ Factory to build a heatmap plot.
+    """ Factory to build a plot with a heatmap renderer.
     """
     plot_type = Constant(HEATMAP_PLOT_TYPE)
 
@@ -57,16 +59,31 @@ class HeatmapPlotFactory(StdXYPlotFactory):
         self.plot_style.colorbar_high = z_arr.max()
 
     def add_renderers(self, plot):
+        if not len(self.plot_style.renderer_styles) == 1:
+            msg = "Only 1 renderer supported in image plots."
+            raise ValueError(msg)
+
         renderer_style = self.plot_style.renderer_styles[0]
-        renderer = plot.img_plot(TWO_D_DATA_NAME,
-                                 **renderer_style.to_plot_kwargs())[0]
-        self.generate_colorbar(renderer, plot)
+        data = self.plot_data.get_data(TWO_D_DATA_NAME)
+        renderer = create_img_plot(data=data,
+                                   **renderer_style.to_plot_kwargs())
+        plot.add(renderer)
+        plot.x_axis = PlotAxis(component=renderer,
+                               orientation="bottom")
+        plot.y_axis = PlotAxis(component=renderer,
+                               orientation="left")
+        plot.underlays.append(plot.x_axis)
+        plot.underlays.append(plot.y_axis)
+
         if self.plot_style.contour_style.add_contours:
             self.generate_contours(plot)
 
-    def generate_colorbar(self, renderer, plot):
+    def generate_colorbar(self, desc):
         """ Generate the colorbar to be displayed along side the main plot.
         """
+        plot = desc["plot"]
+        renderer = plot.components[0]
+
         colormap = renderer.color_mapper
         # Constant mapper for the color bar so that the colors stay the same
         # even when data changes
@@ -93,9 +110,14 @@ class HeatmapPlotFactory(StdXYPlotFactory):
         renderer_style = self.plot_style.renderer_styles[0]
         xbounds = renderer_style.xbounds
         ybounds = renderer_style.ybounds
-        plot.contour_plot(TWO_D_DATA_NAME, type="line",
-                          xbounds=xbounds, ybounds=ybounds,
-                          levels=self.plot_style.contour_style.contour_levels,
-                          styles=self.plot_style.contour_style.contour_styles,
-                          widths=self.plot_style.contour_style.contour_widths,
-                          alpha=self.plot_style.contour_style.contour_alpha)
+
+        data = self.plot_data.get_data(TWO_D_DATA_NAME)
+        renderer = create_contour_plot(
+            data=data, type="line", xbounds=xbounds, ybounds=ybounds,
+            levels=self.plot_style.contour_style.contour_levels,
+            styles=self.plot_style.contour_style.contour_styles,
+            widths=self.plot_style.contour_style.contour_widths,
+            alpha=self.plot_style.contour_style.contour_alpha
+        )
+
+        plot.add(renderer)

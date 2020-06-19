@@ -30,7 +30,7 @@ class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
 
 class plotDescriptorDeSerializer(dataElementDeSerializer):
 
-    protocol_version = 1
+    protocol_version = 2
 
     def _klass_default(self):
         from pybleau.app.model.plot_descriptor import PlotDescriptor
@@ -116,6 +116,13 @@ class scatterRendererStyleDeSerializer(dataElementDeSerializer):
         return ScatterRendererStyle
 
 
+class cmapScatterRendererStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.renderer_style import \
+            CmapScatterRendererStyle
+        return CmapScatterRendererStyle
+
+
 class barRendererStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.renderer_style import BarRendererStyle
@@ -150,3 +157,10 @@ class contourStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.contour_style import ContourStyle
         return ContourStyle
+
+
+class plotContainerStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.plot_container_style import \
+            PlotContainerStyle
+        return PlotContainerStyle

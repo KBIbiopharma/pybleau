@@ -1,11 +1,12 @@
 
 from chaco.base_plot_container import BasePlotContainer
 from traits.api import Any, Bool, Button, Enum, Event, HasStrictTraits, \
-    Instance, Int, Str
+    Instance, Str
 
 from pybleau.app.plotting.plot_config import BasePlotConfigurator
 from pybleau.app.plotting.base_factories import BasePlotFactory
 from ..plotting.api import PLOT_TYPES
+from ..utils.string_definitions import CMAP_SCATTER_PLOT_TYPE
 
 CONTAINER_IDX_REMOVAL = "delete"
 
@@ -26,9 +27,6 @@ class PlotDescriptor(HasStrictTraits):
     # PlotManager.
     container_idx = Any
 
-    #: Number of dimensions, that's number of columns involved to make the plot
-    ndim = Int
-
     #: Filter expression applied to the source_data to build this plot
     data_filter = Str
 
@@ -42,7 +40,7 @@ class PlotDescriptor(HasStrictTraits):
     plot_factory = Instance(BasePlotFactory)
 
     #: Type of plot
-    plot_type = Enum(PLOT_TYPES + [CUSTOM_PLOT_TYPE])
+    plot_type = Enum(PLOT_TYPES + [CMAP_SCATTER_PLOT_TYPE, CUSTOM_PLOT_TYPE])
 
     #: Title of the plot
     plot_title = Str
@@ -76,6 +74,10 @@ class PlotDescriptor(HasStrictTraits):
 
     #: Event triggered if the plot's styling is changed and plot needs updating
     style_edited = Event
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(plot_config=config)
 
     # Traits listeners --------------------------------------------------------
 

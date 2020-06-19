@@ -6,7 +6,7 @@ from __future__ import print_function, division
 import numpy as np
 import logging
 
-from traits.api import Array, Constant, Instance, Int, Str
+from traits.api import Array, Constant, Instance, Str
 from chaco.api import ArrayPlotData
 
 from .plot_config import HIST_PLOT_TYPE
@@ -35,37 +35,30 @@ class HistogramPlotFactory(StdXYPlotFactory):
     >>> x = array([1, 2, 3, 2])
     >>> h = HistogramPlotFactory("age", x)
     >>> h.generate_plot()
-    (<chaco.plot.Plot at 0x12278a590>,
-     {'ndim': 1,
-      'plot': <chaco.plot.Plot at 0x12278a590>,
-      ...})
+    {'plot': <chaco.plot.Plot at 0x12278a590>,
+     ...}
 
     Or a style object can be passed:
     >>> plot_style = HistogramPlotStyle(alpha=0.5)
     >>> h = HistogramPlotFactory("age", x, plot_style=plot_style)
     >>> h.generate_plot()
-    (<chaco.plot.Plot at 0x12278a590>,
-     {'ndim': 1,
-      'plot': <chaco.plot.Plot at 0x12278a590>,
-      ...})
+    {'plot': <chaco.plot.Plot at 0x12278a590>,
+     ...}
 
     FIXME: Make this class a subclass of the BarPlotFactory!
+
+    TODO: support displaying a histogram for multiple datasets.
     """
     #: Label to display along the y-axis
     y_axis_title = Str(HISTOGRAM_Y_LABEL)
 
-    #: Plot type as used by Plot.plot
-    plot_type_name = Constant("bar")
-
     #: String description of the type of plot this generates
     plot_type = Constant(HIST_PLOT_TYPE)
-
-    #: Number of DF columns involved in making the plot
-    ndim = Int(1)
 
     #: Edges of the histogram bars
     bin_edges = Array
 
+    #: Plot styling object
     plot_style = Instance(HistogramPlotStyle, ())
 
     def __init__(self, x_arr=None, **traits):
@@ -140,6 +133,3 @@ class HistogramPlotFactory(StdXYPlotFactory):
         """ Chaco histogram building helper: compute the bar widths.
         """
         return bar_width_factor * (bin_edges[-1] - bin_edges[0]) / num_bins
-
-    def _plot_tools_default(self):
-        return {"zoom", "pan"}
