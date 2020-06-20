@@ -582,7 +582,7 @@ class DataFramePlotManager(DataElement):
         container = self.canvas_manager.get_container_for_plot(plot_desc)
         container.refresh_container()
 
-    @on_trait_change("contained_plots:second_y_axis_title", post_init=True)
+    @on_trait_change("contained_plots:secondary_y_axis_title", post_init=True)
     def update_plot_second_y_title(self, plot_desc, attr_name, old, new_title):
         container = self.canvas_manager.get_container_for_plot(plot_desc)
         plot = self._get_overlay_plot_cont_from_desc(plot_desc)
