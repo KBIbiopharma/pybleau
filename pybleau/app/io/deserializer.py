@@ -30,7 +30,7 @@ class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
 
 class plotDescriptorDeSerializer(dataElementDeSerializer):
 
-    protocol_version = 2
+    protocol_version = 1
 
     def _klass_default(self):
         from pybleau.app.model.plot_descriptor import PlotDescriptor
@@ -41,12 +41,6 @@ class scatterPlotConfiguratorDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
         from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
         return ScatterPlotConfigurator
-
-
-class singlescatterPlotStyleDeSerializer(dataElementDeSerializer):
-    def _klass_default(self):
-        from pybleau.app.plotting.plot_style import SingleScatterPlotStyle
-        return SingleScatterPlotStyle
 
 
 class linePlotConfiguratorDeSerializer(dataElementDeSerializer):
@@ -147,9 +141,15 @@ class axisStyleDeSerializer(dataElementDeSerializer):
         return AxisStyle
 
 
+class baseXYPlotStyleDeSerializer(dataElementDeSerializer):
+    def _klass_default(self):
+        from pybleau.app.plotting.plot_style import BaseXYPlotStyle
+        return BaseXYPlotStyle
+
+
 class baseColorXYPlotStyleDeSerializer(dataElementDeSerializer):
     def _klass_default(self):
-        from pybleau.app.plotting.bar_plot_style import BaseColorXYPlotStyle
+        from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle
         return BaseColorXYPlotStyle
 
 
