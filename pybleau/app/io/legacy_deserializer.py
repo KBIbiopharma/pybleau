@@ -1,4 +1,9 @@
 
+from .deserializer import singleLinePlotStyleDeSerializer, \
+    singleScatterPlotStyleDeSerializer, plotDescriptorDeSerializer
+from ..plotting.plot_config import DEFAULT_CONFIGS, DEFAULT_STYLES
+
+
 class plotDescriptorDeSerializer_v0(plotDescriptorDeSerializer):
 
     protocol_version = 0
@@ -25,13 +30,23 @@ class plotDescriptorDeSerializer_v0(plotDescriptorDeSerializer):
         return instance
 
 
-class plotDescriptorDeSerializer_v1(plotDescriptorDeSerializer):
+class scatterPlotStyleDeSerializer(singleScatterPlotStyleDeSerializer):
+    """ Legacy class which was renamed.
+    """
+    protocol_version = 0
 
-    protocol_version = 1
 
-    def get_instance(self, constructor_data):
-        constructor_data['kwargs'].pop("ndim")
-        instance = super(plotDescriptorDeSerializer_v1, self).get_instance(
-            constructor_data
-        )
-        return instance
+class linePlotStyleDeSerializer(singleLinePlotStyleDeSerializer):
+    """ Legacy class which was renamed.
+    """
+    protocol_version = 0
+
+
+LEGACY_DESERIALIZER_MAP = {
+    "plotDescriptor": {
+        0: plotDescriptorDeSerializer_v0,
+    },
+    "scatterPlotStyle": {0: scatterPlotStyleDeSerializer},
+    "linePlotStyle": {0: linePlotStyleDeSerializer},
+}
+

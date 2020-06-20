@@ -93,7 +93,7 @@ class BaseXYRendererStyle(BaseRendererStyle):
 class ScatterRendererStyle(BaseXYRendererStyle):
     """ Styling object for customizing scatter renderers.
     """
-    #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
+    #: Type of the renderer
     renderer_type = REND_TYPE_SCAT
 
     #: The type of marker to use
@@ -123,7 +123,7 @@ class ScatterRendererStyle(BaseXYRendererStyle):
 
 class CmapScatterRendererStyle(ScatterRendererStyle):
 
-    #: Name of the renderer type, as understood by `chaco.Plot.plot()`.
+    #: Type of the renderer
     renderer_type = REND_TYPE_CMAP_SCAT
 
     #: Name of the palette to pick colors from in z direction
