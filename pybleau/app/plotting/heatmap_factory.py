@@ -5,7 +5,7 @@ from __future__ import print_function, division
 import logging
 
 from traits.api import Constant
-from chaco.api import PlotAxis
+from chaco.api import ImagePlot, PlotAxis
 
 from app_common.chaco.plot_factory import create_contour_plot, create_img_plot
 
@@ -14,6 +14,8 @@ from .base_factories import CmapedXYPlotFactoryMixin, DEFAULT_RENDERER_NAME, \
     StdXYPlotFactory
 
 TWO_D_DATA_NAME = "img_data"
+
+CONTOUR_PLOT_NAME = "contour_renderer"
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,7 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
         renderer = create_img_plot(data=data,
                                    **renderer_style.to_plot_kwargs())
         plot.add(renderer)
+        self.renderers[TWO_D_DATA_NAME] = renderer
         plot.x_axis = PlotAxis(component=renderer,
                                orientation="bottom")
         plot.y_axis = PlotAxis(component=renderer,
@@ -94,3 +97,7 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
         )
 
         plot.add(renderer)
+        self.renderers[CONTOUR_PLOT_NAME] = renderer
+
+    def is_colormapped_renderer(self, renderer):
+        return isinstance(renderer, ImagePlot)

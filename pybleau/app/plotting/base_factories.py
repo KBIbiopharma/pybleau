@@ -589,15 +589,16 @@ class CmapedXYPlotFactoryMixin(HasStrictTraits):
     def _get_cmap_renderer(self):
         renderers = self.renderers.values()
         cmap_renderers = [rend for rend in renderers
-                          if hasattr(rend, "color_mapper")]
+                          if self.is_colormapped_renderer(rend)]
         if len(cmap_renderers) > 1:
             msg = "Unable to generate a colorbar since there are {}" \
                   " color mapped renderers.".format(len(cmap_renderers))
-            logger.warning(msg)
+            logger.exception(msg)
+            raise ValueError(msg)
         elif len(cmap_renderers) == 0:
             msg = "No color mapped renderer found: no colorbar to make."
-            logger.warning(msg)
-            return
+            logger.exception(msg)
+            raise ValueError(msg)
 
         return cmap_renderers[0]
 
@@ -605,10 +606,6 @@ class CmapedXYPlotFactoryMixin(HasStrictTraits):
         """ Colorbar generated: embed it together with plot & replace in desc.
         """
         plot = desc["plot"]
-        # Make more room for labels
-        plot.padding_right = 5
-        plot.padding_top = 25
-
         container = HPlotContainer(
             **self.plot_style.container_style.to_traits()
         )
@@ -617,3 +614,6 @@ class CmapedXYPlotFactoryMixin(HasStrictTraits):
                                        for comp in container.components])
         container.bgcolor = "transparent"
         desc["plot"] = container
+
+    def is_colormapped_renderer(self, renderer):
+        return hasattr(renderer, "color_mapper")
