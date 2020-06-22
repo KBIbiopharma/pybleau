@@ -16,7 +16,6 @@ from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
 from app_common.chaco.plot_factory import create_cmap_scatter_plot
 
 from .plot_config import CMAP_SCATTER_PLOT_TYPE, SCATTER_PLOT_TYPE
-from .renderer_style import REND_TYPE_CMAP_SCAT
 from .base_factories import StdXYPlotFactory
 
 SELECTION_COLOR = "red"
