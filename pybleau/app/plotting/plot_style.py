@@ -12,7 +12,7 @@ from ..utils.chaco_colors import ALL_MPL_PALETTES
 from .axis_style import AxisStyle
 from .title_style import TitleStyle
 from .renderer_style import BaseRendererStyle, LineRendererStyle, \
-    ScatterRendererStyle
+    ScatterRendererStyle, STYLE_R_ORIENT
 from ..utils.chaco_colors import generate_chaco_colors
 from ..utils.string_definitions import DEFAULT_DIVERG_PALETTE
 from .plot_container_style import PlotContainerStyle
@@ -141,7 +141,7 @@ class BaseXYPlotStyle(HasTraits):
 
     def _get__second_y_axis_present(self):
         for style in self.renderer_styles:
-            if style.orientation == "right":
+            if style.orientation == STYLE_R_ORIENT:
                 return True
 
         return False
