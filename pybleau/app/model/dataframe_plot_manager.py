@@ -601,6 +601,8 @@ class DataFramePlotManager(DataElement):
             plot_desc.plot.components[1]._axis.title = new_title
 
             container.refresh_container()
+        else:
+            plot_desc.plot_factory.legend.title = new_title
 
     @on_trait_change("index_selected")
     def sync_all_inspectors(self):
