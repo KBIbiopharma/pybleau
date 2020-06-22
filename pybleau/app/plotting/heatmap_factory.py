@@ -100,4 +100,6 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
         self.renderers[CONTOUR_PLOT_NAME] = renderer
 
     def is_colormapped_renderer(self, renderer):
+        # Need to override parent implementation because the optional contour
+        # plot renderer also has a color mapper:
         return isinstance(renderer, ImagePlot)
