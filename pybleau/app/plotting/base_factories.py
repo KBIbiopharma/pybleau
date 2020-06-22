@@ -362,8 +362,11 @@ class StdXYPlotFactory(BasePlotFactory):
 
         return desc
 
+    def generate_colorbar(self, desc):
+        pass
+
     def add_colorbar(self, desc):
-        """ Need a colorbar. Embed it together with plot & replace in desc.
+        """ Colorbar generated: embed it together with plot & replace in desc.
         """
         plot = desc["plot"]
         # Make more room for labels
