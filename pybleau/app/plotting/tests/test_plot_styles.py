@@ -6,7 +6,7 @@ from app_common.apptools.testing_utils import assert_obj_gui_works
 # try:
 from chaco.api import ArrayPlotData, Plot
 import pandas as pd
-from pybleau.app.api import PlotDescriptor, DataFramePlotManager
+from pybleau.app.api import DataFramePlotManager
 from pybleau.app.plotting.api import ScatterPlotConfigurator
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
 from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
