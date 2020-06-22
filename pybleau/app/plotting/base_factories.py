@@ -126,12 +126,13 @@ class BasePlotFactory(HasStrictTraits):
         """ Set the x axis title, tick labels and styles.
         """
         x_labels = self.x_labels
+        x_axis_style = self.plot_style.x_axis_style
         if x_labels:
             # if x_labels set, axis labels shouldn't be generated from the
             # numerical values but by the values stored in x_labels (for e.g.
             # when x_axis_col contains strings)
-            label_rotation = self.plot_style.x_axis_style.label_rotation
-            if self.plot_style.x_axis_style.show_all_labels:
+            label_rotation = x_axis_style.label_rotation
+            if x_axis_style.show_all_labels:
                 label_positions = range(len(x_labels))
                 tick_generator = ShowAllTickGenerator(
                     positions=label_positions
@@ -151,8 +152,8 @@ class BasePlotFactory(HasStrictTraits):
             plot.underlays.insert(0, bottom_axis)
 
         plot.x_axis.title = self.x_axis_title
-        font_size = self.plot_style.x_axis_style.title_style.font_size
-        font_name = self.plot_style.x_axis_style.title_style.font_name
+        font_size = x_axis_style.title_style.font_size
+        font_name = x_axis_style.title_style.font_name
         plot.x_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def _set_y_axis_labels(self, plot):
@@ -401,8 +402,13 @@ class StdXYPlotFactory(BasePlotFactory):
     def add_renderer(self, plot, desc, style, first_renderer=False):
         """ Create and add to plot renderer described by desc and style.
 
-        FIXME: use log/lin styling info to create axis objects.
+        If the axis it is displayed along isn't already created, create it too,
+        and add it to the plot's list of underlays.
+
+        TODO: use log/lin styling info to adjust mappers in axis objects.
         """
+        # Modify the renderer's style's name so it is displayed in the style
+        # view:
         style.renderer_name = desc["name"]
         renderer = self._build_renderer(desc, style)
         plot.add(renderer)
