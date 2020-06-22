@@ -5,19 +5,22 @@ from __future__ import print_function, division
 import logging
 
 from traits.api import Constant
-from chaco.api import ColorBar, DataRange1D, LinearMapper, PlotAxis
+from chaco.api import ImagePlot, PlotAxis
 
 from app_common.chaco.plot_factory import create_contour_plot, create_img_plot
 
 from .plot_config import HEATMAP_PLOT_TYPE
-from .base_factories import DEFAULT_RENDERER_NAME, StdXYPlotFactory
+from .base_factories import CmapedXYPlotFactoryMixin, DEFAULT_RENDERER_NAME, \
+    StdXYPlotFactory
 
 TWO_D_DATA_NAME = "img_data"
+
+CONTOUR_PLOT_NAME = "contour_renderer"
 
 logger = logging.getLogger(__name__)
 
 
-class HeatmapPlotFactory(StdXYPlotFactory):
+class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
     """ Factory to build a plot with a heatmap renderer.
     """
     plot_type = Constant(HEATMAP_PLOT_TYPE)
@@ -68,6 +71,7 @@ class HeatmapPlotFactory(StdXYPlotFactory):
         renderer = create_img_plot(data=data,
                                    **renderer_style.to_plot_kwargs())
         plot.add(renderer)
+        self.renderers[TWO_D_DATA_NAME] = renderer
         plot.x_axis = PlotAxis(component=renderer,
                                orientation="bottom")
         plot.y_axis = PlotAxis(component=renderer,
@@ -77,34 +81,6 @@ class HeatmapPlotFactory(StdXYPlotFactory):
 
         if self.plot_style.contour_style.add_contours:
             self.generate_contours(plot)
-
-    def generate_colorbar(self, desc):
-        """ Generate the colorbar to be displayed along side the main plot.
-        """
-        plot = desc["plot"]
-        renderer = plot.components[0]
-
-        colormap = renderer.color_mapper
-        # Constant mapper for the color bar so that the colors stay the same
-        # even when data changes
-        colorbar_range = DataRange1D(low=self.plot_style.colorbar_low,
-                                     high=self.plot_style.colorbar_high)
-        index_mapper = LinearMapper(range=colorbar_range)
-        self.colorbar = ColorBar(index_mapper=index_mapper,
-                                 color_mapper=colormap,
-                                 padding_top=plot.padding_top,
-                                 padding_bottom=plot.padding_bottom,
-                                 padding_right=40,
-                                 padding_left=5,
-                                 resizable='v',
-                                 orientation='v',
-                                 width=30)
-        font_size = self.plot_style.color_axis_title_style.font_size
-        font_name = self.plot_style.color_axis_title_style.font_name
-        font = '{} {}'.format(font_name, font_size)
-        axis_kw = dict(title=self.z_axis_title, orientation="right",
-                       title_angle=190.0, title_font=font)
-        self.colorbar._axis.trait_set(**axis_kw)
 
     def generate_contours(self, plot):
         renderer_style = self.plot_style.renderer_styles[0]
@@ -121,3 +97,7 @@ class HeatmapPlotFactory(StdXYPlotFactory):
         )
 
         plot.add(renderer)
+        self.renderers[CONTOUR_PLOT_NAME] = renderer
+
+    def is_colormapped_renderer(self, renderer):
+        return isinstance(renderer, ImagePlot)
