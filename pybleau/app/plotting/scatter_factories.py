@@ -7,8 +7,8 @@ import pandas as pd
 import logging
 
 from traits.api import Constant, Tuple
-from chaco.api import ArrayPlotData, ColorBar, ColormappedSelectionOverlay, \
-    LinearMapper, ScatterInspectorOverlay
+from chaco.api import ArrayPlotData, ColormappedSelectionOverlay, \
+    ScatterInspectorOverlay
 from chaco.tools.api import RangeSelection, RangeSelectionOverlay
 
 from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
@@ -16,8 +16,7 @@ from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
 from app_common.chaco.plot_factory import create_cmap_scatter_plot
 
 from .plot_config import CMAP_SCATTER_PLOT_TYPE, SCATTER_PLOT_TYPE
-from .renderer_style import REND_TYPE_CMAP_SCAT
-from .base_factories import StdXYPlotFactory
+from .base_factories import CmapedXYPlotFactoryMixin, StdXYPlotFactory
 
 SELECTION_COLOR = "red"
 
@@ -101,7 +100,7 @@ class ScatterPlotFactory(StdXYPlotFactory):
         return base_tools | {"click_selector", "hover"}
 
 
-class CmapScatterPlotFactory(ScatterPlotFactory):
+class CmapScatterPlotFactory(ScatterPlotFactory, CmapedXYPlotFactoryMixin):
     """ Factory to build a single scatter plot colormapped by a z array.
 
     See Also
@@ -117,7 +116,7 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
     def generate_colorbar(self, desc):
         """ Generate the colorbar to display along side the plot.
         """
-        plot = desc["plot"]
+        colorbar = self.colorbar
         cmap_renderer = self._get_cmap_renderer()
         select_tool = "colorbar_selector" in self.plot_tools
         if select_tool:
@@ -126,15 +125,12 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
                                                     selection_type="mask")
             cmap_renderer.overlays.append(selection)
 
-        # Create the actual colorbar:
-        colorbar = create_cmap_scatter_colorbar(cmap_renderer.color_mapper,
-                                                select_tool=select_tool)
-        colorbar.plot = cmap_renderer
-        colorbar._axis.orientation = "right"
-        colorbar._axis.title = self.z_axis_title
-        colorbar.padding_top = plot.padding_top
-        colorbar.padding_bottom = plot.padding_bottom
-        self.colorbar = colorbar
+            colorbar.tools.append(RangeSelection(component=colorbar))
+            overlay = RangeSelectionOverlay(component=colorbar,
+                                            border_color="white",
+                                            alpha=0.8,
+                                            fill_color="lightgray")
+            colorbar.overlays.append(overlay)
 
     def _build_renderer(self, desc, style):
         x = self.plot_data.get_data(desc["x"])
@@ -177,21 +173,3 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
 
     def _plot_tools_default(self):
         return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
-
-
-def create_cmap_scatter_colorbar(color_mapper, select_tool=False):
-    """ Create a fancy colorbar for a CMAP scatter plot, with a selection tool.
-    """
-    colorbar = ColorBar(index_mapper=LinearMapper(range=color_mapper.range),
-                        color_mapper=color_mapper,
-                        orientation='v',
-                        resizable='v',
-                        width=30,
-                        padding=20)
-    if select_tool:
-        colorbar.tools.append(RangeSelection(component=colorbar))
-        colorbar.overlays.append(RangeSelectionOverlay(component=colorbar,
-                                                       border_color="white",
-                                                       alpha=0.8,
-                                                       fill_color="lightgray"))
-    return colorbar

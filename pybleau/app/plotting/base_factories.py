@@ -20,8 +20,9 @@ import pandas as pd
 import logging
 
 from traits.api import Any, Dict, HasStrictTraits, Instance, List, Set, Str
-from chaco.api import ArrayPlotData, ColorBar, HPlotContainer, LabelAxis, \
-    OverlayPlotContainer, PlotAxis, PlotLabel  # LinearMapper, LogMapper,
+from chaco.api import ArrayPlotData, ColorBar, DataRange1D, HPlotContainer, \
+    LabelAxis, LinearMapper, OverlayPlotContainer, PlotAxis, PlotLabel
+# LogMapper,
 from chaco.plot_factory import add_default_axes
 from chaco.tools.api import BroadcasterTool, LegendTool, PanTool, ZoomTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
@@ -209,9 +210,6 @@ class StdXYPlotFactory(BasePlotFactory):
     #: Renderer list, mapped to their name
     renderers = Dict
 
-    #: Colorbar built to describe the data's z dimension (for select types)
-    colorbar = Instance(ColorBar)
-
     #: Optional legend object to be added to the future plot
     legend = Instance(Legend)
 
@@ -361,26 +359,6 @@ class StdXYPlotFactory(BasePlotFactory):
             self.add_colorbar(desc)
 
         return desc
-
-    def generate_colorbar(self, desc):
-        pass
-
-    def add_colorbar(self, desc):
-        """ Colorbar generated: embed it together with plot & replace in desc.
-        """
-        plot = desc["plot"]
-        # Make more room for labels
-        plot.padding_right = 5
-        plot.padding_top = 25
-
-        container = HPlotContainer(
-            **self.plot_style.container_style.to_traits()
-        )
-        container.add(plot, self.colorbar)
-        container.padding_right = sum([comp.padding_right
-                                       for comp in container.components])
-        container.bgcolor = "transparent"
-        desc["plot"] = container
 
     def add_tools(self, plot):
         """ Add all tools specified in plot_tools list to provided plot.
@@ -572,3 +550,72 @@ class StdXYPlotFactory(BasePlotFactory):
 
     def _plot_tools_default(self):
         return {"zoom", "pan", "legend"}
+
+
+class CmapedXYPlotFactoryMixin(HasStrictTraits):
+    """ Mixing class to add to a factory to support color-mapped renderer.
+    """
+    #: Colorbar built to describe the data's z dimension (for select types)
+    colorbar = Instance(ColorBar)
+
+    def generate_colorbar(self, desc):
+        """ Generate the colorbar to be displayed along side the main plot.
+        """
+        plot = desc["plot"]
+        renderer = self._get_cmap_renderer()
+
+        colormap = renderer.color_mapper
+        # Constant mapper for the color bar so that the colors stay the same
+        # even when data changes
+        colorbar_range = DataRange1D(low=self.plot_style.colorbar_low,
+                                     high=self.plot_style.colorbar_high)
+        index_mapper = LinearMapper(range=colorbar_range)
+        self.colorbar = ColorBar(index_mapper=index_mapper,
+                                 color_mapper=colormap,
+                                 padding_top=plot.padding_top,
+                                 padding_bottom=plot.padding_bottom,
+                                 padding_right=40,
+                                 padding_left=5,
+                                 resizable='v',
+                                 orientation='v',
+                                 width=30)
+        font_size = self.plot_style.color_axis_title_style.font_size
+        font_name = self.plot_style.color_axis_title_style.font_name
+        font = '{} {}'.format(font_name, font_size)
+        axis_kw = dict(title=self.z_axis_title, orientation="right",
+                       title_angle=190.0, title_font=font)
+        self.colorbar._axis.trait_set(**axis_kw)
+
+    def _get_cmap_renderer(self):
+        styles = self.plot_style.renderer_styles
+        renderers = self.renderers.values()
+        cmap_renderers = [(rend, style) for rend, style in
+                          zip(renderers, styles)
+                          if hasattr(rend, "color_mapper")]
+        if len(cmap_renderers) > 1:
+            msg = "Unable to generate a colorbar since there are more than 1" \
+                  " color mapped renderer."
+            logger.warning(msg)
+        elif len(cmap_renderers) == 0:
+            msg = "No color mapped renderer, no colorbar to make."
+            logger.warning(msg)
+            return
+
+        return cmap_renderers[0]
+
+    def add_colorbar(self, desc):
+        """ Colorbar generated: embed it together with plot & replace in desc.
+        """
+        plot = desc["plot"]
+        # Make more room for labels
+        plot.padding_right = 5
+        plot.padding_top = 25
+
+        container = HPlotContainer(
+            **self.plot_style.container_style.to_traits()
+        )
+        container.add(plot, self.colorbar)
+        container.padding_right = sum([comp.padding_right
+                                       for comp in container.components])
+        container.bgcolor = "transparent"
+        desc["plot"] = container
