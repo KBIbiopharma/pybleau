@@ -37,7 +37,8 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.plotting.scatter_factories import \
         SELECTION_METADATA_NAME, DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR
     from pybleau.app.plotting.base_factories import DEFAULT_RENDERER_NAME
-    from pybleau.app.plotting.renderer_style import DEFAULT_RENDERER_COLOR
+    from pybleau.app.plotting.renderer_style import DEFAULT_RENDERER_COLOR, \
+        STYLE_R_ORIENT
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
     from pybleau.app.utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
         HEATMAP_PLOT_TYPE
@@ -81,6 +82,12 @@ class BasePlotManagerTools(UnittestTools):
         self.config4.x_col_name = "a"
         self.config4.y_col_name = "b"
         self.config4.z_col_name = "d"
+
+        self.config5 = ScatterPlotConfigurator(data_source=TEST_DF,
+                                               plot_title="Plot")
+        self.config5.x_col_name = "a"
+        self.config5.y_col_name = "b"
+        self.config5.z_col_name = "e"
 
     # Helper utilities --------------------------------------------------------
 
@@ -187,12 +194,7 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         self.assertEqual(plot_desc.plot_title, "Plot")
 
     def test_add_colored_scatter(self):
-        config = ScatterPlotConfigurator(data_source=TEST_DF,
-                                         plot_title="Plot")
-        config.x_col_name = "a"
-        config.y_col_name = "b"
-        config.z_col_name = "d"
-
+        config = self.config4
         self.model._add_new_plot(config)
         self.assert_plot_created(renderer_type=ScatterPlot,
                                  num_renderers=NUM_D_VALUES)
@@ -203,12 +205,7 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         self.assertEqual(plot_desc.plot_title, "Plot")
 
     def test_add_cmap_scatter(self):
-        config = ScatterPlotConfigurator(data_source=TEST_DF,
-                                         plot_title="Plot")
-        config.x_col_name = "a"
-        config.y_col_name = "b"
-        config.z_col_name = "e"
-
+        config = self.config5
         self.model._add_new_plot(config)
         self.assert_plot_created(renderer_type=ScatterPlot)
         plot_desc = self.model.contained_plots[0]
@@ -231,6 +228,78 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         plot_desc = self.model.contained_plots[1]
         self.assertEqual(plot_desc.x_col_name, "b")
         self.assertEqual(plot_desc.plot_title, "Plot 2")
+
+    def test_add_custom_plot_at_creation(self):
+        cust_plot1 = self.create_custom_plot()
+        model = DataFramePlotManager(data_source=TEST_DF,
+                                     contained_plots=[cust_plot1])
+        self.assertEqual(len(model.contained_plots), 1)
+        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
+        desc = model.contained_plots[0]
+        self.assertTrue(desc.frozen)
+        self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
+        self.assertEqual(desc.plot_title, "Blah")
+        self.assertEqual(desc.x_axis_title, "x")
+        self.assertEqual(desc.y_axis_title, "y")
+        self.assertIs(desc.plot, cust_plot1)
+        self.assertEqual(len(model.contained_plot_map), 1)
+        container = model.canvas_manager.container_managers[0].container
+        self.assertIn(cust_plot1, container.components)
+
+    def test_add_custom_plot_after_creation(self):
+        model = DataFramePlotManager(data_source=TEST_DF)
+
+        cust_plot1 = self.create_custom_plot()
+        model.add_new_plot(CUSTOM_PLOT_TYPE, cust_plot1)
+        self.assertEqual(len(model.contained_plots), 1)
+        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
+        desc = model.contained_plots[0]
+        self.assertTrue(desc.frozen)
+        self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
+        self.assertEqual(desc.plot_title, "Blah")
+        self.assertEqual(desc.x_axis_title, "x")
+        self.assertEqual(desc.y_axis_title, "y")
+        self.assertIs(desc.plot, cust_plot1)
+        self.assertEqual(len(model.contained_plot_map), 1)
+        container = model.canvas_manager.container_managers[0].container
+        self.assertIn(cust_plot1, container.components)
+
+    def test_add_custom_plot_as_descriptor_after_creation(self):
+        model = DataFramePlotManager(data_source=TEST_DF)
+
+        plot = self.create_custom_plot()
+        cust_plot_desc = PlotDescriptor(
+            plot_type=CUSTOM_PLOT_TYPE, plot=plot,
+            plot_config=BaseSinglePlotConfigurator(),
+            plot_title=plot.title,
+            x_axis_title=plot.x_axis.title,
+            y_axis_title=plot.y_axis.title, frozen=True,
+        )
+
+        model.add_new_plot(CUSTOM_PLOT_TYPE, cust_plot_desc)
+        self.assertEqual(len(model.contained_plots), 1)
+        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
+        desc = model.contained_plots[0]
+        self.assertIs(desc, cust_plot_desc)
+        self.assertTrue(desc.frozen)
+        self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
+        self.assertEqual(desc.plot_title, "Blah")
+        self.assertEqual(desc.x_axis_title, "x")
+        self.assertEqual(desc.y_axis_title, "y")
+        self.assertIs(desc.plot, plot)
+        self.assertEqual(len(model.contained_plot_map), 1)
+        container = model.canvas_manager.container_managers[0].container
+        self.assertIn(plot, container.components)
+
+    # Supporting methods ------------------------------------------------------
+
+    def create_custom_plot(self):
+        cust_plot = Plot(ArrayPlotData(x=[1, 2, 3], y=[1, 2, 3]))
+        cust_plot.plot(("x", "y"))
+        cust_plot.title = "Blah"
+        cust_plot.x_axis.title = "x"
+        cust_plot.y_axis.title = "y"
+        return cust_plot
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
@@ -396,67 +465,89 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
                                      dim="value")
         self.assertFalse(hasattr(desc.plot, "second_y_axis"))
 
-    def test_add_custom_plot_at_creation(self):
-        cust_plot1 = self.create_custom_plot()
-        model = DataFramePlotManager(data_source=TEST_DF,
-                                     contained_plots=[cust_plot1])
-        self.assertEqual(len(model.contained_plots), 1)
-        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
-        desc = model.contained_plots[0]
-        self.assertTrue(desc.frozen)
-        self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
-        self.assertEqual(desc.plot_title, "Blah")
-        self.assertEqual(desc.x_axis_title, "x")
-        self.assertEqual(desc.y_axis_title, "y")
-        self.assertIs(desc.plot, cust_plot1)
-        self.assertEqual(len(model.contained_plot_map), 1)
-        container = model.canvas_manager.container_managers[0].container
-        self.assertIn(cust_plot1, container.components)
+    def test_change_plot_title(self):
+        """ Plot title updated in the table triggers an update of actual plot.
+        """
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+        self.assertIn(desc.plot.title, desc.plot.overlays)
 
-    def test_add_custom_plot_after_creation(self):
-        model = DataFramePlotManager(data_source=TEST_DF)
+        self.assertEqual(desc.plot.title.text, desc.plot_title)
+        with self.assertTraitChanges(desc.plot.title, "text"):
+            desc.plot_title += "2"
 
-        cust_plot1 = self.create_custom_plot()
-        model.add_new_plot(CUSTOM_PLOT_TYPE, cust_plot1)
-        self.assertEqual(len(model.contained_plots), 1)
-        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
-        desc = model.contained_plots[0]
-        self.assertTrue(desc.frozen)
-        self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
-        self.assertEqual(desc.plot_title, "Blah")
-        self.assertEqual(desc.x_axis_title, "x")
-        self.assertEqual(desc.y_axis_title, "y")
-        self.assertIs(desc.plot, cust_plot1)
-        self.assertEqual(len(model.contained_plot_map), 1)
-        container = model.canvas_manager.container_managers[0].container
-        self.assertIn(cust_plot1, container.components)
+        self.assertEqual(desc.plot.title.text, desc.plot_title)
 
-    def test_add_custom_plot_as_descriptor_after_creation(self):
-        model = DataFramePlotManager(data_source=TEST_DF)
+    def test_change_x_axis_title(self):
+        """ X-axis title updated in table triggers an update of actual plot.
+        """
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+        self.assertIn(desc.plot.x_axis, desc.plot.underlays)
 
-        plot = self.create_custom_plot()
-        cust_plot_desc = PlotDescriptor(
-            plot_type=CUSTOM_PLOT_TYPE, plot=plot,
-            plot_config=BaseSinglePlotConfigurator(),
-            plot_title=plot.title,
-            x_axis_title=plot.x_axis.title,
-            y_axis_title=plot.y_axis.title, frozen=True,
-        )
+        self.assertEqual(desc.plot.x_axis.title, desc.x_axis_title)
+        with self.assertTraitChanges(desc.plot.x_axis, "title"):
+            desc.x_axis_title += "2"
 
-        model.add_new_plot(CUSTOM_PLOT_TYPE, cust_plot_desc)
-        self.assertEqual(len(model.contained_plots), 1)
-        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
-        desc = model.contained_plots[0]
-        self.assertIs(desc, cust_plot_desc)
-        self.assertTrue(desc.frozen)
-        self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
-        self.assertEqual(desc.plot_title, "Blah")
-        self.assertEqual(desc.x_axis_title, "x")
-        self.assertEqual(desc.y_axis_title, "y")
-        self.assertIs(desc.plot, plot)
-        self.assertEqual(len(model.contained_plot_map), 1)
-        container = model.canvas_manager.container_managers[0].container
-        self.assertIn(plot, container.components)
+        self.assertEqual(desc.plot.x_axis.title, desc.x_axis_title)
+
+    def test_change_y_axis_title(self):
+        """ Y-axis title updated in table triggers an update of actual plot.
+        """
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+        self.assertIn(desc.plot.y_axis, desc.plot.underlays)
+
+        self.assertEqual(desc.plot.y_axis.title, desc.y_axis_title)
+        with self.assertTraitChanges(desc.plot.y_axis, "title"):
+            desc.y_axis_title += "2"
+
+        self.assertEqual(desc.plot.y_axis.title, desc.y_axis_title)
+
+    def test_change_second_y_axis_title(self):
+        """ Y-axis title updated in table triggers an update of actual plot.
+        """
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+        rend_style = desc.plot_config.plot_style.renderer_styles[1]
+        rend_style.orientation = STYLE_R_ORIENT
+        desc.style_edited = True
+        # desc recreated so re-collect it:
+        desc = self.model.contained_plots[0]
+        plot = desc.plot
+        self.assertTrue(hasattr(plot, "second_y_axis"))
+        self.assertIn(plot.second_y_axis, plot.underlays)
+
+        self.assertEqual(plot.second_y_axis.title, desc.secondary_y_axis_title)
+        with self.assertTraitChanges(plot.second_y_axis, "title"):
+            desc.secondary_y_axis_title += "2"
+
+        self.assertEqual(plot.second_y_axis.title, desc.secondary_y_axis_title)
+
+    def test_change_z_axis_title_regular_scatter(self):
+        """ Z-axis title updated in table triggers an update of actual plot.
+        """
+        self.model._add_new_plot(self.config4)
+        desc = self.model.contained_plots[0]
+
+        self.assertEqual(desc.plot_factory.legend.title, desc.z_axis_title)
+        with self.assertTraitChanges(desc.plot_factory.legend, "title"):
+            desc.z_axis_title += "2"
+
+        self.assertEqual(desc.plot_factory.legend.title, desc.z_axis_title)
+
+    def test_change_z_axis_title_cmap_scatter(self):
+        """ Z-axis title updated in table triggers an update of actual plot.
+        """
+        self.model._add_new_plot(self.config5)
+        desc = self.model.contained_plots[0]
+
+        colorbar = desc.plot.components[1]
+        self.assertEqual(colorbar._axis.title, desc.z_axis_title)
+        with self.assertTraitChanges(colorbar._axis, "title"):
+            desc.z_axis_title += "2"
+
+        self.assertEqual(colorbar._axis.title, desc.z_axis_title)
 
     # Utility methods ---------------------------------------------------------
 
@@ -469,14 +560,6 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
 
         self.assertEqual(rend_range.low, axis_range.low)
         self.assertEqual(rend_range.high, axis_range.high)
-
-    def create_custom_plot(self):
-        cust_plot = Plot(ArrayPlotData(x=[1, 2, 3], y=[1, 2, 3]))
-        cust_plot.plot(("x", "y"))
-        cust_plot.title = "Blah"
-        cust_plot.x_axis.title = "x"
-        cust_plot.y_axis.title = "y"
-        return cust_plot
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)

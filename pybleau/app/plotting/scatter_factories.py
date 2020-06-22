@@ -114,6 +114,21 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
     #: Plot type as selected by user
     plot_type = Constant(CMAP_SCATTER_PLOT_TYPE)
 
+    def _get_cmap_renderer(self):
+        renderers = self.renderers.values()
+        cmap_renderers = [rend for rend in renderers
+                          if hasattr(rend, "color_mapper")]
+        if len(cmap_renderers) > 1:
+            msg = "Unable to generate a colorbar since there are more than 1" \
+                  " color mapped renderer."
+            logger.warning(msg)
+        elif len(cmap_renderers) == 0:
+            msg = "No color mapped renderer, no colorbar to make."
+            logger.warning(msg)
+            return
+
+        return cmap_renderers[0]
+
     def generate_colorbar(self, desc):
         """ Generate the colorbar to display along side the plot.
         """
