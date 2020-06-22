@@ -128,6 +128,9 @@ class DataFramePlotManagerView(ModelView):
                                        cell_color="lightgrey",
                                        label="Y column"),
             'y_axis_title': ObjectColumn(name='y_axis_title'),
+            'secondary_y_axis_title': ObjectColumn(
+                name='secondary_y_axis_title', label="Second. Y title"
+            ),
             "z_col_name": ObjectColumn(name='z_col_name', style="readonly",
                                        cell_color="lightgrey",
                                        label="Z column (color)"),
@@ -252,8 +255,8 @@ class DataFramePlotManagerView(ModelView):
     def _plot_control_cols_default(self):
         return ["id", "plot_title", 'edit_plot_style', "visible", "frozen",
                 "plot_type", "x_col_name", 'x_axis_title', "y_col_name",
-                'y_axis_title', "z_col_name", 'z_axis_title', "data_filter",
-                'container_idx']
+                'y_axis_title', "secondary_y_axis_title", "z_col_name",
+                'z_axis_title', "data_filter", 'container_idx']
 
 
 class PlotTypeSelector(HasStrictTraits):

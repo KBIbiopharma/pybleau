@@ -49,4 +49,3 @@ LEGACY_DESERIALIZER_MAP = {
     "scatterPlotStyle": {0: scatterPlotStyleDeSerializer},
     "linePlotStyle": {0: linePlotStyleDeSerializer},
 }
-
