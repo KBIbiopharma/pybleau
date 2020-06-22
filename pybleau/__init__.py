@@ -12,8 +12,8 @@ try:
         with open(_build_file) as f:
             __build__ = f.read().strip()
     else:
-        # If no build_res_net_model file, we are on a dev machine: display the
-        # git hash instead:
+        # If no build file, we are on a dev machine: try to display the git
+        # hash instead:
         git_hash = check_output("git rev-parse --short HEAD", shell=True)
         __build__ = git_hash.strip()
 except Exception:
