@@ -116,6 +116,8 @@ class CmapScatterPlotFactory(ScatterPlotFactory, CmapedXYPlotFactoryMixin):
     def generate_colorbar(self, desc):
         """ Generate the colorbar to display along side the plot.
         """
+        super(CmapScatterPlotFactory, self).generate_colorbar(desc)
+
         colorbar = self.colorbar
         cmap_renderer = self._get_cmap_renderer()
         select_tool = "colorbar_selector" in self.plot_tools
