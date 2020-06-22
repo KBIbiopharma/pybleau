@@ -155,8 +155,8 @@ class BaseXYPlotStyle(HasTraits):
         self.trait_set(**renderer_traits)
 
         rend_names = [style.renderer_name for style in self.renderer_styles]
-        items = [self._make_group_for_renderer(trait, name)
-                 for trait, name in zip(renderer_traits.keys(), rend_names)]
+        items = [self._make_group_for_renderer(style_idx, renderer_name=name)
+                 for style_idx, name in enumerate(rend_names)]
 
         elemens = [
             Tabbed(
@@ -206,7 +206,7 @@ class BaseXYPlotStyle(HasTraits):
     # Private interface -------------------------------------------------------
 
     @staticmethod
-    def _make_group_for_renderer(trait_name, renderer_name=""):
+    def _make_group_for_renderer(style_idx, renderer_name=""):
         """ Build a TraitsUI element to display a renderer style.
 
         Parameters
@@ -218,6 +218,7 @@ class BaseXYPlotStyle(HasTraits):
             User visible name of the curve. Leave empty if only 1 renderer is
             included.
         """
+        trait_name = "renderer_{}".format(style_idx)
         return VGroup(
             Item(trait_name, editor=InstanceEditor(), style="custom",
                  show_label=False),
@@ -319,7 +320,7 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
     def update_renderer_colors(self):
         """ Based on number of renderers & palette, initialize renderer colors.
 
-        For colormapped renderers, pass the palette straight.
+        For color-mapped renderers, pass the palette straight.
         """
         num_renderer = len(self.renderer_styles)
         if num_renderer > 1 and not self.colorize_by_float:
