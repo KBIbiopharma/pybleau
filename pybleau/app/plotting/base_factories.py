@@ -587,17 +587,15 @@ class CmapedXYPlotFactoryMixin(HasStrictTraits):
         self.colorbar._axis.trait_set(**axis_kw)
 
     def _get_cmap_renderer(self):
-        styles = self.plot_style.renderer_styles
         renderers = self.renderers.values()
-        cmap_renderers = [(rend, style) for rend, style in
-                          zip(renderers, styles)
+        cmap_renderers = [rend for rend in renderers
                           if hasattr(rend, "color_mapper")]
         if len(cmap_renderers) > 1:
-            msg = "Unable to generate a colorbar since there are more than 1" \
-                  " color mapped renderer."
+            msg = "Unable to generate a colorbar since there are {}" \
+                  " color mapped renderers.".format(len(cmap_renderers))
             logger.warning(msg)
         elif len(cmap_renderers) == 0:
-            msg = "No color mapped renderer, no colorbar to make."
+            msg = "No color mapped renderer found: no colorbar to make."
             logger.warning(msg)
             return
 
