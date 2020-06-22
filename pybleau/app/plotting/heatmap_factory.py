@@ -10,7 +10,8 @@ from chaco.api import PlotAxis
 from app_common.chaco.plot_factory import create_contour_plot, create_img_plot
 
 from .plot_config import HEATMAP_PLOT_TYPE
-from .base_factories import CmapedXYPlotFactoryMixin, DEFAULT_RENDERER_NAME, StdXYPlotFactory
+from .base_factories import CmapedXYPlotFactoryMixin, DEFAULT_RENDERER_NAME, \
+    StdXYPlotFactory
 
 TWO_D_DATA_NAME = "img_data"
 
