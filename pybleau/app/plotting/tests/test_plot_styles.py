@@ -112,12 +112,16 @@ class TestPlotStyleAsView(TestCase):
         style = desc.plot_config.plot_style
         # Check view building works:
         elements = style._get_view_elements()
+        all_labels = set()
+        col_3_values = set(test_df["Col_3"].values)
         for group in elements[0].content[2].content:
             group_label = group.label
-            self.assertIn(group_label, test_df["Col_3"].values)
+            all_labels.add(group_label)
             trait_name = group.content[0].name
             rend_style = style.trait_get(trait_name)[trait_name]
             self.assertEqual(rend_style.renderer_name, group_label)
+
+        self.assertEqual(all_labels, col_3_values)
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
