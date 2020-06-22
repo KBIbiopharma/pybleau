@@ -118,20 +118,7 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
         """ Generate the colorbar to display along side the plot.
         """
         plot = desc["plot"]
-        styles = self.plot_style.renderer_styles
-        renderers = self.renderers.values()
-        cmap_renderers = [rend for rend, style in zip(renderers, styles)
-                          if style.renderer_type == REND_TYPE_CMAP_SCAT]
-        if len(cmap_renderers) > 1:
-            msg = "Unable to generate a colorbar since there are more than 1" \
-                  " cmap renderer."
-            logger.warning(msg)
-        elif len(cmap_renderers) == 0:
-            msg = "No cmap renderer, no colorbar to make."
-            logger.warning(msg)
-
-        cmap_renderer = cmap_renderers[0]
-
+        cmap_renderer = self._get_cmap_renderer()
         select_tool = "colorbar_selector" in self.plot_tools
         if select_tool:
             selection = ColormappedSelectionOverlay(cmap_renderer,
@@ -140,11 +127,11 @@ class CmapScatterPlotFactory(ScatterPlotFactory):
             cmap_renderer.overlays.append(selection)
 
         # Create the actual colorbar:
-
         colorbar = create_cmap_scatter_colorbar(cmap_renderer.color_mapper,
                                                 select_tool=select_tool)
         colorbar.plot = cmap_renderer
-        colorbar.title = self.z_axis_title
+        colorbar._axis.orientation = "right"
+        colorbar._axis.title = self.z_axis_title
         colorbar.padding_top = plot.padding_top
         colorbar.padding_bottom = plot.padding_bottom
         self.colorbar = colorbar
