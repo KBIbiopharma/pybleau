@@ -26,8 +26,7 @@ _VersionInfo = namedtuple("_VersionInfo", ["version", "build"])
 
 def _repr_version_info(self):
     """ __repr__ for a _VersionInfo object. """
-    return "version: {}, build: {}".format(self.version,
-                                                         self.build)
+    return "version: {}, build: {}".format(self.version, self.build)
 
 
 _VersionInfo.__repr__ = _repr_version_info
