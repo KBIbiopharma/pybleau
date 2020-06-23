@@ -524,6 +524,18 @@ class DataFramePlotManager(DataElement):
             factory.append_new_renderers(desc_list=new_descs,
                                          styles=new_styles)
 
+    @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
+                     "style_edit_requested", post_init=True)
+    def edit_style(self, manager, attr_name, new):
+        """ A factory requested its style to be edited. Launch dialog.
+        """
+        desc = None
+        for desc in self.contained_plots:
+            if desc.plot_factory.context_menu_manager is manager:
+                break
+
+        desc.edit_plot_style = True
+
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):
         """ Styling changed: update the corresponding plot
