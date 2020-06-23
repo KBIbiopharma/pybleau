@@ -394,7 +394,7 @@ class StdXYPlotFactory(BasePlotFactory):
                                            drag_button="right"))
             legend.tools.append(LegendHighlighter(component=legend))
 
-        if "menu_tool" in self.plot_tools:
+        if "context_menu" in self.plot_tools:
             self.context_menu_manager.target = self.plot
             menu = self.context_menu_manager.build_menu()
             context_menu = ContextMenuTool(component=self.plot,
@@ -569,7 +569,7 @@ class StdXYPlotFactory(BasePlotFactory):
     # Traits initialization methods -------------------------------------------
 
     def _plot_tools_default(self):
-        return {"zoom", "pan", "legend", "menu_tool"}
+        return {"zoom", "pan", "legend", "context_menu"}
 
 
 class CmapedXYPlotFactoryMixin(HasStrictTraits):
