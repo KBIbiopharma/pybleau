@@ -526,15 +526,19 @@ class DataFramePlotManager(DataElement):
 
     @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
                      "style_edit_requested", post_init=True)
-    def edit_style(self, manager, attr_name, new):
+    def action_edit_style_requested(self, manager, attr_name, new):
         """ A factory requested its style to be edited. Launch dialog.
         """
-        desc = None
-        for desc in self.contained_plots:
-            if desc.plot_factory.context_menu_manager is manager:
-                break
-
+        desc = self._get_desc_for_menu_manager(manager)
         desc.edit_plot_style = True
+
+    @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
+                     "delete_requested", post_init=True)
+    def action_delete_requested(self, manager, attr_name, new):
+        """ A factory requested its style to be edited. Launch dialog.
+        """
+        desc = self._get_desc_for_menu_manager(manager)
+        desc.container_idx = CONTAINER_IDX_REMOVAL
 
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):
@@ -659,6 +663,13 @@ class DataFramePlotManager(DataElement):
             self.sync_all_inspectors()
 
     # Private interface methods -----------------------------------------------
+
+    def _get_desc_for_menu_manager(self, manager):
+        desc = None
+        for desc in self.contained_plots:
+            if desc.plot_factory.context_menu_manager is manager:
+                break
+        return desc
 
     def _get_source_analyzer_id(self):
         return self.source_analyzer.uuid
