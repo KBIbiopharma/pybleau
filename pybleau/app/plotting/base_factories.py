@@ -358,7 +358,7 @@ class StdXYPlotFactory(BasePlotFactory):
                     plot_title=self.plot_title, x_col_name=self.x_col_name,
                     y_col_name=self.y_col_name, x_axis_title=self.x_axis_title,
                     y_axis_title=self.y_axis_title, z_col_name=self.z_col_name,
-                    z_axis_title=self.z_axis_title)
+                    z_axis_title=self.z_axis_title, plot_factory=self)
 
         if self.plot_style.container_style.include_colorbar:
             self.generate_colorbar(desc)
