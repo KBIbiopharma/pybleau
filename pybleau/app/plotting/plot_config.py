@@ -508,6 +508,9 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
         hue column as an ID variable (pandas terminology) so it can be used for
         splitting.
         """
+        if self.data_source is None:
+            return
+
         if self.columns_to_melt:
             if self.z_col_name:
                 return self.data_source.melt(id_vars=[self.z_col_name],
