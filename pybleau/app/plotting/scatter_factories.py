@@ -174,4 +174,5 @@ class CmapScatterPlotFactory(ScatterPlotFactory, CmapedXYPlotFactoryMixin):
     # Traits initialization methods -------------------------------------------
 
     def _plot_tools_default(self):
-        return {"zoom", "pan", "click_selector", "colorbar_selector", "hover"}
+        return {"zoom", "pan", "context_menu", "click_selector",
+                "colorbar_selector", "hover"}

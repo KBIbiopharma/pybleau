@@ -26,12 +26,14 @@ from chaco.api import ArrayPlotData, ColorBar, DataRange1D, HPlotContainer, \
 from chaco.plot_factory import add_default_axes
 from chaco.tools.api import BroadcasterTool, LegendTool, PanTool, ZoomTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
+from enable.tools.pyface.context_menu_tool import ContextMenuTool
 
 from app_common.chaco.overlay_plot_container_utils import align_renderers
 from app_common.chaco.plot_factory import create_bar_plot, \
     create_cmap_scatter_plot, create_line_plot, create_scatter_plot
 from app_common.chaco.legend import Legend, LegendHighlighter
 
+from .plot_context_menu_manager import PlotContextMenuManager
 from .plot_style import BaseXYPlotStyle
 from .renderer_style import STYLE_L_ORIENT, STYLE_R_ORIENT
 # from .axis_style import LINEAR_AXIS_STYLE, LOG_AXIS_STYLE
@@ -104,6 +106,9 @@ class BasePlotFactory(HasStrictTraits):
 
     #: Name(s) of the column(s) to display on mouse hover
     hover_col_names = List
+
+    #: Handling of context menu generation and events
+    context_menu_manager = Instance(PlotContextMenuManager, ())
 
     def generate_plot(self):
         raise NotImplementedError("Base class: use subclass.")
@@ -196,6 +201,7 @@ class BasePlotFactory(HasStrictTraits):
         title_label = PlotLabel(self.plot_title, component=plot, font=font,
                                 overlay_position="top")
         plot.overlays.append(title_label)
+        # Emulate chaco.Plot-like behavior:
         plot.title = title_label
 
 
@@ -353,7 +359,7 @@ class StdXYPlotFactory(BasePlotFactory):
                     plot_title=self.plot_title, x_col_name=self.x_col_name,
                     y_col_name=self.y_col_name, x_axis_title=self.x_axis_title,
                     y_axis_title=self.y_axis_title, z_col_name=self.z_col_name,
-                    z_axis_title=self.z_axis_title)
+                    z_axis_title=self.z_axis_title, plot_factory=self)
 
         if self.plot_style.container_style.include_colorbar:
             self.generate_colorbar(desc)
@@ -382,6 +388,20 @@ class StdXYPlotFactory(BasePlotFactory):
                 #  means the box plot mode won't display the blue box!
                 zoom = ZoomTool(component=plot, zoom_factor=1.25)
                 broadcaster.tools.append(zoom)
+
+        if "legend" in self.plot_tools and self.legend:
+            legend = self.legend
+            legend.tools.append(LegendTool(component=self.legend,
+                                           drag_button="right"))
+            legend.tools.append(LegendHighlighter(component=legend))
+
+        if "context_menu" in self.plot_tools:
+            self.context_menu_manager.target = self.plot
+            menu = self.context_menu_manager.build_menu()
+            context_menu = ContextMenuTool(component=self.plot,
+                                           menu_manager=menu)
+
+            self.plot.tools.append(context_menu)
 
     def add_renderers(self, plot):
         """ Add all renderers to provided plot container.
@@ -466,22 +486,20 @@ class StdXYPlotFactory(BasePlotFactory):
         y = self.plot_data.get_data(desc["y"])
         return renderer_maker(data=(x, y), **style.to_plot_kwargs())
 
-    def set_legend(self, plot, align="ur", padding=10, drag_button="right"):
+    def set_legend(self, plot, align="ur", padding=10):
         """ Add legend and make it relocatable & clickable if tools requested.
+
+        FIXME: Add control over legend labels.
         """
         # Make sure plot list in legend doesn't include error bar renderers:
         # legend_labels = [desc["name"] for desc in self.renderer_desc]
         legend = Legend(component=plot, padding=padding, align=align,
-                        title=self.z_axis_title)  # , labels=legend_labels
+                        title=self.z_axis_title)
         legend.plots = self.renderers
         legend.visible = True
         plot.overlays.append(legend)
+        # Emulate chaco.Plot-like behavior:
         self.legend = legend
-
-        if "legend" in self.plot_tools:
-            legend.tools.append(LegendTool(component=legend,
-                                           drag_button=drag_button))
-            legend.tools.append(LegendHighlighter(component=legend))
 
     # Post creation renderer management methods -------------------------------
 
@@ -555,7 +573,7 @@ class StdXYPlotFactory(BasePlotFactory):
     # Traits initialization methods -------------------------------------------
 
     def _plot_tools_default(self):
-        return {"zoom", "pan", "legend"}
+        return {"zoom", "pan", "legend", "context_menu"}
 
 
 class CmapedXYPlotFactoryMixin(HasStrictTraits):

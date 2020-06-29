@@ -143,8 +143,14 @@ class DataFramePlotManager(DataElement):
                                     for x in config_list]
             elif isinstance(desc, BaseSinglePlotConfigurator):
                 contained_plots.append(PlotDescriptor.from_config(desc))
-            else:
+            elif isinstance(desc, PlotDescriptor):
                 contained_plots.append(desc)
+            else:
+                msg = "Unsupported object type to provided a plot in a " \
+                      "DFPlotManager. Supported types are PlotDescriptor " \
+                      "instances or PlotConfigurator instances but a {} was " \
+                      "provided for item {}. Skipping...".format(type(desc), i)
+                logger.error(msg)
 
         return contained_plots
 
@@ -332,7 +338,6 @@ class DataFramePlotManager(DataElement):
         desc["id"] = str(position)
         # Store the config so it be recreated...
         desc["plot_config"] = config
-        desc["plot_factory"] = factory
         if self.source_analyzer:
             desc["data_filter"] = self.source_analyzer.filter_exp
         else:
@@ -497,7 +502,7 @@ class DataFramePlotManager(DataElement):
             config.data_source = new_df
             factory = plot_desc.plot_factory
 
-            # Create a new factory to see what datasets need to be
+            # Create a new factory to see what datasets/renderers need to be
             # added/removed:
             new_factory = self._factory_from_config(config)
 
@@ -523,6 +528,22 @@ class DataFramePlotManager(DataElement):
 
             factory.append_new_renderers(desc_list=new_descs,
                                          styles=new_styles)
+
+    @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
+                     "style_edit_requested", post_init=True)
+    def action_edit_style_requested(self, manager, attr_name, new):
+        """ A factory requested its style to be edited. Launch dialog.
+        """
+        desc = self._get_desc_for_menu_manager(manager)
+        desc.edit_plot_style = True
+
+    @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
+                     "delete_requested", post_init=True)
+    def action_delete_requested(self, manager, attr_name, new):
+        """ A factory requested its style to be edited. Launch dialog.
+        """
+        desc = self._get_desc_for_menu_manager(manager)
+        desc.container_idx = CONTAINER_IDX_REMOVAL
 
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):
@@ -595,14 +616,14 @@ class DataFramePlotManager(DataElement):
 
     @on_trait_change("contained_plots:z_axis_title", post_init=True)
     def update_plot_z_title(self, plot_desc, attr_name, old, new_title):
+        container = self.canvas_manager.get_container_for_plot(plot_desc)
         if plot_desc.plot_type in CMAP_PLOT_TYPES:
-            container = self.canvas_manager.get_container_for_plot(plot_desc)
             # Change the plot's colorbar:
             plot_desc.plot.components[1]._axis.title = new_title
-
-            container.refresh_container()
         else:
             plot_desc.plot_factory.legend.title = new_title
+
+        container.refresh_container()
 
     @on_trait_change("index_selected")
     def sync_all_inspectors(self):
@@ -648,6 +669,16 @@ class DataFramePlotManager(DataElement):
 
     # Private interface methods -----------------------------------------------
 
+    def _get_desc_for_menu_manager(self, manager):
+        desc = None
+        for desc in self.contained_plots:
+            if desc.plot_factory is None:
+                # Raw plot with no factory: no context menu defined for it.
+                continue
+            if desc.plot_factory.context_menu_manager is manager:
+                break
+        return desc
+
     def _get_source_analyzer_id(self):
         return self.source_analyzer.uuid
 
@@ -687,9 +718,7 @@ def embed_plot_in_desc(plot):
             y_axis_title=plot.y_axis.title, frozen=True
         )
     else:
-        msg = "Automatically embedding {} isn't supported. Please manually " \
-              "embed the plot into a PlotDescriptor before providing as the " \
-              "initial list of plots.".format(type(plot))
+        msg = "Automatically embedding {} isn't supported.".format(type(plot))
         logger.exception(msg)
         raise ValueError(msg)
 

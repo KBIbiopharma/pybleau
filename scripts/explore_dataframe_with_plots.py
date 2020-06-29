@@ -25,29 +25,25 @@ TEST_DF = DataFrame({"Col_1": [1, 2, 3, 4, 5, 6, 7, 8],
                      "Col_4": col4,
                      })
 
-config = HistogramPlotConfigurator(data_source=TEST_DF)
+config = HistogramPlotConfigurator(data_source=TEST_DF, plot_title="plot 0")
 config.x_col_name = "Col_4"
 
-config2 = BarPlotConfigurator(data_source=TEST_DF)
+config2 = BarPlotConfigurator(data_source=TEST_DF, plot_title="plot 1")
 config2.x_col_name = "Col_1"
 config2.y_col_name = "Col_2"
-desc2 = PlotDescriptor(plot_config=config2, plot_title="Plot 2")
 
-config3 = ScatterPlotConfigurator(data_source=TEST_DF)
+config3 = ScatterPlotConfigurator(data_source=TEST_DF, plot_title="plot 2")
 config3.x_col_name = "Col_1"
 config3.y_col_name = "Col_2"
-desc3 = PlotDescriptor(plot_config=config3, plot_title="Plot 3")
 
-config4 = ScatterPlotConfigurator(data_source=TEST_DF)
+config4 = ScatterPlotConfigurator(data_source=TEST_DF, plot_title="plot 3")
 config4.x_col_name = "Col_1"
 config4.y_col_name = "Col_2"
 config4.z_col_name = "Col_3"
-desc4 = PlotDescriptor(plot_config=config4, plot_title="Plot 4")
 
-config5 = LinePlotConfigurator(data_source=TEST_DF)
+config5 = LinePlotConfigurator(data_source=TEST_DF, plot_title="plot 4")
 config5.x_col_name = "Col_1"
 config5.y_col_name = "Col_2"
-desc5 = PlotDescriptor(plot_config=config5, plot_title="Plot 5")
 
 cust_plot1 = Plot(ArrayPlotData(x=[1, 2, 3], y=[1, 2, 3]))
 cust_plot1.plot(("x", "y"))
@@ -55,10 +51,9 @@ cust_plot1.title = "Blah"
 cust_plot1.x_axis.title = "x"
 cust_plot1.y_axis.title = "y"
 
-config6 = BarPlotConfigurator(data_source=TEST_DF)
+config6 = BarPlotConfigurator(data_source=TEST_DF, plot_title="plot 6")
 config6.x_col_name = "Col_3"
 config6.y_col_name = "Col_1"
-desc6 = PlotDescriptor(plot_config=config6, plot_title="Plot 6")
 
 config7 = MultiLinePlotConfigurator(data_source=TEST_DF)
 config7.x_col_name = "Col_1"
@@ -78,12 +73,12 @@ analyzer = DataFrameAnalyzer(source_df=TEST_DF)
 plot_manager = DataFramePlotManager(
     contained_plots=[
         config,
-        desc2,
-        desc3,
-        desc4,
-        desc5,
+        config2,
+        config3,
+        config4,
+        config5,
         cust_plot1,
-        desc6,
+        config6,
         desc7,
         desc8
     ],
