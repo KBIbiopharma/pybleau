@@ -31,7 +31,9 @@ class ImageReportElement(BaseReportElement):
         import dash_html_components as html
         import base64
 
-        img_content = open(self.filepath, 'rb').read()
+        with open(self.filepath, 'rb') as f:
+            img_content = f.read()
+
         encoded_image = base64.b64encode(img_content)
         img = html.Img(src='data:image/png;base64,{}'.format(
             encoded_image.decode())
