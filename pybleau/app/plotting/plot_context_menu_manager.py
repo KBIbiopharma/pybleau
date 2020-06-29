@@ -16,11 +16,14 @@ FILE_EXPORT_ACTION_NAME = "Export plot..."
 
 DELETE_ACTION_NAME = "Delete plot..."
 
+ALL_ACTIONS = [STYLE_EDITOR_ACTION_NAME, FILE_EXPORT_ACTION_NAME,
+               DELETE_ACTION_NAME]
+
 
 class PlotContextMenuManager(HasStrictTraits):
     target = Instance(OverlayPlotContainer)
 
-    action_list = List
+    action_list = List(ALL_ACTIONS)
 
     style_edit_requested = Event
 
@@ -65,7 +68,3 @@ class PlotContextMenuManager(HasStrictTraits):
             save_plot_to_file(self.target, filepath)
             logger.info("Plot saved to {}".format(filepath))
             open_file(filepath)
-
-    def _action_list_default(self):
-        return [STYLE_EDITOR_ACTION_NAME, FILE_EXPORT_ACTION_NAME,
-                DELETE_ACTION_NAME]

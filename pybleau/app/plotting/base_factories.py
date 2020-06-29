@@ -201,6 +201,7 @@ class BasePlotFactory(HasStrictTraits):
         title_label = PlotLabel(self.plot_title, component=plot, font=font,
                                 overlay_position="top")
         plot.overlays.append(title_label)
+        # Emulate chaco.Plot-like behavior:
         plot.title = title_label
 
 
@@ -348,10 +349,10 @@ class StdXYPlotFactory(BasePlotFactory):
 
         self.set_axis_labels(plot)
 
-        self.add_tools(plot)
-
         if len(self.renderer_desc) > 1:
             self.set_legend(plot)
+
+        self.add_tools(plot)
 
         # Build a description of the plot to build a PlotDescriptor
         desc = dict(plot_type=self.plot_type, plot=plot, visible=True,
@@ -487,14 +488,17 @@ class StdXYPlotFactory(BasePlotFactory):
 
     def set_legend(self, plot, align="ur", padding=10):
         """ Add legend and make it relocatable & clickable if tools requested.
+
+        FIXME: Add control over legend labels.
         """
         # Make sure plot list in legend doesn't include error bar renderers:
         # legend_labels = [desc["name"] for desc in self.renderer_desc]
         legend = Legend(component=plot, padding=padding, align=align,
-                        title=self.z_axis_title)  # , labels=legend_labels
+                        title=self.z_axis_title)
         legend.plots = self.renderers
         legend.visible = True
         plot.overlays.append(legend)
+        # Emulate chaco.Plot-like behavior:
         self.legend = legend
 
     # Post creation renderer management methods -------------------------------
