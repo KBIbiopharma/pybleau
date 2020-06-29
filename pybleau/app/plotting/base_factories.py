@@ -607,7 +607,7 @@ class CmapedXYPlotFactoryMixin(HasStrictTraits):
         font_name = self.plot_style.color_axis_title_style.font_name
         font = '{} {}'.format(font_name, font_size)
         axis_kw = dict(title=self.z_axis_title, orientation="right",
-                       title_angle=190.0, title_font=font)
+                       title_angle=90.0, title_font=font)
         self.colorbar._axis.trait_set(**axis_kw)
 
     def _get_cmap_renderer(self):
