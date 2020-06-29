@@ -8,6 +8,7 @@ from numpy.testing import assert_array_almost_equal
 from traits.testing.unittest_tools import UnittestTools
 
 try:
+    from enable.tools.pyface.context_menu_tool import ContextMenuTool
     from chaco.api import BarPlot, LinePlot, PlotGraphicsContext, \
         ScatterInspectorOverlay, ScatterPlot
     from chaco.tools.api import BetterSelectingZoom
@@ -27,11 +28,13 @@ try:
     from app_common.apptools.testing_utils import temp_bringup_ui_for, \
         wrap_chaco_plot
 
+    from pybleau.app.model.dataframe_plot_manager import CMAP_PLOT_TYPES
     from pybleau.app.plotting.plot_factories import BAR_PLOT_TYPE, \
         DEFAULT_FACTORIES, HIST_PLOT_TYPE, LINE_PLOT_TYPE, \
         SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE, CMAP_SCATTER_PLOT_TYPE
     from pybleau.app.plotting.bar_factory import BAR_SQUEEZE_FACTOR, \
         ERROR_BAR_DATA_KEY_PREFIX
+    from pybleau.app.plotting.plot_context_menu_manager import ALL_ACTIONS
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
     from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
     from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
@@ -1043,7 +1046,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
 
     def test_create_no_contour(self):
         self.style.add_contours = False
-        x_arr, y_arr, z_arr = self.pivot_data("a", "b2", "c")
+        x_arr, y_arr, z_arr = pivot_data("a", "b2", "c")
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b2", y_arr=y_arr,
                                           z_col_name="c", z_arr=z_arr,
@@ -1056,7 +1059,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         self.style.add_contours = False
         self.style.interpolation = "bilinear"
 
-        x_arr, y_arr, z_arr = self.pivot_data("a", "b2", "c")
+        x_arr, y_arr, z_arr = pivot_data("a", "b2", "c")
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b2", y_arr=y_arr,
                                           z_col_name="c", z_arr=z_arr,
@@ -1068,7 +1071,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
     def test_create_with_contour(self):
         self.style.contour_style.add_contours = True
         self.style.interpolation = "bilinear"
-        x_arr, y_arr, z_arr = self.pivot_data("a", "b2", "c")
+        x_arr, y_arr, z_arr = pivot_data("a", "b2", "c")
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b2", y_arr=y_arr,
                                           z_col_name="c", z_arr=z_arr,
@@ -1078,14 +1081,6 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         self.assert_valid_plot(plot, desc, with_contours=True)
 
     # Helpers -----------------------------------------------------------------
-
-    def pivot_data(self, x_col_name, y_col_name, z_col_name):
-        x_arr = TEST_DF[x_col_name]
-        y_arr = TEST_DF[y_col_name]
-        z_arr = TEST_DF.pivot_table(index=y_col_name,
-                                    columns=x_col_name,
-                                    values=z_col_name).values
-        return x_arr, y_arr, z_arr
 
     def assert_valid_plot(self, container, desc, with_contours=False):
         """ Overridden since container plot generated instead of Plot.
@@ -1116,26 +1111,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
             self.assertIsInstance(main_plot.components[1], ContourLinePlot)
 
 
-class BaseScatterPlotTools(object):
-    """ Utilities to test the presence or absence of tools in generated plots.
-    """
-
-    def _split_df_for_factory_arrays(self, df=None, color_col="d", x_col="a",
-                                     y_col="b"):
-        if df is None:
-            df = TEST_DF
-
-        grpby = df.groupby(color_col)
-        all_x_arr = {}
-        for z_val, subdf in grpby:
-            all_x_arr[z_val] = subdf[x_col].values
-
-        all_y_arr = {}
-        for z_val, subdf in grpby:
-            all_y_arr[z_val] = subdf[y_col].values
-
-        return all_x_arr, all_y_arr
-
+class BasePlotTools(object):
     def assert_no_tools(self, plot):
         self.assertEqual(plot.tools, [])
         if hasattr(plot, "legend"):
@@ -1155,6 +1131,8 @@ class BaseScatterPlotTools(object):
 
         if plot is None:
             plot = self.plot
+            if factory.plot_type in CMAP_PLOT_TYPES:
+                plot = self.plot.components[0]
 
         self.assertIn("pan", factory.plot_tools)
         self.assertIn("zoom", factory.plot_tools)
@@ -1188,6 +1166,21 @@ class BaseScatterPlotTools(object):
         self.assertIsInstance(legend.tools[0], LegendTool)
         self.assertIsInstance(legend.tools[1], LegendHighlighter)
 
+    def assert_context_menu_tool(self, factory=None):
+        if factory is None:
+            factory = self.factory
+
+        self.assertIn("context_menu", factory.plot_tools)
+        tool_types = [tool.__class__ for tool in factory.plot.tools]
+        self.assertIn(ContextMenuTool, tool_types)
+        cmm = factory.context_menu_manager
+        self.assertEqual(cmm.action_list, ALL_ACTIONS)
+        self.assertIs(cmm.target, factory.plot)
+
+
+class BaseScatterPlotTools(BasePlotTools):
+    """ Utilities to test the presence or absence of tools in generated plots.
+    """
     def assert_click_selector_present(self, factory=None, plot=None):
         if factory is None:
             factory = self.factory
@@ -1224,6 +1217,78 @@ class BaseScatterPlotTools(object):
             self.assertIsInstance(inspector, DataframeScatterInspector)
             self.assertIn(inspector, overlay_inspectors)
 
+    # Supporting methods ------------------------------------------------------
+
+    def _split_df_for_factory_arrays(self, df=None, color_col="d", x_col="a",
+                                     y_col="b"):
+        if df is None:
+            df = TEST_DF
+
+        grpby = df.groupby(color_col)
+        all_x_arr = {}
+        for z_val, subdf in grpby:
+            all_x_arr[z_val] = subdf[x_col].values
+
+        all_y_arr = {}
+        for z_val, subdf in grpby:
+            all_y_arr[z_val] = subdf[y_col].values
+
+        return all_x_arr, all_y_arr
+
+
+@skipIf(not BACKEND_AVAILABLE, msg)
+class TestLinePlotTools(TestCase, BasePlotTools):
+    def setUp(self):
+        plot_type = LINE_PLOT_TYPE
+        config_class = LinePlotConfigurator
+        config = config_class(data_source=TEST_DF)
+        style = config.plot_style
+        plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                   'plot_style': style}
+
+        plot_factory_klass = DEFAULT_FACTORIES[plot_type]
+        self.factory = plot_factory_klass(
+            x_col_name="a", x_arr=TEST_DF["a"].values,
+            y_col_name="c", y_arr=TEST_DF["c"].values, **plot_kw
+        )
+        desc = self.factory.generate_plot()
+        self.plot = desc["plot"]
+
+    def test_tools_present_default(self):
+        """ By default, zoom, pan, click selector legend & context menu tools.
+        """
+        self.assert_zoom_pan_tools_present()
+        self.assert_context_menu_tool()
+        # No legend since only 1 renderer
+        self.assertIsNone(self.factory.legend)
+
+
+@skipIf(not BACKEND_AVAILABLE, msg)
+class TestBarPlotTools(TestCase, BasePlotTools):
+    def setUp(self):
+        plot_type = BAR_PLOT_TYPE
+        config_class = BarPlotConfigurator
+        config = config_class(data_source=TEST_DF)
+        style = config.plot_style
+        plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                   'plot_style': style}
+
+        plot_factory_klass = DEFAULT_FACTORIES[plot_type]
+        self.factory = plot_factory_klass(
+            x_col_name="a", x_arr=TEST_DF["a"].values,
+            y_col_name="c", y_arr=TEST_DF["c"].values, **plot_kw
+        )
+        desc = self.factory.generate_plot()
+        self.plot = desc["plot"]
+
+    def test_tools_present_default(self):
+        """ By default, zoom, pan, click selector legend & context menu tools.
+        """
+        self.assert_zoom_pan_tools_present()
+        self.assert_context_menu_tool()
+        # No legend since only 1 renderer
+        self.assertIsNone(self.factory.legend)
+
 
 @skipIf(not BACKEND_AVAILABLE, msg)
 class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
@@ -1244,10 +1309,11 @@ class TestScatterPlotTools(TestCase, BaseScatterPlotTools):
         self.plot = desc["plot"]
 
     def test_tools_present_default(self):
-        """ By default, zoom, pan, click selector and legend tools.
+        """ By default, zoom, pan, click selector legend & context menu tools.
         """
         self.assert_zoom_pan_tools_present()
         self.assert_click_selector_present()
+        self.assert_context_menu_tool()
         # No legend since only 1 renderer
         self.assertIsNone(self.factory.legend)
 
@@ -1397,6 +1463,7 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
 
         self.assert_zoom_pan_tools_present(factory, plot)
         self.assert_click_selector_present(factory, plot)
+        self.assert_context_menu_tool()
         self.assert_colorbar_tool_present(factory, plot)
 
     def test_tools_present_colored_scatter_by_float_with_hover_col(self):
@@ -1410,6 +1477,7 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
 
         self.assert_zoom_pan_tools_present(factory, plot)
         self.assert_click_selector_present(factory, plot)
+        self.assert_context_menu_tool()
         self.assert_hover_tool_present(factory, plot)
         self.assert_colorbar_tool_present(factory, plot)
 
@@ -1421,3 +1489,39 @@ class TestCmapScatterPlotTools(TestCase, BaseScatterPlotTools):
             # First overlay is the click_inspector tool's:
             self.assertIsInstance(renderer.overlays[1],
                                   ColormappedSelectionOverlay)
+
+
+@skipIf(not BACKEND_AVAILABLE, msg)
+class TestHeatmapPlotTools(BasePlotTools, TestCase):
+    def setUp(self):
+        plot_type = HEATMAP_PLOT_TYPE
+        config_class = HeatmapPlotConfigurator
+        config = config_class(data_source=TEST_DF)
+        style = config.plot_style
+        plot_kw = {'plot_title': 'Plot 1', 'x_axis_title': 'foo',
+                   'plot_style': style}
+        x_arr, y_arr, z_arr = pivot_data("a", "b2", "c")
+        plot_factory_klass = DEFAULT_FACTORIES[plot_type]
+        self.factory = plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b2", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **plot_kw)
+        desc = self.factory.generate_plot()
+        self.plot = desc["plot"]
+
+    def test_tools_present_default(self):
+        """ Tools present when building a scatter plot colored by float column.
+        """
+        self.assert_zoom_pan_tools_present()
+        self.assert_context_menu_tool()
+
+
+def pivot_data(x_col_name, y_col_name, z_col_name):
+    """ Pivot data to make a heat map plot from TEST_DF
+    """
+    x_arr = TEST_DF[x_col_name]
+    y_arr = TEST_DF[y_col_name]
+    z_arr = TEST_DF.pivot_table(index=y_col_name,
+                                columns=x_col_name,
+                                values=z_col_name).values
+    return x_arr, y_arr, z_arr
