@@ -133,16 +133,16 @@ class BasePlotManagerTools(UnittestTools):
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
 class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
     def test_create_manager(self):
-        self.assertIsInstance(self.model, DataFramePlotManager)
-        self.assertEqual(len(self.model.canvas_manager.container_managers),
-                         DEFAULT_NUM_CONTAINERS)
-        for container_manager in self.model.canvas_manager.container_managers:
-            self.assertIsInstance(container_manager,
-                                  ConstraintsPlotContainerManager)
-            self.assertIsNotNone(container_manager.container)
+        self.assert_empty_manager()
 
-        self.assertEqual(self.model.contained_plots, [])
-        self.assertIsNone(self.model.source_analyzer)
+    def test_create_with_empty_plot_list(self):
+        """ Create with empty list since may be serialized that way.
+        """
+        model = DataFramePlotManager(data_source=TEST_DF, contained_plots=[])
+        self.assert_empty_manager(model)
+        config = self.config
+        self.model._add_new_plot(config)
+        self.assert_plot_created(renderer_type=BarPlot, container_idx=0)
 
     def test_add_histogram(self):
         config = self.config
@@ -292,6 +292,21 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         self.assertIn(plot, container.components)
 
     # Supporting methods ------------------------------------------------------
+
+    def assert_empty_manager(self, model=None):
+        if model is None:
+            model = self.model
+
+        self.assertIsInstance(model, DataFramePlotManager)
+        self.assertEqual(len(model.canvas_manager.container_managers),
+                         DEFAULT_NUM_CONTAINERS)
+        for container_manager in model.canvas_manager.container_managers:
+            self.assertIsInstance(container_manager,
+                                  ConstraintsPlotContainerManager)
+            self.assertIsNotNone(container_manager.container)
+
+        self.assertEqual(model.contained_plots, [])
+        self.assertIsNone(model.source_analyzer)
 
     def create_custom_plot(self):
         cust_plot = Plot(ArrayPlotData(x=[1, 2, 3], y=[1, 2, 3]))

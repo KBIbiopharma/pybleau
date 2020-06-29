@@ -124,9 +124,6 @@ class DataFramePlotManager(DataElement):
         """
         from ..plotting.multi_plot_config import BaseMultiPlotConfigurator
 
-        if not plot_list:
-            return
-
         contained_plots = []
         for i, desc in enumerate(plot_list):
             if isinstance(desc, BasePlotContainer):
