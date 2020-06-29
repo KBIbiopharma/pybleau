@@ -37,9 +37,11 @@ def serialize(obj, array_collection=None):
 
 
 class DataFramePlotManager_Serializer(DataElement_Serializer):
+
+    protocol_version = 1
+
     def attr_names_to_serialize(self, obj):
-        return ['name', 'uuid', "source_analyzer_id", "contained_plots",
-                "next_plot_id"]
+        return ['name', 'uuid', "source_analyzer_id", "contained_plots"]
 
 
 class PlotDescriptor_Serializer(DataElement_Serializer):

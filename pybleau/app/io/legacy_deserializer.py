@@ -1,7 +1,20 @@
 
 from .deserializer import singleLinePlotStyleDeSerializer, \
-    singleScatterPlotStyleDeSerializer, plotDescriptorDeSerializer
+    singleScatterPlotStyleDeSerializer, plotDescriptorDeSerializer, \
+    dataFramePlotManagerDeSerializer
 from ..plotting.plot_config import DEFAULT_CONFIGS, DEFAULT_STYLES
+
+
+class dataFramePlotManagerDeSerializer_v0(dataFramePlotManagerDeSerializer):
+
+    protocol_version = 0
+
+    def get_instance(self, constructor_data):
+        kwargs = constructor_data['kwargs']
+        kwargs.pop("next_plot_id")
+        return super(dataFramePlotManagerDeSerializer_v0, self).get_instance(
+            constructor_data
+        )
 
 
 class plotDescriptorDeSerializer_v0(plotDescriptorDeSerializer):
@@ -48,4 +61,5 @@ LEGACY_DESERIALIZER_MAP = {
     },
     "scatterPlotStyle": {0: scatterPlotStyleDeSerializer},
     "linePlotStyle": {0: linePlotStyleDeSerializer},
+    "dataFramePlotManager": {0: dataFramePlotManagerDeSerializer_v0}
 }
