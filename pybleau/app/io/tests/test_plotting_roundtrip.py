@@ -76,7 +76,6 @@ class TestRoundTripDataFramePlotManager(TestCase):
             contained_plots=[desc, desc2, desc3, desc4, desc5, desc6],
             data_source=TEST_DF, source_analyzer=analyzer
         )
-
         self.assert_roundtrip_identical(plot_manager, ignore=self.ignore)
 
     def test_round_trip_df_plotter_cmap_scatter_type(self):
