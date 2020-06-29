@@ -22,6 +22,9 @@ def deserialize(serial_data, array_collection=None):
 
 
 class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
+
+    protocol_version = 1
+
     def _klass_default(self):
         from pybleau.app.model.dataframe_plot_manager import \
             DataFramePlotManager
