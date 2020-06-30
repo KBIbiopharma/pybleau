@@ -21,6 +21,26 @@ def deserialize(serial_data, array_collection=None):
                        additional_deserializers=local_deserializers)
 
 
+class dataFrameAnalyzerDeSerializer(dataElementDeSerializer):
+
+    def get_instance(self, constructor_data):
+        instance = super(dataFrameAnalyzerDeSerializer, self).get_instance(
+            constructor_data
+        )
+        for plot_manager in instance.plot_manager_list:
+            plot_manager.source_analyzer = instance
+            plot_manager.data_source = instance.filtered_df
+            # Now that the data_source is set, we can rebuild the plots:
+            plot_manager._create_initial_plots_from_descriptions()
+
+        return instance
+
+    def _klass_default(self):
+        from pybleau.app.model.dataframe_analyzer import \
+            DataFrameAnalyzer
+        return DataFrameAnalyzer
+
+
 class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
 
     protocol_version = 1

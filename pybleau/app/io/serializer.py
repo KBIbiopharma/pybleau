@@ -36,6 +36,14 @@ def serialize(obj, array_collection=None):
                      additional_serializers=local_serializers)
 
 
+class DataFrameAnalyzer_Serializer(DataElement_Serializer):
+
+    def attr_names_to_serialize(self, obj):
+        return ['name', 'uuid', 'source_df', 'filter_exp', 'summary_index',
+                'sort_by_col', 'data_selected', 'num_displayed_rows',
+                'index_name', "plot_manager_list"]
+
+
 class DataFramePlotManager_Serializer(DataElement_Serializer):
 
     protocol_version = 1
