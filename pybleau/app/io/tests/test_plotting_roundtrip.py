@@ -7,12 +7,11 @@ from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
 from pybleau.app.io.serializer import serialize
 from pybleau.app.io.deserializer import deserialize
-from pybleau.app.api import DataFrameAnalyzer
+from pybleau.app.api import DataFrameAnalyzer, DataFramePlotManager
 from pybleau.app.model.plot_descriptor import PlotDescriptor
 from pybleau.app.plotting.api import BarPlotConfigurator, \
     HeatmapPlotConfigurator, HistogramPlotConfigurator, LinePlotConfigurator, \
     ScatterPlotConfigurator
-from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
 
 TEST_DF = pd.DataFrame({"Col_1": [1, 2, 3, 4, 5, 6, 7, 8],
                         "Col_2": np.array([1, 2, 3, 4, 5, 6, 7, 8])[::-1],
