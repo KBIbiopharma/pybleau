@@ -122,7 +122,9 @@ class ScatterRendererStyle(BaseXYRendererStyle):
 
 
 class CmapScatterRendererStyle(ScatterRendererStyle):
-
+    """
+    FIXME: why have a color palette on the renderer as well as on the plot??
+    """
     #: Type of the renderer
     renderer_type = REND_TYPE_CMAP_SCAT
 
