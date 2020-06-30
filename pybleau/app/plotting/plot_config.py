@@ -522,7 +522,18 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
 
     @on_trait_change("z_col_name, transformed_data", post_init=True)
     def update_style(self):
-        self.plot_style = self._plot_style_default()
+        # Only change the plot_style if we must since we will loose what was
+        # already set:
+        new_style = self._plot_style_default()
+        style = self.plot_style
+        change_needed = (
+                new_style.__class__ != style.__class__ or
+                len(new_style.renderer_styles) != len(style.renderer_styles) or
+                any(r1.__class__ != r2.__class__ for r1, r2 in
+                    zip(new_style.renderer_styles, style.renderer_styles))
+        )
+        if change_needed:
+            self.plot_style = new_style
 
     def _plot_style_default(self):
         if not self.z_col_name:
@@ -546,13 +557,22 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
 
 
 class LinePlotConfigurator(BaseSingleXYPlotConfigurator):
-    """ Configuration object for building a line plot.
+    """ Configuration object for building a plot with a single line renderer.
+
+    See also
+    --------
+    `MultiLinePlotConfigurator` from pybleau.app.plotting.multi_plot_config.
     """
     plot_type = Str(LINE_PLOT_TYPE)
 
     plot_style = Instance(SingleLinePlotStyle, ())
 
     renderer_style_klass = LineRendererStyle
+
+    # # Traits intialization methods --------------------------------------------
+    #
+    # def _plot_style_default(self):
+    #     return BaseXYPlotStyle(renderer_styles=[LineRendererStyle()])
 
 
 class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
@@ -588,7 +608,18 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
 
     @on_trait_change("data_source, z_col_name, plot_type", post_init=True)
     def update_style(self):
-        self.plot_style = self._plot_style_default()
+        new_style = self._plot_style_default()
+        # Only change the plot_style if we must since we will loose what was
+        # already set:
+        style = self.plot_style
+        change_needed = (
+                new_style.__class__ != style.__class__ or
+                len(new_style.renderer_styles) != len(style.renderer_styles) or
+                any(r1.__class__ != r2.__class__ for r1, r2 in
+                    zip(new_style.renderer_styles, style.renderer_styles))
+        )
+        if change_needed:
+            self.plot_style = new_style
 
     # Traits intialization methods --------------------------------------------
 
@@ -599,9 +630,11 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
             num_renderer = len(self.data_source[self.z_col_name].unique())
 
         # Always use a color styler to support cmap scatters and multi-scatters
-        style = BaseColorXYPlotStyle(colorize_by_float=self.colorize_by_float)
-        style.renderer_styles = [self.renderer_style_klass()
-                                 for _ in range(num_renderer)]
+        style = BaseColorXYPlotStyle(
+            colorize_by_float=self.colorize_by_float,
+            renderer_styles=[self.renderer_style_klass()
+                             for _ in range(num_renderer)]
+        )
         if self.colorize_by_float:
             style.container_style.include_colorbar = True
         return style
