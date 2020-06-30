@@ -11,7 +11,7 @@ class dataFramePlotManagerDeSerializer_v0(dataFramePlotManagerDeSerializer):
 
     def get_instance(self, constructor_data):
         kwargs = constructor_data['kwargs']
-        kwargs.pop("next_plot_id")
+        kwargs.pop("next_plot_id", None)
         return super(dataFramePlotManagerDeSerializer_v0, self).get_instance(
             constructor_data
         )
