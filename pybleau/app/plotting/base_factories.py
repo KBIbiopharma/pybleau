@@ -443,14 +443,19 @@ class StdXYPlotFactory(BasePlotFactory):
         else:
             if style.orientation == STYLE_R_ORIENT and not \
                     hasattr(plot, "second_y_axis"):
-                if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
+                is_log = self.plot_style.second_y_axis_style.scaling == \
+                    LOG_AXIS_STYLE
+                if is_log:
                     mapper_klass = LogMapper
                 else:
                     mapper_klass = LinearMapper
 
+                # The range needs to be initialized to the axis can be aligned
+                # with all secondary y axis renderers:
+                mapper = mapper_klass(range=DataRange1D())
                 second_y_axis = PlotAxis(component=renderer,
                                          orientation="right",
-                                         mapper=mapper_klass())
+                                         mapper=mapper)
                 # Keep a handle on the axis object and display
                 plot.second_y_axis = second_y_axis
                 plot.underlays.append(second_y_axis)
@@ -487,7 +492,7 @@ class StdXYPlotFactory(BasePlotFactory):
         if style.orientation == STYLE_L_ORIENT:
             y_style = self.plot_style.y_axis_style
         else:
-            y_style = self.plot_style.secondary_y_axis_style
+            y_style = self.plot_style.second_y_axis_style
 
         if y_style.scaling == LOG_AXIS_STYLE:
             y_mapper_class = LogMapper
