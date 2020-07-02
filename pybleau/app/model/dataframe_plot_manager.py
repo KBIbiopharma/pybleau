@@ -571,7 +571,7 @@ class DataFramePlotManager(DataElement):
             self.delete_plots(event.removed)
 
     @on_trait_change("contained_plots:visible", post_init=True)
-    def hide_plot(self, plot_desc, attr_name, old, visible):
+    def show_hide_plot(self, plot_desc, attr_name, old, visible):
         key = self.canvas_manager.build_container_key(plot_desc)
         container = self.canvas_manager.get_container_for_plot(plot_desc)
         if visible:
