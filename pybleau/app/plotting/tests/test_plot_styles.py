@@ -3,7 +3,6 @@ from unittest import skipIf, TestCase
 
 from app_common.apptools.testing_utils import assert_obj_gui_works
 
-# try:
 from chaco.api import ArrayPlotData, Plot
 import pandas as pd
 from pybleau.app.api import DataFramePlotManager
@@ -19,8 +18,6 @@ from pybleau.app.plotting.axis_style import AxisStyle
 from pybleau.app.plotting.contour_style import ContourStyle
 from pybleau.app.plotting.renderer_style import LineRendererStyle, \
     ScatterRendererStyle
-# except ImportError:
-#     pass
 
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
@@ -111,14 +108,18 @@ class TestPlotStyleAsView(TestCase):
         desc = plot_manager.contained_plots[0]
         style = desc.plot_config.plot_style
         # Check view building works:
-        elements = style._get_view_elements()
         all_labels = set()
         col_3_values = set(test_df["Col_3"].values)
-        for group in elements[0].content[2].content:
+        renderer_style_manager = style.renderer_style_manager
+        renderer_style_manager_view = renderer_style_manager.traits_view()
+        renderer_items = renderer_style_manager_view.content.content[0].content
+        for group in renderer_items:
             group_label = group.label
             all_labels.add(group_label)
             trait_name = group.content[0].name
-            rend_style = style.trait_get(trait_name)[trait_name]
+            rend_style = renderer_style_manager.trait_get(trait_name)[
+                trait_name
+            ]
             self.assertEqual(rend_style.renderer_name, group_label)
 
         self.assertEqual(all_labels, col_3_values)

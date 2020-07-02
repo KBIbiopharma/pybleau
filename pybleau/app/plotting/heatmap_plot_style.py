@@ -2,7 +2,8 @@
 from traits.api import Bool, Enum, Instance
 from traitsui.api import HGroup, InstanceEditor, Item, VGroup
 
-from .plot_style import BaseColorXYPlotStyle, SPECIFIC_CONFIG_CONTROL_LABEL
+from .plot_style import BaseColorXYPlotStyle, RendererStyleManager, \
+    SPECIFIC_CONFIG_CONTROL_LABEL
 from .contour_style import ContourStyle
 from .renderer_style import HeatmapRendererStyle
 
@@ -35,5 +36,5 @@ class HeatmapPlotStyle(BaseColorXYPlotStyle):
     def _colorize_by_float_default(self):
         return True
 
-    def _renderer_styles_default(self):
-        return [HeatmapRendererStyle()]
+    def _renderer_style_manager_default(self):
+        return RendererStyleManager(renderer_styles=[HeatmapRendererStyle()])
