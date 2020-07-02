@@ -2,7 +2,8 @@
 from traits.api import Bool, Enum
 from traitsui.api import HGroup, Item, VGroup
 
-from .plot_style import BaseColorXYPlotStyle, SPECIFIC_CONFIG_CONTROL_LABEL
+from .plot_style import BaseColorXYPlotStyle, RendererStyleManager, \
+    SPECIFIC_CONFIG_CONTROL_LABEL
 from .renderer_style import BarRendererStyle
 
 IGNORE_DATA_DUPLICATES = "ignore"
@@ -41,5 +42,5 @@ class BarPlotStyle(BaseColorXYPlotStyle):
             )
         ]
 
-    def _renderer_styles_default(self):
-        return [BarRendererStyle()]
+    def _renderer_style_manager_default(self):
+        return RendererStyleManager(renderer_styles=[BarRendererStyle()])

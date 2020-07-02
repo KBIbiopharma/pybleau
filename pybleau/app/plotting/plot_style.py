@@ -3,8 +3,8 @@
 """
 import logging
 
-from traits.api import Any, Bool, Callable, Dict, Enum, Float, HasTraits, \
-    Instance, List, on_trait_change, Property
+from traits.api import Any, Bool, Callable, DelegatesTo, Dict, Enum, Float, \
+    HasStrictTraits, HasTraits, Instance, List, on_trait_change, Property
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
 
@@ -22,15 +22,61 @@ SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
 logger = logging.getLogger(__name__)
 
 
-class BaseXYPlotStyle(HasTraits):
+class RendererStyleManager(HasTraits):
+    """ Utility class to build a scrollable view of the renderer style list.
+    """
+
+    renderer_styles = List(Instance(BaseRendererStyle))
+
+    #: View klass. Override to customize the view, for example its icon
+    view_klass = Any(default_value=View)
+
+    def traits_view(self):
+        renderer_traits = {"renderer_{}".format(i): style
+                           for i, style in enumerate(self.renderer_styles)}
+        self.trait_set(**renderer_traits)
+
+        rend_names = [style.renderer_name for style in self.renderer_styles]
+        items = [self._make_group_for_renderer(style_idx, renderer_name=name)
+                 for style_idx, name in enumerate(rend_names)]
+        return self.view_klass(
+            VGroup(*items),
+            scrollable=True
+        )
+
+    @staticmethod
+    def _make_group_for_renderer(style_idx, renderer_name=""):
+        """ Build a TraitsUI element to display a renderer style.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the renderer style trait to be displayed.
+
+        renderer_name : str
+            User visible name of the curve. Leave empty if only 1 renderer is
+            included.
+        """
+        trait_name = "renderer_{}".format(style_idx)
+        return VGroup(
+            Item(trait_name, editor=InstanceEditor(), style="custom",
+                 show_label=False),
+            show_border=True, label=renderer_name
+        )
+
+
+class BaseXYPlotStyle(HasStrictTraits):
     """ Styling parameters for building X-Y Chaco plots.
 
     These objects are designed to be used by PlotFactories to control the
     styling during the generation of a plot, but also be embedded inside
     traits-based app views.
     """
-    #: Styling controls for each renderer contained in the plot
-    renderer_styles = List(Instance(BaseRendererStyle))
+    #: Utility object to render the styling controls for each renderer
+    renderer_style_manager = Instance(RendererStyleManager, ())
+
+    #: Access to the list of renderer styles
+    renderer_styles = DelegatesTo("renderer_style_manager")
 
     #: Font used to draw the plot title
     title_style = Instance(TitleStyle, ())
@@ -48,8 +94,9 @@ class BaseXYPlotStyle(HasTraits):
     second_y_axis_style = Instance(AxisStyle)
 
     #: Whether there is a renderer to be displayed on the secondary y-axis
-    _second_y_axis_present = Property(Bool,
-                                      depends_on="renderer_styles.orientation")
+    _second_y_axis_present = Property(
+        Bool, depends_on="renderer_style_manager.renderer_styles.orientation"
+    )
 
     #: View klass. Override to customize the view, for example its icon
     view_klass = Any(default_value=View)
@@ -65,6 +112,19 @@ class BaseXYPlotStyle(HasTraits):
 
     #: Range value transformation function for eg. to avoid non-sensical digits
     range_transform = Callable
+
+    def __init__(self, **traits):
+        # Support passing the renderer_styles directly since the
+        # renderer_style_manager is there just for UI layout:
+        renderer_styles = None
+        if "renderer_styles" in traits:
+            renderer_styles = traits.pop("renderer_styles")
+
+        super(BaseXYPlotStyle, self).__init__(**traits)
+
+        self.renderer_style_manager.view_klass = self.view_klass
+        if renderer_styles:
+            self.renderer_style_manager.renderer_styles = renderer_styles
 
     def initialize_axis_ranges(self, plot, x_mapper=None, y_mapper=None,
                                second_y_mapper=None):
@@ -150,14 +210,6 @@ class BaseXYPlotStyle(HasTraits):
         return []
 
     def _get_view_elements(self):
-        renderer_traits = {"renderer_{}".format(i): style
-                           for i, style in enumerate(self.renderer_styles)}
-        self.trait_set(**renderer_traits)
-
-        rend_names = [style.renderer_name for style in self.renderer_styles]
-        items = [self._make_group_for_renderer(style_idx, renderer_name=name)
-                 for style_idx, name in enumerate(rend_names)]
-
         elemens = [
             Tabbed(
                 VGroup(
@@ -192,7 +244,8 @@ class BaseXYPlotStyle(HasTraits):
                     ),
                     show_border=True, label="Axis controls"
                 ),
-                VGroup(*items,
+                VGroup(Item("renderer_style_manager", editor=InstanceEditor(),
+                            style="custom", show_label=False),
                        show_border=True, label="Renderer controls"),
                 VGroup(
                     Item("container_style", editor=InstanceEditor(),
@@ -204,26 +257,6 @@ class BaseXYPlotStyle(HasTraits):
         return elemens
 
     # Private interface -------------------------------------------------------
-
-    @staticmethod
-    def _make_group_for_renderer(style_idx, renderer_name=""):
-        """ Build a TraitsUI element to display a renderer style.
-
-        Parameters
-        ----------
-        trait_name : str
-            Name of the renderer style trait to be displayed.
-
-        renderer_name : str
-            User visible name of the curve. Leave empty if only 1 renderer is
-            included.
-        """
-        trait_name = "renderer_{}".format(style_idx)
-        return VGroup(
-            Item(trait_name, editor=InstanceEditor(), style="custom",
-                 show_label=False),
-            show_border=True, label=renderer_name
-        )
 
     def _get_plot_mappers(self, plot, x_mapper=None, y_mapper=None,
                           second_y_mapper=None):
@@ -335,10 +368,10 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
 
 
 class SingleLinePlotStyle(BaseXYPlotStyle):
-    def _renderer_styles_default(self):
-        return [LineRendererStyle()]
+    def _renderer_style_manager_default(self):
+        return RendererStyleManager(renderer_styles=[LineRendererStyle()])
 
 
 class SingleScatterPlotStyle(BaseXYPlotStyle):
-    def _renderer_styles_default(self):
-        return [ScatterRendererStyle()]
+    def _renderer_style_manager_default(self):
+        return RendererStyleManager(renderer_styles=[ScatterRendererStyle()])

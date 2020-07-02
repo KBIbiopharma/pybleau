@@ -2,7 +2,8 @@
 from traits.api import Enum, Float, Int, Tuple
 from traitsui.api import HGroup, Item, RangeEditor, VGroup
 
-from .plot_style import BaseXYPlotStyle, SPECIFIC_CONFIG_CONTROL_LABEL
+from .plot_style import BaseXYPlotStyle, RendererStyleManager, \
+    SPECIFIC_CONFIG_CONTROL_LABEL
 from .renderer_style import BarRendererStyle
 
 DEFAULT_NUM_BINS = 10
@@ -40,5 +41,5 @@ class HistogramPlotStyle(BaseXYPlotStyle):
             )
         ]
 
-    def _renderer_styles_default(self):
-        return [BarRendererStyle()]
+    def _renderer_style_manager_default(self):
+        return RendererStyleManager(renderer_styles=[BarRendererStyle()])

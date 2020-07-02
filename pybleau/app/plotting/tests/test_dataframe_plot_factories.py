@@ -41,6 +41,7 @@ try:
         HeatmapPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
     from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
         LineRendererStyle
+    from pybleau.app.plotting.bar_plot_style import BarRendererStyle
 
 except ImportError as e:
     print("ERROR: Module imports failed with error: {}".format(e))
@@ -168,13 +169,16 @@ class TestMakeHistogramPlot(BaseTestMakePlot, TestCase):
         self.assert_valid_plot(plot, desc)
 
     def test_make_histogram_from_style_object(self):
-        style = HistogramPlotStyle(alpha=0.5)
+        style = HistogramPlotStyle(
+            renderer_styles=[BarRendererStyle(alpha=0.5)]
+        )
 
         factory = self.plot_factory_klass(x_col_name="b", x_arr=TEST_DF["b"],
                                           plot_style=style)
         desc = factory.generate_plot()
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
+        self.assertEqual(plot.components[0].alpha, 0.5)
 
     # Helpers -----------------------------------------------------------------
 
@@ -1045,7 +1049,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         super(TestMakeHeatmapPlot, self).setUp()
 
     def test_create_no_contour(self):
-        self.style.add_contours = False
+        self.style.contour_style.add_contours = False
         x_arr, y_arr, z_arr = pivot_data("a", "b2", "c")
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b2", y_arr=y_arr,
@@ -1056,7 +1060,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         self.assert_valid_plot(plot, desc, with_contours=False)
 
     def test_create_with_interpolation(self):
-        self.style.add_contours = False
+        self.style.contour_style.add_contours = False
         self.style.interpolation = "bilinear"
 
         x_arr, y_arr, z_arr = pivot_data("a", "b2", "c")
