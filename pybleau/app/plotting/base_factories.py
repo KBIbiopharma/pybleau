@@ -21,8 +21,9 @@ import logging
 
 from traits.api import Any, Dict, HasStrictTraits, Instance, List, Set, Str
 from chaco.api import ArrayPlotData, ColorBar, DataRange1D, HPlotContainer, \
-    LabelAxis, LinearMapper, OverlayPlotContainer, PlotAxis, PlotLabel
-# LogMapper,
+    LabelAxis, LinearMapper, LogMapper, OverlayPlotContainer, PlotAxis, \
+    PlotLabel
+
 from chaco.plot_factory import add_default_axes
 from chaco.tools.api import BroadcasterTool, LegendTool, PanTool, ZoomTool
 from chaco.ticks import DefaultTickGenerator, ShowAllTickGenerator
@@ -36,7 +37,7 @@ from app_common.chaco.legend import Legend, LegendHighlighter
 from .plot_context_menu_manager import PlotContextMenuManager
 from .plot_style import BaseXYPlotStyle
 from .renderer_style import STYLE_L_ORIENT, STYLE_R_ORIENT
-# from .axis_style import LINEAR_AXIS_STYLE, LOG_AXIS_STYLE
+from .axis_style import LOG_AXIS_STYLE
 
 SELECTION_COLOR = "red"
 
@@ -424,8 +425,6 @@ class StdXYPlotFactory(BasePlotFactory):
 
         If the axis it is displayed along isn't already created, create it too,
         and add it to the plot's list of underlays.
-
-        TODO: use log/lin styling info to adjust mappers in axis objects.
         """
         # Modify the renderer's style's name so it is displayed in the style
         # view:
@@ -435,11 +434,6 @@ class StdXYPlotFactory(BasePlotFactory):
         self.renderers[desc["name"]] = renderer
 
         if first_renderer:
-            # if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
-            #     x_mapper_klass = LogMapper
-            # else:
-            #     x_mapper_klass = LinearMapper
-
             left_axis, bottom_axis = add_default_axes(renderer)
             # Emulate chaco.Plot interface:
             plot.x_axis = bottom_axis
@@ -449,13 +443,14 @@ class StdXYPlotFactory(BasePlotFactory):
         else:
             if style.orientation == STYLE_R_ORIENT and not \
                     hasattr(plot, "second_y_axis"):
-                # if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
-                #     mapper_klass = LogMapper
-                # else:
-                #     mapper_klass = LinearMapper
+                if style.second_y_axis_style.scaling == LOG_AXIS_STYLE:
+                    mapper_klass = LogMapper
+                else:
+                    mapper_klass = LinearMapper
 
                 second_y_axis = PlotAxis(component=renderer,
-                                         orientation="right")
+                                         orientation="right",
+                                         mapper=mapper_klass())
                 # Keep a handle on the axis object and display
                 plot.second_y_axis = second_y_axis
                 plot.underlays.append(second_y_axis)
@@ -484,7 +479,24 @@ class StdXYPlotFactory(BasePlotFactory):
         renderer_maker = RENDERER_MAKER[style.renderer_type]
         x = self.plot_data.get_data(desc["x"])
         y = self.plot_data.get_data(desc["y"])
-        return renderer_maker(data=(x, y), **style.to_plot_kwargs())
+        if self.plot_style.x_axis_style.scaling == LOG_AXIS_STYLE:
+            x_mapper_class = LogMapper
+        else:
+            x_mapper_class = LinearMapper
+
+        if style.orientation == STYLE_L_ORIENT:
+            y_style = self.plot_style.y_axis_style
+        else:
+            y_style = self.plot_style.secondary_y_axis_style
+
+        if y_style.scaling == LOG_AXIS_STYLE:
+            y_mapper_class = LogMapper
+        else:
+            y_mapper_class = LinearMapper
+
+        return renderer_maker(data=(x, y), index_mapper_class=x_mapper_class,
+                              value_mapper_class=y_mapper_class,
+                              **style.to_plot_kwargs())
 
     def set_legend(self, plot, align="ur", padding=10):
         """ Add legend and make it relocatable & clickable if tools requested.

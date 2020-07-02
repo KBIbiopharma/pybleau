@@ -8,13 +8,15 @@ import logging
 
 from traits.api import Constant, Tuple
 from chaco.api import ArrayPlotData, ColormappedSelectionOverlay, \
-    ScatterInspectorOverlay
+    LinearMapper, LogMapper, ScatterInspectorOverlay
 from chaco.tools.api import RangeSelection, RangeSelectionOverlay
 
 from app_common.chaco.scatter_position_tool import add_scatter_inspectors, \
     DataframeScatterInspector
 from app_common.chaco.plot_factory import create_cmap_scatter_plot
 
+from .renderer_style import STYLE_L_ORIENT
+from .axis_style import LOG_AXIS_STYLE
 from .plot_config import CMAP_SCATTER_PLOT_TYPE, SCATTER_PLOT_TYPE
 from .base_factories import CmapedXYPlotFactoryMixin, StdXYPlotFactory
 
@@ -138,7 +140,25 @@ class CmapScatterPlotFactory(ScatterPlotFactory, CmapedXYPlotFactoryMixin):
         x = self.plot_data.get_data(desc["x"])
         y = self.plot_data.get_data(desc["y"])
         z = self.plot_data.get_data(desc["z"])
+
+        if self.plot_style.x_axis_style.scaling == LOG_AXIS_STYLE:
+            x_mapper_class = LogMapper
+        else:
+            x_mapper_class = LinearMapper
+
+        if style.orientation == STYLE_L_ORIENT:
+            y_style = self.plot_style.y_axis_style
+        else:
+            y_style = self.plot_style.secondary_y_axis_style
+
+        if y_style.scaling == LOG_AXIS_STYLE:
+            y_mapper_class = LogMapper
+        else:
+            y_mapper_class = LinearMapper
+
         return create_cmap_scatter_plot(data=(x, y, z),
+                                        index_mapper_class=x_mapper_class,
+                                        value_mapper_class=y_mapper_class,
                                         **style.to_plot_kwargs())
 
     def initialize_plot_data(self, x_arr=None, y_arr=None, z_arr=None,
