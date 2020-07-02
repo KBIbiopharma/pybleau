@@ -236,7 +236,8 @@ class TestRoundTripAnalyzerWithPlots(TestCase):
         plot_container_map = container_manager.plot_map
         plot_container = container_manager.container
         self.assertEqual(len(plot_container_map), 1)
-        self.assertIn(plot_desc[0].plot, plot_container_map.values())
+        self.assertIn(plot_desc[0].plot,
+                      [plot for plot, position in plot_container_map.values()])
         self.assertEqual(len(plot_container.components), 1)
         self.assertIs(plot_desc[0].plot, plot_container.components[0])
         return new_analysis
