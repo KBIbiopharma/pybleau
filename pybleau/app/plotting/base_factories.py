@@ -387,7 +387,7 @@ class StdXYPlotFactory(BasePlotFactory):
                 # FIXME: the zoom tool is added to the broadcaster's tools
                 #  attribute because it doesn't have an overlay list. That
                 #  means the box plot mode won't display the blue box!
-                zoom = ZoomTool(component=plot, zoom_factor=1.25)
+                zoom = ZoomTool(component=plot, zoom_factor=1.15)
                 broadcaster.tools.append(zoom)
 
         if "legend" in self.plot_tools and self.legend:
