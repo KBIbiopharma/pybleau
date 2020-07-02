@@ -569,11 +569,6 @@ class LinePlotConfigurator(BaseSingleXYPlotConfigurator):
 
     renderer_style_klass = LineRendererStyle
 
-    # # Traits intialization methods --------------------------------------------
-    #
-    # def _plot_style_default(self):
-    #     return BaseXYPlotStyle(renderer_styles=[LineRendererStyle()])
-
 
 class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     """ Configuration object for building scatter plot (std or color-mapped).
