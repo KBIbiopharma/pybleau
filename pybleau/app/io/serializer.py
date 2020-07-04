@@ -95,7 +95,7 @@ class BaseSinglePlotConfigurator_Serializer(DataElement_Serializer):
 
 
 class ScatterPlotConfigurator_Serializer(BaseSinglePlotConfigurator_Serializer):  # noqa
-    pass
+    protocol_version = 1
 
 
 class LinePlotConfigurator_Serializer(BaseSinglePlotConfigurator_Serializer):
@@ -142,12 +142,18 @@ class SingleLinePlotStyle_Serializer(BaseXYPlotStyle_Serializer):
 
 
 class BarPlotStyle_Serializer(BaseColorXYPlotStyle_Serializer):
+
+    protocol_version = 1
+
     def attr_names_to_serialize(self, obj):
         attrs = super(BarPlotStyle_Serializer, self).attr_names_to_serialize(obj)  # noqa
         return attrs + ["bar_style", "data_duplicate", "show_error_bars"]
 
 
 class HistogramPlotStyle_Serializer(BaseXYPlotStyle_Serializer):
+
+    protocol_version = 1
+
     def attr_names_to_serialize(self, obj):
         attrs = super(HistogramPlotStyle_Serializer, self).attr_names_to_serialize(obj)  # noqa
         return attrs + ["num_bins", "bin_limits", "bar_width_factor"]

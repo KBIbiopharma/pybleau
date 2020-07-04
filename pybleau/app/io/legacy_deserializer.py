@@ -1,12 +1,15 @@
+from traits.api import HasStrictTraits, Set
 
 from .deserializer import singleLinePlotStyleDeSerializer, \
     singleScatterPlotStyleDeSerializer, plotDescriptorDeSerializer, \
-    dataFramePlotManagerDeSerializer
+    dataFramePlotManagerDeSerializer, histogramPlotStyleDeSerializer, \
+    scatterPlotConfiguratorDeSerializer
 from ..plotting.plot_config import DEFAULT_CONFIGS, DEFAULT_STYLES
 
 
 class dataFramePlotManagerDeSerializer_v0(dataFramePlotManagerDeSerializer):
-
+    """ Legacy deserializer for objects stored by pybleau before 0.5.0.
+    """
     protocol_version = 0
 
     def get_instance(self, constructor_data):
@@ -18,7 +21,8 @@ class dataFramePlotManagerDeSerializer_v0(dataFramePlotManagerDeSerializer):
 
 
 class plotDescriptorDeSerializer_v0(plotDescriptorDeSerializer):
-
+    """ Legacy deserializer for objects stored by pybleau before 0.5.0.
+    """
     protocol_version = 0
 
     def get_instance(self, constructor_data):
@@ -43,23 +47,91 @@ class plotDescriptorDeSerializer_v0(plotDescriptorDeSerializer):
         return instance
 
 
-class scatterPlotStyleDeSerializer(singleScatterPlotStyleDeSerializer):
-    """ Legacy class which was renamed.
+class _LegacyStyleDeserializerMixin(HasStrictTraits):
+    kw_to_keep = Set
+
+    def lose_moved_style_attrs(self, kwargs):
+        return {kw: val for kw, val in kwargs.items() if kw in self.kw_to_keep}
+
+
+class scatterPlotStyleDeSerializer(singleScatterPlotStyleDeSerializer,
+                                   _LegacyStyleDeserializerMixin):
+    """ Legacy class which was renamed for objects stored before v0.5.0.
+
+    Note: Legacy users not worried about loosing renderer styling.
     """
     protocol_version = 0
 
+    def get_instance(self, constructor_data):
+        kwargs = constructor_data['kwargs']
+        constructor_data['kwargs'] = self.lose_moved_style_attrs(kwargs)
 
-class linePlotStyleDeSerializer(singleLinePlotStyleDeSerializer):
-    """ Legacy class which was renamed.
+        return super(scatterPlotStyleDeSerializer, self).get_instance(
+            constructor_data
+        )
+
+
+class linePlotStyleDeSerializer(singleLinePlotStyleDeSerializer,
+                                _LegacyStyleDeserializerMixin):
+    """ Legacy class which was renamed for objects stored before v0.5.0.
+
+    Note: Legacy users not worried about loosing renderer styling.
     """
     protocol_version = 0
+
+    def get_instance(self, constructor_data):
+        kwargs = constructor_data['kwargs']
+        constructor_data['kwargs'] = self.lose_moved_style_attrs(kwargs)
+
+        return super(linePlotStyleDeSerializer, self).get_instance(
+            constructor_data
+        )
+
+
+class histogramPlotStyleDeSerializer_v0(histogramPlotStyleDeSerializer,
+                                        _LegacyStyleDeserializerMixin):
+    """ Legacy deserializer for objects stored by pybleau before 0.5.0.
+
+    Legacy users not worried about loosing renderer styling.
+    """
+    protocol_version = 0
+
+    def get_instance(self, constructor_data):
+        kwargs = constructor_data['kwargs']
+        constructor_data['kwargs'] = self.lose_moved_style_attrs(kwargs)
+
+        return super(histogramPlotStyleDeSerializer_v0, self).get_instance(
+            constructor_data
+        )
+
+    def _kw_to_keep_default(self):
+        # Salvage a few styling attributes since they haven't moved:
+        return {'bar_width_type', 'bar_width_factor', 'bin_limits', 'num_bins'}
+
+
+class scatterPlotConfiguratorDeSerializer_v0(scatterPlotConfiguratorDeSerializer):  # noqa
+    """ Legacy deserializer for objects stored by pybleau before 0.5.0.
+
+    Old configurators stored an deprecated style class which may not
+    recreate the correct number of renderers. This triggers a style reset for
+    frozen configurators so plot regeneration doesn't fail. Non-frozen plots
+    will trigger a reset of their styling when the data_source is reset from
+    analyzer data.
+    """
+    def get_instance(self, constructor_data):
+        x = super(scatterPlotConfiguratorDeSerializer_v0, self).get_instance(
+            constructor_data
+        )
+        if x.frozen:
+            x.update_style()
+        return x
 
 
 LEGACY_DESERIALIZER_MAP = {
-    "plotDescriptor": {
-        0: plotDescriptorDeSerializer_v0,
-    },
+    "plotDescriptor": {0: plotDescriptorDeSerializer_v0},
     "scatterPlotStyle": {0: scatterPlotStyleDeSerializer},
     "linePlotStyle": {0: linePlotStyleDeSerializer},
-    "dataFramePlotManager": {0: dataFramePlotManagerDeSerializer_v0}
+    "dataFramePlotManager": {0: dataFramePlotManagerDeSerializer_v0},
+    "histogramPlotStyle": {0: histogramPlotStyleDeSerializer_v0},
+    "scatterPlotConfigurator": {0: scatterPlotConfiguratorDeSerializer_v0}
 }
