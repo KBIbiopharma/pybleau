@@ -122,7 +122,7 @@ class scatterPlotConfiguratorDeSerializer_v0(scatterPlotConfiguratorDeSerializer
         x = super(scatterPlotConfiguratorDeSerializer_v0, self).get_instance(
             constructor_data
         )
-        if x.frozen:
+        if x.data_source is not None:
             x.update_style()
         return x
 
