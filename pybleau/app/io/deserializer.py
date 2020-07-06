@@ -61,6 +61,9 @@ class plotDescriptorDeSerializer(dataElementDeSerializer):
 
 
 class scatterPlotConfiguratorDeSerializer(dataElementDeSerializer):
+
+    protocol_version = 1
+
     def _klass_default(self):
         from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
         return ScatterPlotConfigurator
@@ -91,6 +94,9 @@ class barPlotConfiguratorDeSerializer(dataElementDeSerializer):
 
 
 class barPlotStyleDeSerializer(dataElementDeSerializer):
+
+    protocol_version = 1
+
     def _klass_default(self):
         from pybleau.app.plotting.bar_plot_style import BarPlotStyle
         return BarPlotStyle
@@ -103,6 +109,9 @@ class histogramPlotConfiguratorDeSerializer(dataElementDeSerializer):
 
 
 class histogramPlotStyleDeSerializer(dataElementDeSerializer):
+
+    protocol_version = 1
+
     def _klass_default(self):
         from pybleau.app.plotting.histogram_plot_style import \
             HistogramPlotStyle
