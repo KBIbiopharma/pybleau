@@ -16,15 +16,15 @@ from app_common.traitsui.common_traitsui_groups import make_window_title_group
 from app_common.pyface.ui.extra_file_dialogs import request_csv_file
 from app_common.std_lib.filepath_utils import open_file
 
-from ..model.dataframe_analyzer import DataFrameAnalyzer
+from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
 try:
-    from .dataframe_plot_manager_view import DataFramePlotManager, \
-        DataFramePlotManagerView
+    from pybleau.app.ui.dataframe_plot_manager_view import \
+        DataFramePlotManager, DataFramePlotManagerView
 except ImportError:
     DataFramePlotManager = object
     DataFramePlotManagerView = object
 
-from ..tools.filter_expression_manager import FilterExpression, \
+from pybleau.app.tools.filter_expression_manager import FilterExpression, \
     FilterExpressionManager
 
 logger = logging.getLogger(__name__)
