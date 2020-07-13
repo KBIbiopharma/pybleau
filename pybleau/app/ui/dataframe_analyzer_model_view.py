@@ -593,9 +593,12 @@ class DataFrameAnalyzerView(ModelView):
         # Rebuild the column list (col name, column id) for the tabular
         # adapter:
         all_visible_cols = [(col, col) for col in self.visible_columns]
+
+        df = self.model.source_df
+        cat_dtypes = self.model.categorical_dtypes
+        summarizable_df = df.select_dtypes(exclude=cat_dtypes)
         summary_visible_cols = [(col, col) for col in self.visible_columns
-                                if self.model.source_df.dtypes[col] not in
-                                self.model.categorical_dtypes]
+                                if col in summarizable_df.columns]
 
         for df_name, cols in zip(["displayed_df", "summary_df"],
                                  [all_visible_cols, summary_visible_cols]):
