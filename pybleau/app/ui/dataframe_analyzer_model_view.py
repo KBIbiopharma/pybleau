@@ -590,24 +590,27 @@ class DataFrameAnalyzerView(ModelView):
         if not self._df_editors:
             self._collect_df_editors()
 
-        for df_name in ["displayed_df", "summary_df"]:
+        # Rebuild the column list (col name, column id) for the tabular
+        # adapter:
+        all_visible_cols = [(col, col) for col in self.visible_columns]
+
+        df = self.model.source_df
+        cat_dtypes = self.model.categorical_dtypes
+        summarizable_df = df.select_dtypes(exclude=cat_dtypes)
+        summary_visible_cols = [(col, col) for col in self.visible_columns
+                                if col in summarizable_df.columns]
+
+        for df_name, cols in zip(["displayed_df", "summary_df"],
+                                 [all_visible_cols, summary_visible_cols]):
             df = getattr(self.model, df_name)
             index_name = df.index.name
             if index_name is None:
                 index_name = ''
 
-            # Rebuild the column list (col name, column id) for the tabular
-            # adapter:
-            all_cols = [(col, col) for col in self.all_data_columns
-                        if col in self.visible_columns]
-            try:
-                # This grabs the corresponding _DataFrameEditor (not the editor
-                # factory) which has access to the adapter object:
-                editor = self._df_editors[df_name]
-                editor.adapter.columns = [(index_name, 'index')] + all_cols
-            except Exception as e:
-                msg = "Error trying to collect the tabular adapter: {}"
-                logger.error(msg.format(e))
+            # This grabs the corresponding _DataFrameEditor (not the editor
+            # factory) which has access to the adapter object:
+            editor = self._df_editors[df_name]
+            editor.adapter.columns = [(index_name, 'index')] + cols
 
     def _collect_df_editors(self):
         for df_name in ["displayed_df", "summary_df"]:
