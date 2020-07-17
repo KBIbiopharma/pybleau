@@ -5,6 +5,7 @@
   "dash",
   "kiwisolver",
   "matplotlib",
+  "openpyxl",
   "pandas",
   "plotly",
   "pytables",
