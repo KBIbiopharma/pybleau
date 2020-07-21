@@ -314,7 +314,10 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
     """
     #: Name of the palette to pick colors when generating multiple renderers
     # (Ignored when colorizing by a float: then the renderer's palette is used)
-    color_palette = Enum(DEFAULT_DIVERG_PALETTE, values=ALL_MPL_PALETTES)
+    color_palette = Enum(DEFAULT_DIVERG_PALETTE, values="_all_palettes")
+
+    #: List of possible palettes available for color_palette
+    _all_palettes = List(ALL_MPL_PALETTES)
 
     #: Font used to draw the color dimension title
     color_axis_title_style = Instance(TitleStyle, ())
