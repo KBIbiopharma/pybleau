@@ -91,7 +91,7 @@ class FilterDataFrameAnalyzer(UnittestTools):
         """
         df = self.df2
         analyzer = self.analyzer_klass(source_df=df,
-                                     filter_error_handling="ignore")
+                                       filter_error_handling="ignore")
         self.assertEqual(analyzer.filter_exp, "")
         assert_frame_equal(analyzer.filtered_df, analyzer.source_df)
         # Request that involves a non-existent column leads to unchanged DF
@@ -110,7 +110,7 @@ class FilterDataFrameAnalyzer(UnittestTools):
         """
         df = self.df2
         analyzer = self.analyzer_klass(source_df=df,
-                                     filter_error_handling="ignore")
+                                       filter_error_handling="ignore")
         self.assertEqual(analyzer.filter_exp, "")
 
         with self.assertTraitDoesNotChange(analyzer, "filtered_df"):
@@ -136,7 +136,7 @@ class FilterDataFrameAnalyzer(UnittestTools):
         """
         df = self.df2
         analyzer = self.analyzer_klass(source_df=df,
-                                     filter_error_handling="raise")
+                                       filter_error_handling="raise")
         self.assertEqual(analyzer.filter_exp, "")
         assert_frame_equal(analyzer.filtered_df, analyzer.source_df)
         # Request that involves an invalid expression raises a syntax error
@@ -154,7 +154,7 @@ class FilterDataFrameAnalyzer(UnittestTools):
         """
         df = self.df2
         analyzer = self.analyzer_klass(source_df=df,
-                                     filter_error_handling="raise")
+                                       filter_error_handling="raise")
         self.assertEqual(analyzer.filter_exp, "")
         assert_frame_equal(analyzer.filtered_df, analyzer.source_df)
         # Spaces are ignored
@@ -171,7 +171,7 @@ class FilterDataFrameAnalyzer(UnittestTools):
     def test_new_line_in_filter(self):
         df = self.df2
         analyzer = self.analyzer_klass(source_df=df,
-                                     filter_exp="a > \n1")
+                                       filter_exp="a > \n1")
 
         expected = pd.DataFrame({"a": [2, 3, 4, 5],
                                  "b": [15, 20, 15, 10]}, index=[1, 2, 3, 4])
