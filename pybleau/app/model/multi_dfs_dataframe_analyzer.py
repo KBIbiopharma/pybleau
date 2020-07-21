@@ -26,16 +26,37 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         if "source_df" in traits:
             df = traits.pop("source_df")
             traits["_source_dfs"] = {0: df}
-            traits["_source_df_columns"] = {0: df.columns.tolist()}
 
-        elif "_source_dfs" in traits and "_source_df_columns" not in traits:
+        if "_source_dfs" in traits and isinstance(traits["_source_dfs"], list):
+            dfs = traits["_source_dfs"]
+            traits["_source_dfs"] = {i: df for i, df in enumerate(dfs)}
+
+        if "_source_dfs" in traits:
+            known_cols = set()
+            for df in traits["_source_dfs"].values():
+                new_cols = set(df.columns)
+                column_overlap = known_cols & new_cols
+                if column_overlap:
+                    msg = "Dataframes provided have overlapping columns it " \
+                          "will be ambiguous what data should be stored where."
+                    logger.exception(msg)
+                    raise ValueError(msg)
+
+                known_cols = known_cols | new_cols
+
+        if "_source_dfs" in traits and "_source_df_columns" not in traits:
             traits["_source_df_columns"] = {
                 key: df.columns.tolist()
                 for key, df in traits["_source_dfs"].items()
             }
         elif "_source_dfs" in traits and "_source_df_columns" in traits:
-            assert traits["_source_dfs"].keys() == \
-                traits["_source_df_columns"].keys()
+            df_map_keys = list(traits["_source_dfs"].keys())
+            col_map_keys = list(traits["_source_df_columns"].keys())
+            if df_map_keys != col_map_keys:
+                msg = "Keys of _source_dfs and _source_df_columns aren't the" \
+                      " same ({} vs {}).".format(df_map_keys, col_map_keys)
+                logger.exception(msg)
+                raise ValueError(msg)
 
         if "_source_dfs" in traits:
             for key, df in traits["_source_dfs"].items():
@@ -66,7 +87,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         """ Rebuild the source_df proxy from _source_dfs.
         """
         if self._source_dfs:
-            return pd.concat(self._source_dfs.values())
+            return pd.concat(self._source_dfs.values(), axis=1)
 
     def _set_source_df(self, df):
         """ Set the source_df proxy to a new value.

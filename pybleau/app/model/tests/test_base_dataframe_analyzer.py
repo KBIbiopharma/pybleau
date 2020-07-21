@@ -1,4 +1,3 @@
-from unittest import skipIf, TestCase
 import pandas as pd
 from pandas.core.computation.ops import UndefinedVariableError
 from pandas.util.testing import assert_frame_equal, assert_series_equal
@@ -271,6 +270,8 @@ class Analyzer(UnittestTools):
                                 "c": list("abcdeabcaab")})
         self.df2 = pd.DataFrame({"a": [1, 2, 3, 4, 5],
                                  "b": [10, 15, 20, 15, 10]})
+        self.df3 = pd.DataFrame({"x": [1, 2, 3, 4, 5],
+                                 "y": [10, 15, 20, 15, 10]})
 
     def test_create_no_data(self):
         analyzer = self.analyzer_klass()
@@ -288,7 +289,7 @@ class Analyzer(UnittestTools):
         expected = pd.DataFrame({"a_b": [1], "c_d": [3], "e_f": [5]})
         assert_frame_equal(analyzer.filtered_df, expected)
 
-    def test_object_df(self):
+    def test_df_with_strings(self):
         df = pd.DataFrame({"a": ["x", "x", "x"], "b": ["x", "y", "y"]})
         analyzer = self.analyzer_klass(source_df=df)
         assert_frame_equal(analyzer.summary_df, pd.DataFrame([]))

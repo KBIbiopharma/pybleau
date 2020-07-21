@@ -20,6 +20,14 @@ msg = "No UI backend to paint into or no Kiwisolver"
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+class TestAnalyzer(Analyzer, TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.analyzer_klass = DataFrameAnalyzer
+
+
+@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
 class TestFilterDataFrameAnalyzer(FilterDataFrameAnalyzer, TestCase):
 
     @classmethod
@@ -29,14 +37,6 @@ class TestFilterDataFrameAnalyzer(FilterDataFrameAnalyzer, TestCase):
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
 class TestSummaryDataFrameAnalyzer(SummaryDataFrameAnalyzer, TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.analyzer_klass = DataFrameAnalyzer
-
-
-@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
-class TestAnalyzer(Analyzer, TestCase):
 
     @classmethod
     def setUpClass(cls):
