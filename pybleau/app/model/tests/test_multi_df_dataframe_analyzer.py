@@ -14,7 +14,8 @@ except ImportError:
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
 if BACKEND_AVAILABLE and KIWI_AVAILABLE:
-    from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
+    from pybleau.app.model.multi_dfs_dataframe_analyzer import \
+        MultiDataFrameAnalyzer
 
 msg = "No UI backend to paint into or no Kiwisolver"
 
@@ -24,7 +25,7 @@ class TestFilterDataFrameAnalyzer(FilterDataFrameAnalyzer, TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer_klass = DataFrameAnalyzer
+        cls.analyzer_klass = MultiDataFrameAnalyzer
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
@@ -32,7 +33,7 @@ class TestSummaryDataFrameAnalyzer(SummaryDataFrameAnalyzer, TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer_klass = DataFrameAnalyzer
+        cls.analyzer_klass = MultiDataFrameAnalyzer
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
@@ -40,7 +41,7 @@ class TestAnalyzer(Analyzer, TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer_klass = DataFrameAnalyzer
+        cls.analyzer_klass = MultiDataFrameAnalyzer
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
@@ -48,7 +49,7 @@ class TestSortingDataFrameAnalyzer(SortingDataFrameAnalyzer, TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer_klass = DataFrameAnalyzer
+        cls.analyzer_klass = MultiDataFrameAnalyzer
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
@@ -56,4 +57,4 @@ class TestDisplayingDataFrameAnalyzer(DisplayingDataFrameAnalyzer, TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer_klass = DataFrameAnalyzer
+        cls.analyzer_klass = MultiDataFrameAnalyzer
