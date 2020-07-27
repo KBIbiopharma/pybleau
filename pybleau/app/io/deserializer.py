@@ -23,6 +23,8 @@ def deserialize(serial_data, array_collection=None):
 
 class dataFrameAnalyzerDeSerializer(dataElementDeSerializer):
 
+    protocol_version = 1
+
     def get_instance(self, constructor_data):
         instance = super(dataFrameAnalyzerDeSerializer, self).get_instance(
             constructor_data

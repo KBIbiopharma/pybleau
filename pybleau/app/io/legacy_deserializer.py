@@ -3,8 +3,18 @@ from traits.api import HasStrictTraits, Set
 from .deserializer import singleLinePlotStyleDeSerializer, \
     singleScatterPlotStyleDeSerializer, plotDescriptorDeSerializer, \
     dataFramePlotManagerDeSerializer, histogramPlotStyleDeSerializer, \
-    scatterPlotConfiguratorDeSerializer
+    scatterPlotConfiguratorDeSerializer, dataFrameAnalyzerDeSerializer
 from ..plotting.plot_config import DEFAULT_CONFIGS, DEFAULT_STYLES
+
+
+class dataFrameAnalyzerDeSerializer_v0(dataFrameAnalyzerDeSerializer):
+
+    protocol_version = 0
+
+    def get_instance(self, constructor_data):
+        constructor_data['kwargs'].pop('index_name')
+        return super(dataFrameAnalyzerDeSerializer_v0, self).get_instance(
+            constructor_data)
 
 
 class dataFramePlotManagerDeSerializer_v0(dataFramePlotManagerDeSerializer):
@@ -133,5 +143,6 @@ LEGACY_DESERIALIZER_MAP = {
     "linePlotStyle": {0: linePlotStyleDeSerializer},
     "dataFramePlotManager": {0: dataFramePlotManagerDeSerializer_v0},
     "histogramPlotStyle": {0: histogramPlotStyleDeSerializer_v0},
-    "scatterPlotConfigurator": {0: scatterPlotConfiguratorDeSerializer_v0}
+    "scatterPlotConfigurator": {0: scatterPlotConfiguratorDeSerializer_v0},
+    "dataFrameAnalyzer": {0: dataFrameAnalyzerDeSerializer_v0}
 }
