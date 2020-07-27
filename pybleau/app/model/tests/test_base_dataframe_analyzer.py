@@ -345,7 +345,10 @@ class Analyzer(UnittestTools):
         df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                            "c": list("abcdeabcaab")}, index=range(11))
         df.index.name = "new index"
-        analyzer.source_df = df
+        with self.assertTraitChanges(analyzer, "index_name"):
+            with self.assertTraitChanges(analyzer, "sort_by_col_list"):
+                analyzer.source_df = df
+
         self.assertEqual(analyzer.index_name, "new index")
         self.assertNotIn("index", analyzer.sort_by_col_list)
         self.assertIn("new index", analyzer.sort_by_col_list)
