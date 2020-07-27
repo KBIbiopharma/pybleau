@@ -331,6 +331,25 @@ class Analyzer(UnittestTools):
         self.assertEqual(list(analyzer.summary_df.columns), ["a", "c"])
         self.assertEqual(list(analyzer.summary_categorical_df.columns), ["b"])
 
+    def test_keep_index_name_sort_options_synced(self):
+        """ Make sure index_name & sort options update on data update.
+
+        This update may be triggered by programmatic modification of an
+        analyzer or during its deserialization or creation.
+        """
+        analyzer = self.analyzer_klass(source_df=self.df)
+        self.assertEqual(analyzer.index_name, "index")
+        self.assertIn("index", analyzer.sort_by_col_list)
+
+        # Change source_df
+        df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
+                           "c": list("abcdeabcaab")}, index=range(11))
+        df.index.name = "new index"
+        analyzer.source_df = df
+        self.assertEqual(analyzer.index_name, "new index")
+        self.assertNotIn("index", analyzer.sort_by_col_list)
+        self.assertIn("new index", analyzer.sort_by_col_list)
+
 
 class SortingDataFrameAnalyzer(UnittestTools):
 
