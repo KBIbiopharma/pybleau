@@ -358,13 +358,16 @@ class DataFrameAnalyzer(DataElement):
             self.sort_by_col = self.index_name
 
     def _sort_by_col_changed(self, new):
-        self._sort_df_by(self.filtered_df, new)
+        self.filtered_df = self._sort_df_by(self.filtered_df, new)
         # Remap the selections
         if self.data_selected:
             self.selected_idx = self.map_df_index_to_idx(self.data_selected)
 
     def _sort_df_by(self, df, by):
-        """ Sort in-place the provided Dataframe by the key specified.
+        """ Returns a sorted version the provided Dataframe by specified key.
+
+        Parse the 'by' key to see if need to sort ascending or descending, or
+        if needing to sort by the index or one of the columns.
 
         Parameters
         ----------
@@ -377,7 +380,7 @@ class DataFrameAnalyzer(DataElement):
             ascending.
         """
         if by == NO_SORTING_ENTRY or df is None:
-            return None
+            return df
 
         if by.endswith(REVERSED_SUFFIX):
             by = by[:-len(REVERSED_SUFFIX)]
@@ -386,9 +389,9 @@ class DataFrameAnalyzer(DataElement):
             ascending = True
 
         if by == self.index_name:
-            df.sort_index(ascending=ascending, inplace=True)
+            df = df.sort_index(ascending=ascending)
         else:
-            df.sort_values(by=by, ascending=ascending, inplace=True)
+            df = df.sort_values(by=by, ascending=ascending)
         return df
 
     # Private interface -------------------------------------------------------
@@ -423,18 +426,21 @@ class DataFrameAnalyzer(DataElement):
         self.selected_idx = []
 
         if not self.filter_exp.strip():
-            return self.source_df
+            new_df = self.source_df
+        else:
+            query = self.filter_transformation(
+                self._clean_filter_exp(self.filter_exp)
+            )
+            if not self._validate_query(query):
+                msg = "Invalid filter expression error: {}.".format(query)
+                logger.error(msg)
+                raise InvalidQuery(msg)
 
-        query = self.filter_transformation(
-            self._clean_filter_exp(self.filter_exp)
-        )
-        if not self._validate_query(query):
-            msg = "Invalid filter expression error: {}.".format(query)
-            logger.error(msg)
-            raise InvalidQuery(msg)
+            new_df = self.source_df.query(query)
 
-        new_df = self.source_df.query(query)
-        self._sort_df_by(new_df, self.sort_by_col)
+        if self.sort_by_col:
+            new_df = self._sort_df_by(new_df, self.sort_by_col)
+
         return new_df
 
     def _validate_query(self, query):
