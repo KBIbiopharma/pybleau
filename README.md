@@ -34,11 +34,11 @@ The project provides 2 entry-points for high-level tools it contains:
 For all components:
   - Python 2.7 and 3.6+
   - pandas (> 0.20 recommended)
-  - app_common 0.10.1+
+  - app_common 0.12+
 
 For ETS app tools:
-  - traitsUI 6.0, traits, pyface,
-  - a UI toolkit (qt or wx) if wanting to run standalone app.
+  - traitsUI 6.0+ (>7.0.1 recommended), traits, pyface
+  - a UI toolkit (qt5 or wx): see ETS documentation for details.
 
 For the plotting portion of the ETS app tools:
   - chaco 4.7, enable, kiwisolver.
@@ -53,17 +53,19 @@ For report generation:
   - python_pptx 0.6
  
 For development:
-  - nose
-  - coverage
   - flake8
+  
+ 
+For complete list of dependencies, please refer to `ci/requirements.json`.
 
 ### Installation steps
 
-`pybleau` works on and is tested under Python 2.7 and 3.6. To 
-build the development environment, refer to the "Requirements" section above. 
+`pybleau` is tested under python version `3.6` but should work on `2.7`, `3.7` 
+and `3.8` too. To build the development environment, refer to the 
+"Requirements" section above. 
 Afterwards, end users should install `pybleau` itself using: 
 ```bash
-pip install pybleau
+python setup.py install
 ```
 
 Developers should clone this repository and run
@@ -182,7 +184,7 @@ issue on this repository.
 Before contributing a PR, it is necessary to run the test suite to make sure it 
 passes. For that, execute:
 ```bash
-nosetests -v pybleau/
+python -m unittest discover pybleau/
 ```
 Please make sure to contribute new tests to make sure the test coverage doesn't 
 get reduced by your contribution and that your contribution can't be broken 
