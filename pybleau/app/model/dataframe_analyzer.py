@@ -3,8 +3,8 @@ from pandas import concat, DataFrame
 import numpy as np
 from functools import partial
 
-from traits.api import Bool, Callable, Enum, Event, Instance,\
-    Int, List, on_trait_change, Str
+from traits.api import Bool, cached_property, Callable, Enum, Event, Instance,\
+    Int, List, on_trait_change, Property, Str
 
 from app_common.std_lib.str_utils import add_suffix_if_exists, sanitize_string
 from app_common.model_tools.data_element import DataElement
@@ -93,13 +93,13 @@ class DataFrameAnalyzer(DataElement):
     sort_by_col = Enum(values='sort_by_col_list')
 
     #: List of possible values for the sort_by_col
-    sort_by_col_list = List
+    sort_by_col_list = Property(List, depends_on="source_df")
 
     #: Whether the source data's index is sorted
     data_sorted = Bool
 
     #: Name of the index if any
-    index_name = Str
+    index_name = Property(Str, depends_on="source_df")
 
     #: List of DF row locations currently selected. Used by PlotManager and
     #: TableEditor, but not invariant under sorting operations.
@@ -159,9 +159,6 @@ class DataFrameAnalyzer(DataElement):
         if self.source_df is not None:
             self.compute_summary()
             self.compute_categorical_summary()
-
-        if NO_SORTING_ENTRY not in self.sort_by_col_list:
-            self.sort_by_col_list.insert(0, NO_SORTING_ENTRY)
 
         if sort_by:
             self.sort_by_col = sort_by
@@ -478,15 +475,10 @@ class DataFrameAnalyzer(DataElement):
 
         return displayed_df
 
-    # Traits initialization methods -------------------------------------------
+    # Property getters/setters ------------------------------------------------
 
-    def _displayed_df_default(self):
-        return self._compute_displayed_df()
-
-    def _filtered_df_default(self):
-        return self._compute_filtered_df()
-
-    def _sort_by_col_list_default(self):
+    @cached_property
+    def _get_sort_by_col_list(self):
         if self.source_df is None:
             return []
 
@@ -500,10 +492,8 @@ class DataFrameAnalyzer(DataElement):
             cols.append(col + REVERSED_SUFFIX)
         return cols
 
-    def _filter_transformation_default(self):
-        return lambda x: x
-
-    def _index_name_default(self):
+    @cached_property
+    def _get_index_name(self):
         if self.source_df is None:
             return ""
 
@@ -511,6 +501,17 @@ class DataFrameAnalyzer(DataElement):
         if index_col is None:
             index_col = "index"
         return index_col
+
+    # Traits initialization methods -------------------------------------------
+
+    def _displayed_df_default(self):
+        return self._compute_displayed_df()
+
+    def _filtered_df_default(self):
+        return self._compute_filtered_df()
+
+    def _filter_transformation_default(self):
+        return lambda x: x
 
     def _num_display_increment_default(self):
         return self.num_displayed_rows
