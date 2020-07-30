@@ -15,7 +15,8 @@ from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
 
 
 class FilterDataFrameAnalyzer(UnittestTools):
-
+    """ Tests around filtering a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
@@ -190,7 +191,8 @@ class FilterDataFrameAnalyzer(UnittestTools):
 
 
 class SummaryDataFrameAnalyzer(UnittestTools):
-
+    """ Tests around summarizing a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
@@ -264,7 +266,8 @@ class SummaryDataFrameAnalyzer(UnittestTools):
 
 
 class Analyzer(UnittestTools):
-
+    """ Tests around creating a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
@@ -355,7 +358,8 @@ class Analyzer(UnittestTools):
 
 
 class SortingDataFrameAnalyzer(UnittestTools):
-
+    """ Tests around sorting a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
@@ -721,6 +725,7 @@ class DisplayingDataFrameAnalyzer(UnittestTools):
         self.assertIs(analyzer.displayed_df, analyzer.filtered_df)
 
     def test_truncating_data_non_trivial_index(self):
+        import pdb ; pdb.set_trace()
         df = self.df
         df.index = [1, 2, 5, 6, 3, 8, 10, 12, 4, 13, 14]
         analyzer = self.analyzer_klass(source_df=df, num_displayed_rows=100,
