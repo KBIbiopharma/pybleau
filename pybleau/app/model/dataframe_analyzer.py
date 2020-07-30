@@ -358,24 +358,38 @@ class DataFrameAnalyzer(DataElement):
             self.sort_by_col = self.index_name
 
     def _sort_by_col_changed(self, new):
-        if new == NO_SORTING_ENTRY or self.filtered_df is None:
-            return
+        self._sort_df_by(self.filtered_df, new)
+        # Remap the selections
+        if self.data_selected:
+            self.selected_idx = self.map_df_index_to_idx(self.data_selected)
 
-        if new.endswith(REVERSED_SUFFIX):
-            new = new[:-len(REVERSED_SUFFIX)]
+    def _sort_df_by(self, df, by):
+        """ Sort in-place the provided Dataframe by the key specified.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe to sort.
+
+        by : str
+            Name of the index or of the column to sort the DF by. Can contain a
+            prefix to sort in descending order rather than the default
+            ascending.
+        """
+        if by == NO_SORTING_ENTRY or df is None:
+            return None
+
+        if by.endswith(REVERSED_SUFFIX):
+            by = by[:-len(REVERSED_SUFFIX)]
             ascending = False
         else:
             ascending = True
 
-        if new == self.index_name:
-            self.filtered_df = self.filtered_df.sort_index(ascending=ascending)
+        if by == self.index_name:
+            df.sort_index(ascending=ascending, inplace=True)
         else:
-            self.filtered_df = self.filtered_df.sort_values(
-                by=new, ascending=ascending)
-
-        # Remap the selections
-        if self.data_selected:
-            self.selected_idx = self.map_df_index_to_idx(self.data_selected)
+            df.sort_values(by=by, ascending=ascending, inplace=True)
+        return df
 
     # Private interface -------------------------------------------------------
 
@@ -420,17 +434,7 @@ class DataFrameAnalyzer(DataElement):
             raise InvalidQuery(msg)
 
         new_df = self.source_df.query(query)
-        # FIXME: this custom code should be replaced by a call to
-        # _sort_by_col_changed
-        if self.sort_by_col:
-            if self.sort_by_col in new_df.columns:
-                new_df = new_df.sort_values(self.sort_by_col)
-            else:
-                msg = "Trying to sort the DF by a column that doesn't exist " \
-                      "in the DF: {}. Skipping.".format(self.sort_by_col)
-                logger.error(msg)
-                self.sort_by_col = NO_SORTING_ENTRY
-
+        self._sort_df_by(new_df, self.sort_by_col)
         return new_df
 
     def _validate_query(self, query):
