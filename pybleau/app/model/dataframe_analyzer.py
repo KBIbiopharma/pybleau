@@ -358,24 +358,41 @@ class DataFrameAnalyzer(DataElement):
             self.sort_by_col = self.index_name
 
     def _sort_by_col_changed(self, new):
-        if new == NO_SORTING_ENTRY or self.filtered_df is None:
-            return
+        self.filtered_df = self._sort_df_by(self.filtered_df, new)
+        # Remap the selections
+        if self.data_selected:
+            self.selected_idx = self.map_df_index_to_idx(self.data_selected)
 
-        if new.endswith(REVERSED_SUFFIX):
-            new = new[:-len(REVERSED_SUFFIX)]
+    def _sort_df_by(self, df, by):
+        """ Returns a sorted version the provided Dataframe by specified key.
+
+        Parse the 'by' key to see if need to sort ascending or descending, or
+        if needing to sort by the index or one of the columns.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe to sort.
+
+        by : str
+            Name of the index or of the column to sort the DF by. Can contain a
+            prefix to sort in descending order rather than the default
+            ascending.
+        """
+        if by == NO_SORTING_ENTRY or df is None:
+            return df
+
+        if by.endswith(REVERSED_SUFFIX):
+            by = by[:-len(REVERSED_SUFFIX)]
             ascending = False
         else:
             ascending = True
 
-        if new == self.index_name:
-            self.filtered_df = self.filtered_df.sort_index(ascending=ascending)
+        if by == self.index_name:
+            df = df.sort_index(ascending=ascending)
         else:
-            self.filtered_df = self.filtered_df.sort_values(
-                by=new, ascending=ascending)
-
-        # Remap the selections
-        if self.data_selected:
-            self.selected_idx = self.map_df_index_to_idx(self.data_selected)
+            df = df.sort_values(by=by, ascending=ascending)
+        return df
 
     # Private interface -------------------------------------------------------
 
@@ -409,27 +426,20 @@ class DataFrameAnalyzer(DataElement):
         self.selected_idx = []
 
         if not self.filter_exp.strip():
-            return self.source_df
-
-        query = self.filter_transformation(
-            self._clean_filter_exp(self.filter_exp)
-        )
-        if not self._validate_query(query):
-            msg = "Invalid filter expression error: {}.".format(query)
-            logger.error(msg)
-            raise InvalidQuery(msg)
-
-        new_df = self.source_df.query(query)
-        # FIXME: this custom code should be replaced by a call to
-        # _sort_by_col_changed
-        if self.sort_by_col:
-            if self.sort_by_col in new_df.columns:
-                new_df = new_df.sort_values(self.sort_by_col)
-            else:
-                msg = "Trying to sort the DF by a column that doesn't exist " \
-                      "in the DF: {}. Skipping.".format(self.sort_by_col)
+            new_df = self.source_df
+        else:
+            query = self.filter_transformation(
+                self._clean_filter_exp(self.filter_exp)
+            )
+            if not self._validate_query(query):
+                msg = "Invalid filter expression error: {}.".format(query)
                 logger.error(msg)
-                self.sort_by_col = NO_SORTING_ENTRY
+                raise InvalidQuery(msg)
+
+            new_df = self.source_df.query(query)
+
+        if self.sort_by_col:
+            new_df = self._sort_df_by(new_df, self.sort_by_col)
 
         return new_df
 

@@ -3,25 +3,20 @@ import os
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-try:
-    import kiwisolver  # noqa
-    KIWI_AVAILABLE = True
-except ImportError:
-    KIWI_AVAILABLE = False
+from .base_dataframe_analyzer import Analyzer, DisplayingDataFrameAnalyzer, \
+    FilterDataFrameAnalyzer, SelectionPlotDataFrameAnalyzer, \
+    SortingDataFrameAnalyzer, SummaryDataFrameAnalyzer
 
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
-if BACKEND_AVAILABLE and KIWI_AVAILABLE:
-    from .test_base_dataframe_analyzer import Analyzer, \
-        DisplayingDataFrameAnalyzer, FilterDataFrameAnalyzer, \
-        SortingDataFrameAnalyzer, SummaryDataFrameAnalyzer
+if BACKEND_AVAILABLE:
     from pybleau.app.model.multi_dfs_dataframe_analyzer import \
         MultiDataFrameAnalyzer
 
-msg = "No UI backend to paint into or no Kiwisolver"
+msg = "No UI backend to paint into"
 
 
-@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+@skipIf(not BACKEND_AVAILABLE, msg)
 class TestAnalyzer(Analyzer, TestCase):
 
     @classmethod
@@ -56,33 +51,37 @@ class TestAnalyzer(Analyzer, TestCase):
             self.analyzer_klass(_source_dfs={"a": self.df, "b": self.df2})
 
 
-@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+@skipIf(not BACKEND_AVAILABLE, msg)
 class TestFilterDataFrameAnalyzer(FilterDataFrameAnalyzer, TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.analyzer_klass = MultiDataFrameAnalyzer
 
 
-@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+@skipIf(not BACKEND_AVAILABLE, msg)
 class TestSummaryDataFrameAnalyzer(SummaryDataFrameAnalyzer, TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.analyzer_klass = MultiDataFrameAnalyzer
 
 
-@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+@skipIf(not BACKEND_AVAILABLE, msg)
 class TestSortingDataFrameAnalyzer(SortingDataFrameAnalyzer, TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.analyzer_klass = MultiDataFrameAnalyzer
 
 
-@skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
+@skipIf(not BACKEND_AVAILABLE, msg)
 class TestDisplayingDataFrameAnalyzer(DisplayingDataFrameAnalyzer, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.analyzer_klass = MultiDataFrameAnalyzer
 
+
+@skipIf(not BACKEND_AVAILABLE, msg)
+class TestSelectionPlotDataFrameAnalyzer(SelectionPlotDataFrameAnalyzer,
+                                         TestCase):
     @classmethod
     def setUpClass(cls):
         cls.analyzer_klass = MultiDataFrameAnalyzer

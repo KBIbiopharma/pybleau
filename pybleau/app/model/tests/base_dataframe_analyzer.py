@@ -15,7 +15,8 @@ from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
 
 
 class FilterDataFrameAnalyzer(UnittestTools):
-
+    """ Tests around filtering a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
@@ -190,7 +191,8 @@ class FilterDataFrameAnalyzer(UnittestTools):
 
 
 class SummaryDataFrameAnalyzer(UnittestTools):
-
+    """ Tests around summarizing a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
@@ -264,7 +266,8 @@ class SummaryDataFrameAnalyzer(UnittestTools):
 
 
 class Analyzer(UnittestTools):
-
+    """ Tests around creating a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
@@ -355,12 +358,16 @@ class Analyzer(UnittestTools):
 
 
 class SortingDataFrameAnalyzer(UnittestTools):
-
+    """ Tests around sorting a DFAnalyzer.
+    """
     def setUp(self):
         self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
                                 "c": list("abcdeabcaab")})
         self.df2 = pd.DataFrame({"a": [1, 2, 3, 4, 5],
                                  "b": [10, 15, 20, 15, 10]})
+
+        self.unsorted_df = pd.DataFrame({"a": range(5)})
+        self.unsorted_df.index = [1, 2, 5, 6, 3]
 
     def test_sorting_options_no_index_name(self):
         """ Changing the sort_by_col changes the filtered DF and summary DF.
@@ -395,31 +402,29 @@ class SortingDataFrameAnalyzer(UnittestTools):
                     "a" + REVERSED_SUFFIX, "b", "b" + REVERSED_SUFFIX]
         self.assertEqual(analyzer.sort_by_col_list, expected)
 
-    def test_initial_index_sort(self):
-        unsorted_df = pd.DataFrame({"a": range(5)})
-        unsorted_df.index = [1, 2, 5, 6, 3]
-        # By default, the DF is sorted along the index: data_sorted=True
-        analyzer = self.analyzer_klass(source_df=unsorted_df)
+    def test_initial_index_sorted(self):
+        """ By default, the DF is sorted along the index: data_sorted=True. """
+        analyzer = self.analyzer_klass(source_df=self.unsorted_df)
+        self.assertEqual(analyzer.source_df.index.tolist(), [1, 2, 3, 5, 6])
+        self.assertEqual(analyzer.source_df.a.tolist(), [0, 1, 4, 2, 3])
+        self.assertEqual(analyzer.filtered_df.index.tolist(), [1, 2, 3, 5, 6])
+        self.assertEqual(analyzer.filtered_df.a.tolist(), [0, 1, 4, 2, 3])
         self.assertEqual(analyzer.displayed_df.index.tolist(), [1, 2, 3, 5, 6])
         self.assertEqual(analyzer.displayed_df.a.tolist(), [0, 1, 4, 2, 3])
         self.assertEqual(analyzer.sort_by_col, "index")
         self.assertIn(NO_SORTING_ENTRY, analyzer.sort_by_col_list)
 
     def test_turn_off_initial_index_sort(self):
-        unsorted_df = pd.DataFrame({"a": range(5)})
-        unsorted_df.index = [1, 2, 5, 6, 3]
-        # Turn off initial sorting:
-        analyzer = self.analyzer_klass(source_df=unsorted_df,
+        """ Turn off initial sort. """
+        analyzer = self.analyzer_klass(source_df=self.unsorted_df,
                                        data_sorted=False)
         self.assertEqual(analyzer.displayed_df.index.tolist(), [1, 2, 5, 6, 3])
         self.assertEqual(analyzer.displayed_df.a.tolist(), list(range(5)))
         self.assertEqual(analyzer.sort_by_col, NO_SORTING_ENTRY)
 
     def test_sorting_variables_updates_when_source_df_changes(self):
-        unsorted_df = pd.DataFrame({"a": range(5)})
-        unsorted_df.index = [1, 2, 5, 6, 3]
-        # Turn off initial sorting:
-        analyzer = self.analyzer_klass(source_df=unsorted_df,
+        """ The list of sorting options update when the source_df updates. """
+        analyzer = self.analyzer_klass(source_df=self.unsorted_df,
                                        data_sorted=False)
         self.assertEqual(analyzer.displayed_df.index.tolist(), [1, 2, 5, 6, 3])
         self.assertEqual(analyzer.displayed_df.a.tolist(), list(range(5)))
@@ -432,12 +437,44 @@ class SortingDataFrameAnalyzer(UnittestTools):
         self.assertTrue(analyzer.data_sorted)
         self.assertIn(NO_SORTING_ENTRY, analyzer.sort_by_col_list)
 
-        analyzer.source_df = unsorted_df
+        analyzer.source_df = self.unsorted_df
         self.assertIn(NO_SORTING_ENTRY, analyzer.sort_by_col_list)
         self.assertEqual(analyzer.sort_by_col, NO_SORTING_ENTRY)
         self.assertFalse(analyzer.data_sorted)
 
-    def test_sorting_by_columns(self):
+    def test_create_with_sort_by_index_no_filter(self):
+        """ Even if no filter is applied, should allow sorting filtered df. """
+        analyzer = self.analyzer_klass(source_df=self.unsorted_df,
+                                       sort_by_col="index", data_sorted=False)
+        self.assertEqual(analyzer.filter_exp, "")
+        self.assertEqual(analyzer.sort_by_col, "index")
+        assert_frame_equal(analyzer.source_df, self.unsorted_df)
+        self.assertEqual(analyzer.filtered_df.index.tolist(),
+                         sorted(analyzer.filtered_df.index))
+        self.assertEqual(analyzer.displayed_df.index.tolist(),
+                         sorted(analyzer.displayed_df.index))
+
+    def test_create_with_sort_by_col_descending(self):
+        """ Even if no filter is applied, should allow sorting filtered df. """
+        b_vals = [10, 15, 20, 16, 11]
+        a_vals = [1, 2, 3, 4, 5]
+        df = pd.DataFrame({"a": a_vals, "b": b_vals})
+        analyzer = self.analyzer_klass(source_df=df,
+                                       sort_by_col="a" + REVERSED_SUFFIX)
+
+        self.assertEqual(analyzer.filter_exp, "")
+        self.assertEqual(analyzer.sort_by_col, "a" + REVERSED_SUFFIX)
+        assert_frame_equal(analyzer.source_df, df)
+        self.assertEqual(analyzer.filtered_df["a"].tolist(),
+                         a_vals[::-1])
+        self.assertEqual(analyzer.filtered_df["b"].tolist(),
+                         b_vals[::-1])
+        self.assertEqual(analyzer.displayed_df["a"].tolist(),
+                         a_vals[::-1])
+        self.assertEqual(analyzer.displayed_df["b"].tolist(),
+                         b_vals[::-1])
+
+    def test_sorting_by_columns_after_creation(self):
         """ Changing the sort_by_col changes the filtered DF and summary DF.
         """
         b_vals = [10, 15, 20, 16, 11, 12, 21]
@@ -462,7 +499,7 @@ class SortingDataFrameAnalyzer(UnittestTools):
                 with self.assertRaises(TraitError):
                     analyzer.sort_by_col = "BLAH"
 
-    def test_sorting_by_index(self):
+    def test_sorting_by_index_after_creation(self):
         """ Changing the column list changes the filtered DF and summary DF.
         """
         b_vals = [10, 15, 20, 16, 11, 12, 21]
@@ -495,6 +532,25 @@ class SortingDataFrameAnalyzer(UnittestTools):
         assert_frame_equal(analysis.source_df, df)
         assert_frame_equal(analysis.filtered_df, filtered)
         assert_frame_equal(analysis.displayed_df, filtered)
+
+    def test_shuffle(self):
+        df = self.df
+        model = self.analyzer_klass(source_df=df)
+        index0 = list(model.filtered_df.index)
+        model.shuffle_filtered_df()
+        index1 = list(model.filtered_df.index)
+        self.assertNotEqual(index0, index1)
+        self.assertEqual(index0, sorted(index1))
+
+
+class SelectionPlotDataFrameAnalyzer(UnittestTools):
+    """ Tests around data selections and data plotters of a DFAnalyzer.
+    """
+    def setUp(self):
+        self.df = pd.DataFrame({"a": range(11), "b": range(0, 110, 10),
+                                "c": list("abcdeabcaab")})
+        self.df2 = pd.DataFrame({"a": [1, 2, 3, 4, 5],
+                                 "b": [10, 15, 20, 15, 10]})
 
     def test_plotter_selection_connected(self):
         df = self.df
@@ -639,15 +695,6 @@ class SortingDataFrameAnalyzer(UnittestTools):
                 model.sort_by_col = "index" + REVERSED_SUFFIX
 
         self.assertEqual(model.selected_idx, [len(df)-1])
-
-    def test_shuffle(self):
-        df = self.df
-        model = self.analyzer_klass(source_df=df)
-        index0 = list(model.filtered_df.index)
-        model.shuffle_filtered_df()
-        index1 = list(model.filtered_df.index)
-        self.assertNotEqual(index0, index1)
-        self.assertEqual(index0, sorted(index1))
 
     # Helper methods ----------------------------------------------------------
 
