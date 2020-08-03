@@ -6,16 +6,16 @@ from enable.component import white_color_trait
 class PlotContainerStyle(HasStrictTraits):
 
     #: The amount of space to put on the left side of the component
-    padding_left = Int(20)
+    padding_left = Int(50)
 
     #: The amount of space to put on the right side of the component
     padding_right = Int(20)
 
     #: The amount of space to put on top of the component
-    padding_top = Int(30)
+    padding_top = Int(40)
 
     #: The amount of space to put below the component
-    padding_bottom = Int(20)
+    padding_bottom = Int(50)
 
     # Is the border visible?
     border_visible = Bool(False)
