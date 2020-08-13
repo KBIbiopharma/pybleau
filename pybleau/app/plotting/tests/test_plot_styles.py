@@ -128,6 +128,7 @@ class TestPlotStyleAsView(TestCase):
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestPlotStyleBehaviors(TestCase):
     def test_default_plot_style_supports_text_x_axis(self):
+        """ Bar plot styles must support text labels along the x axis. """
         style = BarPlotStyle()
         self.assertTrue(style.x_axis_style.support_text_labels)
         self.assertFalse(style.y_axis_style.support_text_labels)
