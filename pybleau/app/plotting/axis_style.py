@@ -49,7 +49,7 @@ class AxisStyle(HasStrictTraits):
 
     #: Is there a finite number of labels?
     # (If so, allow forcing the appearance of all of them and label rotation)
-    _text_labels = Bool
+    support_text_labels = Bool
 
     def __init__(self, **traits):
         if "range_low" in traits and "auto_range_low" not in traits:
@@ -83,7 +83,7 @@ class AxisStyle(HasStrictTraits):
                          label="Show all ticks/labels",
                          tooltip="(String labels only)"),
                     show_border=True, label="Labels",
-                    visible_when="_text_labels"
+                    visible_when="support_text_labels"
                 ),
             ),
             resizable=True

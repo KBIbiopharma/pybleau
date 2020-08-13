@@ -127,6 +127,11 @@ class TestPlotStyleAsView(TestCase):
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestPlotStyleBehaviors(TestCase):
+    def test_default_plot_style_supports_text_x_axis(self):
+        style = BarPlotStyle()
+        self.assertTrue(style.x_axis_style.support_text_labels)
+        self.assertFalse(style.y_axis_style.support_text_labels)
+
     def test_initialize_range(self):
         style = SingleLinePlotStyle()
         plot = Plot(ArrayPlotData(x=[1, 2], y=[3, 4]))
