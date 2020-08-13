@@ -168,6 +168,20 @@ class BaseXYPlotStyle(HasStrictTraits):
     def apply_axis_ranges(self, plot, x_mapper=None, y_mapper=None,
                           second_y_mapper=None):
         """ Apply to the plot's mappers the ranges stored in this style object.
+
+        Parameters
+        ----------
+        plot : Plot, OverlayPlotContainer
+            Plot to apply the style's ranges to.
+
+        x_mapper : Mapper, optional
+            Mapper to apply the x range values to.
+
+        y_mapper : Mapper, optional
+            Mapper to apply the y range values to.
+
+        second_y_mapper : Mapper, optional
+            Mapper to apply the secondary y range values to.
         """
         x_mapper, y_mapper, second_y_mapper = self._get_plot_mappers(
             plot, x_mapper=x_mapper, y_mapper=y_mapper,
@@ -261,6 +275,22 @@ class BaseXYPlotStyle(HasStrictTraits):
     def _get_plot_mappers(self, plot, x_mapper=None, y_mapper=None,
                           second_y_mapper=None):
         """ Retrieve the plot's mappers to synchronize with the style.
+
+        Parameters
+        ----------
+        plot : Plot-like
+            Chaco Plot-like class that holds up to 3 axis attributes to apply
+            style ranges to: x_axis, y_axis and second_y_axis. Each must be an
+            instance of a PlotAxis.
+
+        x_mapper : Mapper
+            Already identified Mapper to align with the x range.
+
+        y_mapper : Mapper
+            Already identified Mapper to align with the y range.
+
+        second_y_mapper : Mapper
+            Already identified Mapper to align with the secondary y range.
         """
         missing_mapper_msg = "The plot is missing the attribute {}. Please " \
                              "provide the mapper explicitly"

@@ -330,7 +330,7 @@ class DataFramePlotManager(DataElement):
         if initial_creation:
             self._initialize_config_plot_ranges(config, plot)
         else:
-            self._apply_config_plot_ranges(config, plot)
+            self._apply_style_ranges(config, plot, factory)
 
         desc["id"] = str(position)
         # Store the config so it be recreated...
@@ -381,18 +381,24 @@ class DataFramePlotManager(DataElement):
 
         config.plot_style.initialize_axis_ranges(plot)
 
-    def _apply_config_plot_ranges(self, config, plot):
+    def _apply_style_ranges(self, config, plot, factory):
         """ Apply the styler's range attributes to the created plot.
         """
         style = config.plot_style
-        # Collect the plot instance which holds the mappers to apply to:
+
+        # Override the plot by collecting the OverlayPlotContainer instance
+        # which holds the axis instances to apply to:
         if isinstance(plot, HPlotContainer):
             for comp in plot.components:
                 if isinstance(comp, OverlayPlotContainer):
                     plot = comp
                     break
 
+        # Apply style range to plot's axis
         style.apply_axis_ranges(plot)
+
+        # Align all renderers to all plot's axis
+        factory.align_all_renderers(plot)
 
     def _factory_from_config(self, config):
         """ Return plot factory capable of building a plot described by config.
@@ -720,3 +726,14 @@ def embed_plot_in_desc(plot):
         raise ValueError(msg)
 
     return desc
+
+
+def plot_from_config(config, factory_map=DEFAULT_FACTORIES):
+    """ Build plot factory capable of building a plot described by config.
+    """
+    plot_type = config.plot_type
+    plot_factory_klass = factory_map[plot_type]
+    factory = plot_factory_klass(**config.to_dict())
+    desc = factory.generate_plot()
+    plot = desc["plot"]
+    return plot, factory, desc
