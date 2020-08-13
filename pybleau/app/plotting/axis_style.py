@@ -81,9 +81,9 @@ class AxisStyle(HasStrictTraits):
                          tooltip="(String labels only)"),
                     Item('show_all_labels',
                          label="Show all ticks/labels",
-                         tooltip="(String labels only)",
-                         visible_when="_text_labels"),
+                         tooltip="(String labels only)"),
                     show_border=True, label="Labels",
+                    visible_when="_text_labels"
                 ),
             ),
             resizable=True
