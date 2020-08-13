@@ -77,11 +77,13 @@ class AxisStyle(HasStrictTraits):
                 ),
                 HGroup(
                     Item('label_rotation',
-                         editor=RangeEditor(low=0, high=360)),
+                         editor=RangeEditor(low=0, high=360),
+                         tooltip="(String labels only)"),
                     Item('show_all_labels',
-                         label="Show all ticks/labels"),
+                         label="Show all ticks/labels",
+                         tooltip="(String labels only)",
+                         visible_when="_finite_labels"),
                     show_border=True, label="Labels",
-                    visible_when="_finite_labels"
                 ),
             ),
             resizable=True

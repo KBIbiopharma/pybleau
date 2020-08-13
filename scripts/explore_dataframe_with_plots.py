@@ -61,6 +61,10 @@ config7.y_col_names = ["Col_1", "Col_2", "Col_4"]
 desc7 = PlotDescriptor(plot_config=config7, plot_title="Plot 7",
                        container_idx=1)
 
+config9 = BarPlotConfigurator(data_source=TEST_DF, plot_title="plot 9")
+config9.x_col_name = "Col_3"
+config9.y_col_name = "Col_4"
+
 config8 = ScatterPlotConfigurator(data_source=TEST_DF)
 config8.x_col_name = "Col_1"
 config8.y_col_name = "Col_2"
@@ -72,15 +76,16 @@ analyzer = DataFrameAnalyzer(source_df=TEST_DF)
 
 plot_manager = DataFramePlotManager(
     contained_plots=[
-        config,
-        config2,
-        config3,
-        config4,
-        config5,
-        cust_plot1,
-        config6,
-        desc7,
-        desc8
+        # config,
+        # config2,
+        # config3,
+        # config4,
+        # config5,
+        # cust_plot1,
+        # config6,
+        # desc7,
+        config9,
+        # desc8
     ],
     data_source=TEST_DF, source_analyzer=analyzer
 )
