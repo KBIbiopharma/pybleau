@@ -289,7 +289,9 @@ class BaseXYPlotStyle(HasStrictTraits):
     # Traits initialization methods -------------------------------------------
 
     def _x_axis_style_default(self):
-        return AxisStyle(axis_name="X", _finite_labels=True)
+        # Not always text labels along x but that's a possibility so enable
+        # text label controls:
+        return AxisStyle(axis_name="X", _text_labels=True)
 
     def _y_axis_style_default(self):
         return AxisStyle(axis_name="Y")
