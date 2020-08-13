@@ -76,16 +76,16 @@ analyzer = DataFrameAnalyzer(source_df=TEST_DF)
 
 plot_manager = DataFramePlotManager(
     contained_plots=[
-        # config,
-        # config2,
-        # config3,
-        # config4,
-        # config5,
-        # cust_plot1,
-        # config6,
-        # desc7,
+        config,
+        config2,
+        config3,
+        config4,
+        config5,
+        cust_plot1,
+        config6,
+        desc7,
         config9,
-        # desc8
+        desc8
     ],
     data_source=TEST_DF, source_analyzer=analyzer
 )
