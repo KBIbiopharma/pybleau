@@ -47,7 +47,7 @@ class AxisStyle(HasStrictTraits):
     #: View klass. Override to customize the views, for example their icon
     view_klass = Any(default_value=View)
 
-    #: Is there a finite number of labels?
+    #: Does the axis contain text labels?
     # (If so, allow forcing the appearance of all of them and label rotation)
     support_text_labels = Bool
 
