@@ -209,9 +209,12 @@ class HeatmapRendererStyle_Serializer(BaseRendererStyle_Serializer):
 
 
 class AxisStyle_Serializer(Serializer):
+
+    protocol_version = 1
+
     def attr_names_to_serialize(self, obj):
         return ["axis_name", "range_low", "range_high", "auto_range_low",
-                "auto_range_high", "title_style"]
+                "auto_range_high", "title_style", "support_text_labels"]
 
 
 class TitleStyle_Serializer(Serializer):

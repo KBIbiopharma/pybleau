@@ -3,8 +3,23 @@ from traits.api import HasStrictTraits, Set
 from .deserializer import singleLinePlotStyleDeSerializer, \
     singleScatterPlotStyleDeSerializer, plotDescriptorDeSerializer, \
     dataFramePlotManagerDeSerializer, histogramPlotStyleDeSerializer, \
-    scatterPlotConfiguratorDeSerializer, dataFrameAnalyzerDeSerializer
+    scatterPlotConfiguratorDeSerializer, dataFrameAnalyzerDeSerializer, \
+    axisStyleDeSerializer
 from ..plotting.plot_config import DEFAULT_CONFIGS, DEFAULT_STYLES
+
+
+class axisStyleDeSerializer_v0(axisStyleDeSerializer):
+    """ Legacy deserializer for AxisStyle stored by pybleau before 0.5.3.
+    """
+    protocol_version = 0
+
+    def get_instance(self, constructor_data):
+        # Enable text label controls for all x-axis even for old plots:
+        if constructor_data['axis_name'] == "x":
+            constructor_data['support_text_labels'] = True
+
+        return super(axisStyleDeSerializer_v0, self).get_instance(
+            constructor_data)
 
 
 class dataFrameAnalyzerDeSerializer_v0(dataFrameAnalyzerDeSerializer):
@@ -144,5 +159,6 @@ LEGACY_DESERIALIZER_MAP = {
     "dataFramePlotManager": {0: dataFramePlotManagerDeSerializer_v0},
     "histogramPlotStyle": {0: histogramPlotStyleDeSerializer_v0},
     "scatterPlotConfigurator": {0: scatterPlotConfiguratorDeSerializer_v0},
-    "dataFrameAnalyzer": {0: dataFrameAnalyzerDeSerializer_v0}
+    "dataFrameAnalyzer": {0: dataFrameAnalyzerDeSerializer_v0},
+    "axisStyle": {0: axisStyleDeSerializer_v0}
 }
