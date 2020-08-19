@@ -60,7 +60,7 @@ class BasePlotFactory(HasStrictTraits):
     #: ArrayPlotData supporting the Plot object
     plot_data = Instance(ArrayPlotData)
 
-    #: Styling of the plot and renderer. Passed to renderer creation method
+    #: Styling of the plot and renderer(s)
     plot_style = Instance(BaseXYPlotStyle)
 
     #: Title of the generated plot
@@ -152,10 +152,12 @@ class BasePlotFactory(HasStrictTraits):
                                     positions=np.arange(len(x_labels)),
                                     label_rotation=label_rotation,
                                     tick_generator=tick_generator)
-            plot.x_axis = bottom_axis
-            # Replace in the underlay list too:
-            plot.underlays.pop(0)
+            # Replace in the underlay list...
+            if plot.underlays:
+                plot.underlays.pop(0)
             plot.underlays.insert(0, bottom_axis)
+            # ... and add a handle from the plot object to emulate chaco.Plot
+            plot.x_axis = bottom_axis
 
         plot.x_axis.title = self.x_axis_title
         font_size = x_axis_style.title_style.font_size

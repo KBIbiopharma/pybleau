@@ -47,9 +47,9 @@ class AxisStyle(HasStrictTraits):
     #: View klass. Override to customize the views, for example their icon
     view_klass = Any(default_value=View)
 
-    #: Is there a finite number of labels?
+    #: Does the axis contain text labels?
     # (If so, allow forcing the appearance of all of them and label rotation)
-    _finite_labels = Bool
+    support_text_labels = Bool
 
     def __init__(self, **traits):
         if "range_low" in traits and "auto_range_low" not in traits:
@@ -77,11 +77,13 @@ class AxisStyle(HasStrictTraits):
                 ),
                 HGroup(
                     Item('label_rotation',
-                         editor=RangeEditor(low=0, high=360)),
+                         editor=RangeEditor(low=0, high=360),
+                         tooltip="(String labels only)"),
                     Item('show_all_labels',
-                         label="Show all ticks/labels"),
+                         label="Show all ticks/labels",
+                         tooltip="(String labels only)"),
                     show_border=True, label="Labels",
-                    visible_when="_finite_labels"
+                    visible_when="support_text_labels"
                 ),
             ),
             resizable=True

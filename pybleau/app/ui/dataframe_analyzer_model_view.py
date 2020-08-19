@@ -31,8 +31,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_FONT = 'Courier'
 
-SHOW_COLUMN_CONTROL = u"\u2190 Show column control"
-
 
 class DataFrameAnalyzerView(ModelView):
     """ Flexible ModelView class for a DataFrameAnalyzer.
@@ -62,7 +60,7 @@ class DataFrameAnalyzerView(ModelView):
     show_column_controls = Bool
 
     #: Open control for what columns to analyze (popup when many columns)
-    open_column_controls = Button(SHOW_COLUMN_CONTROL)
+    open_column_controls = Button("Show column control")
 
     #: Button to launch the plotter tool when plotter_layout=popup
     plotter_launcher = Button("Launch Plot Tool")
@@ -353,7 +351,8 @@ class DataFrameAnalyzerView(ModelView):
                      show_label=False),
             ),
             HGroup(
-                Item("show_column_controls", label=SHOW_COLUMN_CONTROL,
+                Item("show_column_controls",
+                     label="\u2190 Show column control",
                      visible_when="not _many_columns"),
                 Item("open_column_controls", show_label=False,
                      visible_when="_many_columns"),
@@ -482,7 +481,7 @@ class DataFrameAnalyzerView(ModelView):
     def _open_column_controls_fired(self):
         """ Pop-up a new view on the column list control.
         """
-        if self._control_popup:
+        if self._control_popup and self._control_popup.control:
             # If there is an existing window, bring it in focus:
             # Discussion: https://stackoverflow.com/questions/2240717/in-qt-how-do-i-make-a-window-be-the-current-window  # noqa
             self._control_popup.control._mw.activateWindow()
