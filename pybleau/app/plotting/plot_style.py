@@ -291,6 +291,12 @@ class BaseXYPlotStyle(HasStrictTraits):
 
         second_y_mapper : Mapper
             Already identified Mapper to align with the secondary y range.
+
+        Returns
+        -------
+        tuple
+            The x_mapper, y_mapper and secondary_y_mapper found on provided
+            plot.
         """
         missing_mapper_msg = "The plot is missing the attribute {}. Please " \
                              "provide the mapper explicitly"
