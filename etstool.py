@@ -104,10 +104,10 @@ dependencies = set(json.load(open(DEPENDENCIES)) +
                    json.load(open(DEV_DEPENDENCIES)))
 
 # NOTE : pyface is always installed from source
-source_dependencies = {}
+source_dependencies = set()
 
 # Additional toolkit-independent dependencies for demo testing
-test_dependencies = {}
+test_dependencies = set()
 
 extra_dependencies = {
     # XXX once pyside2 is available in EDM, we will want it here
@@ -115,7 +115,7 @@ extra_dependencies = {
     'pyqt5': {'pyqt5'},
 }
 
-runtime_dependencies = {}
+runtime_dependencies = set()
 
 doc_dependencies = {
     "sphinx",
