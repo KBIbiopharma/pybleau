@@ -32,9 +32,9 @@ setup(
     # Additional data files
     package_data={
         "": ["README.md", "LICENSE"],
-        PKG_NAME: [join(PKG_NAME, "reporting", "tests", '*.png'),
-                   join(PKG_NAME, "reporting", "tests", "*.json"),
-                   join(PKG_NAME, "images", "*.png")]
+        PKG_NAME: ["reporting/tests/*.png",
+                   "reporting/tests/*.json",
+                   "images/*.png"]
     },
     entry_points={
         'console_scripts': [

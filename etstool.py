@@ -90,7 +90,7 @@ import click
 PKG_NAME = "pybleau"
 
 supported_combinations = {
-    '3.6': {'pyside2', 'pyqt5'},
+    '3.6': {'pyside2', 'pyqt5', "wx"},
 }
 
 # Default Python version to use in the commands below if none is specified.
