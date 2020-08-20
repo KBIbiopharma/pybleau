@@ -1,3 +1,4 @@
+from glob import glob
 from os.path import abspath, dirname, join
 from setuptools import setup, find_packages
 
@@ -16,6 +17,12 @@ def read(fname):
     return open(join(HERE, fname)).read()
 
 
+# Collect test support files --------------------------------------------------
+
+reporting_test_files = glob(join(PKG_NAME, "reporting", "tests", "*.png"))
+reporting_test_files += glob(join(PKG_NAME, "reporting", "tests", "*.json"))
+
+
 setup(
     name=PKG_NAME,
     version=info["__version__"],
@@ -30,7 +37,10 @@ setup(
     install_requires=[],
     requires=[],
     # Additional data files
-    data_files=[(".", ["README.md", "LICENSE"])],
+    data_files=[
+        (".", ["README.md", "LICENSE"]),
+        (join(PKG_NAME, "reporting", "tests"), reporting_test_files)
+    ],
     entry_points={
         'console_scripts': [
             'pybleau_app = {}.app.main:main'.format(PKG_NAME),
