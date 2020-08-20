@@ -1,0 +1,5 @@
+recursive-include pybleau *.json
+recursive-include pybleau *.png
+
+include README.md
+include LICENSE
