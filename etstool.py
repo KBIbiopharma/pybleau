@@ -159,10 +159,11 @@ def install(runtime, toolkit, environment, editable):
         | test_dependencies
     )
 
-    install_pkg = "edm run -e {environment} -- pip install "
-    if editable:
-        install_pkg += "--editable "
-    install_pkg += "."
+    # install_pkg = "edm run -e {environment} -- pip install "
+    # if editable:
+    #     install_pkg += "--editable "
+    # install_pkg += "."
+    install_pkg = "edm run -e {environment} -- python setup.py install"
 
     # edm commands to setup the development environment
     commands = [
