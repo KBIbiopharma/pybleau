@@ -193,15 +193,18 @@ def install(runtime, toolkit, environment, editable):
     execute(commands, parameters)
 
     if source_dependencies:
-        cmd_fmt = "edm plumbing remove-package --environment {environment} --force "
-        commands = [cmd_fmt+dependency for dependency in source_dependencies.keys()]
+        cmd_fmt = "edm plumbing remove-package --environment {environment} " \
+                  "--force "
+        commands = [cmd_fmt+dependency
+                    for dependency in source_dependencies.keys()]
         execute(commands, parameters)
         source_pkgs = source_dependencies.values()
         commands = [
             "python -m pip install {pkg} --no-deps".format(pkg=pkg)
             for pkg in source_pkgs
         ]
-        commands = ["edm run -e {environment} -- " + command for command in commands]
+        commands = ["edm run -e {environment} -- " + command
+                    for command in commands]
         execute(commands, parameters)
 
     click.echo('Done install')
