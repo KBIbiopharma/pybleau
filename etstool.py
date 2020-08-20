@@ -114,7 +114,7 @@ extra_dependencies = {
     'pyqt5': {'pyqt5'},
 }
 
-runtime_dependencies = set()
+runtime_dependencies = {}
 
 doc_dependencies = {
     "sphinx",
