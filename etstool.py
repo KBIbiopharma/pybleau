@@ -103,8 +103,7 @@ DEV_DEPENDENCIES = "ci/dev_requirements.json"
 dependencies = set(json.load(open(DEPENDENCIES)) +
                    json.load(open(DEV_DEPENDENCIES)))
 
-# NOTE : pyface is always installed from source
-source_dependencies = set()
+source_dependencies = {}
 
 # Additional toolkit-independent dependencies for demo testing
 test_dependencies = set()
