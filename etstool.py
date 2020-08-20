@@ -147,8 +147,7 @@ def cli():
     default=False,
     help="Install main package in 'editable' mode?  [default: --not-editable]",
 )
-@click.option('--source/--no-source', default=False)
-def install(runtime, toolkit, environment, editable, source):
+def install(runtime, toolkit, environment, editable):
     """ Install project and dependencies into a clean EDM environment.
 
     """
@@ -192,7 +191,7 @@ def install(runtime, toolkit, environment, editable, source):
     click.echo("Creating environment '{environment}'".format(**parameters))
     execute(commands, parameters)
 
-    if source:
+    if source_dependencies:
         cmd_fmt = "edm plumbing remove-package --environment {environment} --force "
         commands = [cmd_fmt+dependency for dependency in source_dependencies.keys()]
         execute(commands, parameters)
