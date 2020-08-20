@@ -170,6 +170,9 @@ class titleStyleDeSerializer(dataElementDeSerializer):
 
 
 class axisStyleDeSerializer(dataElementDeSerializer):
+
+    protocol_version = 1
+
     def _klass_default(self):
         from pybleau.app.plotting.axis_style import AxisStyle
         return AxisStyle
