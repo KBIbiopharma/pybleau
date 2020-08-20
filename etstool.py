@@ -87,15 +87,17 @@ from contextlib import contextmanager
 
 import click
 
+PKG_NAME = "pybleau"
+
 supported_combinations = {
     '3.6': {'pyside2', 'pyqt5'},
 }
 
-# Default Python version to use in the comamnds below if none is specified.
+# Default Python version to use in the commands below if none is specified.
 DEFAULT_RUNTIME = '3.6'
 
 # Default toolkit to use if none specified.
-DEFAULT_TOOLKIT = 'null'
+DEFAULT_TOOLKIT = 'pyqt5'
 
 DEPENDENCIES = "ci/requirements.json"
 DEV_DEPENDENCIES = "ci/dev_requirements.json"
@@ -103,7 +105,11 @@ DEV_DEPENDENCIES = "ci/dev_requirements.json"
 dependencies = set(json.load(open(DEPENDENCIES)) +
                    json.load(open(DEV_DEPENDENCIES)))
 
-source_dependencies = {}
+dependencies.remove("app_common")
+
+source_dependencies = {
+    "app_common": "git+https://github.com/KBIbiopharma/app_common#egg=app_common",
+}
 
 # Additional toolkit-independent dependencies for demo testing
 test_dependencies = set()
@@ -154,10 +160,10 @@ def install(runtime, toolkit, environment, editable, source):
         | test_dependencies
     )
 
-    install_traitsui = "edm run -e {environment} -- pip install "
+    install_pkg = "edm run -e {environment} -- pip install "
     if editable:
-        install_traitsui += "--editable "
-    install_traitsui += "."
+        install_pkg += "--editable "
+    install_pkg += "."
 
     # edm commands to setup the development environment
     commands = [
@@ -165,7 +171,7 @@ def install(runtime, toolkit, environment, editable, source):
         "edm install -y -e {environment} " + packages,
         "edm run -e {environment} -- pip install --force-reinstall -r ci-src-requirements.txt --no-dependencies",
         "edm run -e {environment} -- python setup.py clean --all",
-        install_traitsui,
+        install_pkg,
     ]
 
     # pip install pyqt5 and pyside2, because we don't have them in EDM yet
@@ -223,7 +229,7 @@ def test(runtime, toolkit, environment):
 
     parameters["integrationtests"] = os.path.abspath("integrationtests")
     commands = [
-        "edm run -e {environment} -- coverage run -p -m unittest discover -v traitsui",
+        "edm run -e {environment} -- coverage run -p -m unittest discover -v " + PKG_NAME,
         # coverage run prevents local images to be loaded for demo examples
         # which are not defined in Python packages. Run with python directly
         # instead.
@@ -349,7 +355,7 @@ def get_parameters(runtime, toolkit, environment):
                "test environments")
         raise RuntimeError(msg.format(**parameters))
     if environment is None:
-        parameters['environment'] = 'traitsui-test-{runtime}-{toolkit}'.format(**parameters)
+        parameters['environment'] = PKG_NAME + '-test-{runtime}-{toolkit}'.format(**parameters)
     return parameters
 
 
