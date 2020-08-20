@@ -420,7 +420,7 @@ class StdXYPlotFactory(BasePlotFactory):
             first_renderer = i == 0
             self.add_renderer(plot, desc, style, first_renderer=first_renderer)
 
-        self._align_all_renderers(plot)
+        self.align_all_renderers(plot)
 
     def add_renderer(self, plot, desc, style, first_renderer=False):
         """ Create and add to plot renderer described by desc and style.
@@ -464,8 +464,11 @@ class StdXYPlotFactory(BasePlotFactory):
 
         return renderer
 
-    def _align_all_renderers(self, plot):
-        """ Align all renderers in index and value dimension.
+    def align_all_renderers(self, plot):
+        """ Align all renderers in index and value dimensions to plot's axis.
+
+        This method is used to keep renderers aligned with the displayed axes
+        once their ranges have been set.
         """
         styles = self.plot_style.renderer_styles
         all_renderers = self.renderers.values()

@@ -393,7 +393,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         self.assertEqual(bar_renderer2.fill_color, "red")
         self.assertEqual(len(new_plot_desc2.plot.data.arrays["a"]), 20)
 
-    def test_change_style_doesnt_loose_desc_attrs(self):
+    def test_change_style_doesnt_lose_desc_attrs(self):
         self.model._add_new_plot(self.config)
 
         plot_desc1 = self.model.contained_plots[0]
@@ -418,32 +418,19 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
                              getattr(plot_desc1, attr))
 
     def test_change_style_range(self):
-        self.model._add_new_plot(self.config)
+        """ Change style range in x and y dim and check all renderers update.
+        """
+        for config in [self.config, self.config3, self.config4]:
+            for dim in ["x", "y"]:
+                for end, new_val in zip(["low", "high"], [-2, 6.5]):
+                    self.model._add_new_plot(config)
+                    self.assert_change_style_range_changes_renderers(
+                        config.plot_style, dim, end, new_val
+                    )
+                    # Clean up for the next loop
+                    self.model.contained_plots.pop(0)
 
-        plot = self.model.contained_plots[0].plot
-        plot_high = plot.x_axis.mapper.range.high
-        self.assertEqual(self.config.plot_style.x_axis_style.range_high,
-                         plot_high)
-        self.assertEqual(self.config.plot_style.x_axis_style.auto_range_high,
-                         plot_high)
-
-        plot_desc1 = self.model.contained_plots[0]
-        plot_desc1.container_idx = 1
-        self.assertNotAlmostEqual(plot_high, 6.5)
-        plot_desc1.plot_config.plot_style.x_axis_style.range_high = 6.5
-
-        # Trigger a regeneration of the plot (normally done by clicking OK in
-        # GUI):
-        plot_desc1.style_edited = True
-
-        # The old plot_desc2 has been removed from the contained plots:
-        self.assertNotIn(plot_desc1, self.model.contained_plots)
-        # and the new one that replaced it has the new properties requested:
-        new_plot_desc1 = self.model.contained_plots[0]
-        plot_high = new_plot_desc1.plot.x_axis.mapper.range.high
-        self.assertAlmostEqual(plot_high, 6.5)
-
-    def test_change_style_y_axis(self):
+    def test_change_style_y_axis_orientation(self):
         self.model._add_new_plot(self.config4)
         desc = self.model.contained_plots[0]
         rend_styles = desc.plot_config.plot_style.renderer_styles
@@ -460,7 +447,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         self.assert_renderer_aligned(renderer, desc.plot.second_y_axis,
                                      dim="value")
 
-    def test_change_style_y_axis_back(self):
+    def test_change_style_y_axis_orientation_back(self):
         self.model._add_new_plot(self.config4)
         desc = self.model.contained_plots[0]
         rend_styles = desc.plot_config.plot_style.renderer_styles
@@ -575,6 +562,41 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
 
         self.assertEqual(rend_range.low, axis_range.low)
         self.assertEqual(rend_range.high, axis_range.high)
+
+    def assert_change_style_range_changes_renderers(self, plot_style, dim, end,
+                                                    new_val):
+        plot = self.model.contained_plots[0].plot
+        range = getattr(plot, dim + "_axis").mapper.range
+        plot_val = getattr(range, end)
+        style = getattr(plot_style, dim + "_axis_style")
+        self.assertEqual(getattr(style, "range_" + end), plot_val)
+        self.assertEqual(getattr(style, "auto_range_" + end), plot_val)
+
+        # Change style
+        self.assertNotAlmostEqual(plot_val, new_val)
+        setattr(style, "range_" + end, new_val)
+
+        # Trigger a regeneration of the plot (normally done by
+        # clicking OK in GUI):
+        plot_desc1 = self.model.contained_plots[0]
+        plot_desc1.style_edited = True
+
+        # The old plot_desc1 has been removed from the contained
+        # plots:
+        self.assertNotIn(plot_desc1, self.model.contained_plots)
+        # so grab the new one:
+        plot_desc1 = self.model.contained_plots[0]
+
+        axis = getattr(plot_desc1.plot, dim + "_axis")
+        plot_high = getattr(axis.mapper.range, end)
+        self.assertAlmostEqual(plot_high, new_val)
+        for i, renderer in enumerate(plot_desc1.plot.components):
+            if dim == "x":
+                mapper = renderer.index_mapper
+            else:
+                mapper = renderer.value_mapper
+
+            self.assertAlmostEqual(getattr(mapper.range, end), new_val)
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)

@@ -5,7 +5,8 @@ from app_common.apptools.testing_utils import assert_obj_gui_works
 
 from chaco.api import ArrayPlotData, Plot
 import pandas as pd
-from pybleau.app.api import DataFramePlotManager
+from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager, \
+    plot_from_config
 from pybleau.app.plotting.api import ScatterPlotConfigurator
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
 from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
@@ -133,7 +134,7 @@ class TestPlotStyleBehaviors(TestCase):
         self.assertTrue(style.x_axis_style.support_text_labels)
         self.assertFalse(style.y_axis_style.support_text_labels)
 
-    def test_initialize_range(self):
+    def test_initialize_range_from_manual_plot(self):
         style = SingleLinePlotStyle()
         plot = Plot(ArrayPlotData(x=[1, 2], y=[3, 4]))
         plot.plot(("x", "y"))
@@ -160,7 +161,39 @@ class TestPlotStyleBehaviors(TestCase):
         self.assertEqual(style.y_axis_style.auto_range_low, 3)
         self.assertEqual(style.y_axis_style.auto_range_high, 4)
 
-    def test_initialize_range_with_transform(self):
+    def test_initialize_range_from_factory_result(self):
+        style = BaseColorXYPlotStyle()
+
+        df = pd.DataFrame({"x": [1, 2], "y": [3, 4], "z": ["a", "b"]})
+        config = ScatterPlotConfigurator(
+            data_source=df, x_col_name="x", y_col_name="y",
+            z_col_name="z"
+        )
+        plot, _, _ = plot_from_config(config)
+
+        self.assertNotEqual(style.x_axis_style.range_low, 1)
+        self.assertNotEqual(style.x_axis_style.range_high, 2)
+        self.assertNotEqual(style.y_axis_style.range_low, 3)
+        self.assertNotEqual(style.y_axis_style.range_high, 4)
+
+        self.assertNotEqual(style.x_axis_style.auto_range_low, 1)
+        self.assertNotEqual(style.x_axis_style.auto_range_high, 2)
+        self.assertNotEqual(style.y_axis_style.auto_range_low, 3)
+        self.assertNotEqual(style.y_axis_style.auto_range_high, 4)
+
+        style.initialize_axis_ranges(plot)
+
+        self.assertEqual(style.x_axis_style.range_low, 1)
+        self.assertEqual(style.x_axis_style.range_high, 2)
+        self.assertEqual(style.y_axis_style.range_low, 3)
+        self.assertEqual(style.y_axis_style.range_high, 4)
+
+        self.assertEqual(style.x_axis_style.auto_range_low, 1)
+        self.assertEqual(style.x_axis_style.auto_range_high, 2)
+        self.assertEqual(style.y_axis_style.auto_range_low, 3)
+        self.assertEqual(style.y_axis_style.auto_range_high, 4)
+
+    def test_initialize_range_from_manual_plot_with_transform(self):
         style = SingleLinePlotStyle()
         plot = Plot(ArrayPlotData(x=[1.1, 2.1], y=[3.1, 4.1]))
         plot.plot(("x", "y"))
@@ -201,7 +234,7 @@ class TestPlotStyleBehaviors(TestCase):
         self.assertEqual(style.y_axis_style.auto_range_low, 3)
         self.assertEqual(style.y_axis_style.auto_range_high, 4)
 
-    def test_change_plot_range_and_reset(self):
+    def test_reset_axis_range(self):
         style = SingleLinePlotStyle()
         # Initial state:
         self.assertEqual(style.x_axis_style.range_low,
