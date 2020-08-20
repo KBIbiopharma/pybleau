@@ -1,3 +1,8 @@
+""" Module defining legacy deserializers for old protocol versions of a few
+objects. Deserializers are defined as modifications to the regular
+implementation, and added to the LEGACY dictionary.
+"""
+
 from traits.api import HasStrictTraits, Set
 
 from .deserializer import singleLinePlotStyleDeSerializer, \
