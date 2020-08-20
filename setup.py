@@ -12,15 +12,8 @@ exec(open(init_file).read(), globals(), info)
 
 
 def read(fname):
-    """ Returns content of the passed file.
-    """
+    """ Returns content of the passed file. """
     return open(join(HERE, fname)).read()
-
-
-# Collect test support files --------------------------------------------------
-
-reporting_test_files = glob(join(PKG_NAME, "reporting", "tests", "*.png"))
-reporting_test_files += glob(join(PKG_NAME, "reporting", "tests", "*.json"))
 
 
 setup(
@@ -37,10 +30,12 @@ setup(
     install_requires=[],
     requires=[],
     # Additional data files
-    data_files=[
-        (".", ["README.md", "LICENSE"]),
-        (join(PKG_NAME, "reporting", "tests"), reporting_test_files)
-    ],
+    package_data={
+        "": ["README.md", "LICENSE"],
+        PKG_NAME: [join(PKG_NAME, "reporting", "tests", '*.png'),
+                   join(PKG_NAME, "reporting", "tests", "*.json"),
+                   join(PKG_NAME, "images", "*.png")]
+    },
     entry_points={
         'console_scripts': [
             'pybleau_app = {}.app.main:main'.format(PKG_NAME),
