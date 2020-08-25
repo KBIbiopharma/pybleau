@@ -1,20 +1,19 @@
 """ View for a DataFramePlotManager.
 """
 import logging
+import os
 
+from enable.component_editor import ComponentEditor
 from pyface.api import warning
 from traits.api import Any, Bool, Button, Enum, HasStrictTraits, Instance, \
-    Int, List
+    Int, List, Str
 from traitsui.api import EnumEditor, HGroup, Item, Label, ModelView, \
-    OKCancelButtons, Spring, TableEditor, VGroup, View, VSplit
-from traitsui.table_column import ObjectColumn
+    OKCancelButtons, Spring, TableEditor, VGroup, View, VSplit, ObjectColumn
 from traitsui.extras.checkbox_column import CheckboxColumn
-from enable.component_editor import ComponentEditor
 
-from ..model.dataframe_plot_manager import CONTAINER_IDX_REMOVAL, \
+from pybleau.app.model.dataframe_plot_manager import CONTAINER_IDX_REMOVAL, \
     DataFramePlotManager
-from ..model.multi_canvas_manager import CONTAINER_TRAIT_NAME
-from ..plotting.api import PLOT_CONFIGURATORS, PLOT_TYPES
+from pybleau.app.model.multi_canvas_manager import CONTAINER_TRAIT_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +116,7 @@ class DataFramePlotManagerView(ModelView):
             "visible": CheckboxColumn(name='visible'),
             "frozen": CheckboxColumn(
                 name='frozen', tooltip="Freeze the plot and skip updates when "
-                "source data changes"),
+                                       "source data changes"),
             "plot_type": ObjectColumn(name='plot_type', style="readonly",
                                       cell_color="lightgrey"),
             "x_col_name": ObjectColumn(name='x_col_name', style="readonly",
@@ -163,7 +162,8 @@ class DataFramePlotManagerView(ModelView):
     def _build_container_group(self):
         """ Build the view group containing all plot containers.
         """
-        is_horiz = self.model.canvas_manager.container_layout_type == "horizontal"  # noqa
+        is_horiz = self.model.canvas_manager.container_layout_type == \
+                   "horizontal"  # noqa
         cont_height = DEFAULT_CONTAINER_SIZE if is_horiz else -1
         cont_width = -1 if is_horiz else DEFAULT_CONTAINER_SIZE
         group_klass = VGroup if is_horiz else HGroup
@@ -193,7 +193,8 @@ class DataFramePlotManagerView(ModelView):
         if self.model.failed_plots:
             error_msgs = []
             for desc in self.model.failed_plots:
-                msg = "Failed to recreate plot number {} ({} of '{}' vs '{}',"\
+                msg = "Failed to recreate plot number {} ({} of '{}' vs '{" \
+                      "}'," \
                       " z_col '{}'). It will need to be recreated manually."
                 msg = msg.format(desc.id, desc.plot_type, desc.x_col_name,
                                  desc.y_col_name, desc.z_col_name)
@@ -214,7 +215,8 @@ class DataFramePlotManagerView(ModelView):
         selector = PlotTypeSelector(
             view_klass=self.view_klass,
             num_containers=self.model.canvas_manager.num_container_managers,
-            container_idx=AUTO_TARGET_CONTAINER
+            container_idx=AUTO_TARGET_CONTAINER,
+            _plot_types=self.model.plot_types
         )
         ui = selector.edit_traits(kind="modal")
         if not ui.result:
@@ -222,19 +224,29 @@ class DataFramePlotManagerView(ModelView):
 
         plot_type = selector.plot_type
 
-        next_plot_num = len(self.model.contained_plots) + 1
-        if plot_type.startswith("Multi"):
-            new_plot_default_title = "Plot {i}"
+        if plot_type in list(self.model.custom_configs.keys()) and \
+                self.model.template_interactor is not None:
+            interactor = self.model.template_interactor
+            filepath = os.path.join(interactor.get_template_dir(), plot_type +
+                                    interactor.get_template_ext())
+            loader = interactor.get_template_loader()
+            configurator = loader(filepath)
+            configurator.data_source = self.model.data_source
+            configurator.template_basis = plot_type
         else:
-            new_plot_default_title = "Plot {}".format(next_plot_num)
+            next_plot_num = len(self.model.contained_plots) + 1
+            if plot_type.startswith("Multi"):
+                new_plot_default_title = "Plot {i}"
+            else:
+                new_plot_default_title = "Plot {}".format(next_plot_num)
 
-        config_klass = PLOT_CONFIGURATORS[plot_type]
-        configurator = config_klass(data_source=self.model.data_source,
-                                    plot_title=new_plot_default_title,
-                                    view_klass=self.view_klass)
-        ui = configurator.edit_traits(kind="modal")
-        if not ui.result:
-            return
+            config_klass = self.model.plot_configs[plot_type]
+            configurator = config_klass(data_source=self.model.data_source,
+                                        plot_title=new_plot_default_title,
+                                        view_klass=self.view_klass)
+            ui = configurator.edit_traits(kind="modal")
+            if not ui.result:
+                return
 
         if selector.container_idx == AUTO_TARGET_CONTAINER:
             selector.container_idx = -1
@@ -263,7 +275,10 @@ class PlotTypeSelector(HasStrictTraits):
     """ Tiny UI to select the type of plot to create.
     """
     #: Selected plot type
-    plot_type = Enum(PLOT_TYPES)
+    plot_type = Enum(values="_plot_types")
+
+    #: Available plot types
+    _plot_types = List(Str)
 
     #: Selected container for the future plot
     container_idx = Any

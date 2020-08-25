@@ -16,6 +16,8 @@ FILE_EXPORT_ACTION_NAME = "Export plot..."
 
 DELETE_ACTION_NAME = "Delete plot..."
 
+CREATE_TEMPLATE_ACTION_NAME = "Create template from plot..."
+
 ALL_ACTIONS = [STYLE_EDITOR_ACTION_NAME, FILE_EXPORT_ACTION_NAME,
                DELETE_ACTION_NAME]
 
@@ -28,6 +30,8 @@ class PlotContextMenuManager(HasStrictTraits):
     style_edit_requested = Event
 
     delete_requested = Event
+
+    template_requested = Event
 
     def build_menu(self):
         menu_entries = []
@@ -48,6 +52,12 @@ class PlotContextMenuManager(HasStrictTraits):
             menu_entries.append(action)
             menu_entries.append(Separator())
 
+        if CREATE_TEMPLATE_ACTION_NAME:
+            action = Action(name=CREATE_TEMPLATE_ACTION_NAME,
+                            on_perform=self.request_plot_template)
+            menu_entries.append(action)
+            menu_entries.append(Separator())
+
         menu = MenuManager(*menu_entries)
         return menu
 
@@ -61,6 +71,11 @@ class PlotContextMenuManager(HasStrictTraits):
         """
         if confirm(None, "Delete the plot?") == YES:
             self.delete_requested = True
+
+    def request_plot_template(self):
+        """ Trigger plot template event and let DFPlotManager handle.
+        """
+        self.template_requested = True
 
     def export_plot_to_file(self):
         filepath = to_png_file_requester(title="Select export path")
