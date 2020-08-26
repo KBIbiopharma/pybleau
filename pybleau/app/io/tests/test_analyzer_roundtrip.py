@@ -1,23 +1,22 @@
-
 from unittest import TestCase
-import pandas as pd
-import numpy as np
 
+import numpy as np
+import pandas as pd
 from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
-from pybleau.app.io.serializer import serialize
-from pybleau.app.io.deserializer import deserialize
 from pybleau.app.api import DataFrameAnalyzer
-from pybleau.app.plotting.api import BAR_PLOT_TYPE, BarPlotConfigurator, \
-    HEATMAP_PLOT_TYPE, HeatmapPlotConfigurator, HIST_PLOT_TYPE, \
-    HistogramPlotConfigurator, LINE_PLOT_TYPE, LinePlotConfigurator, \
-    SCATTER_PLOT_TYPE, ScatterPlotConfigurator
+from pybleau.app.io.deserializer import deserialize
+from pybleau.app.io.serializer import serialize
+from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
-from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
 from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
+from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
+from pybleau.app.plotting.plot_config import BAR_PLOT_TYPE, \
+    BarPlotConfigurator, HEATMAP_PLOT_TYPE, HeatmapPlotConfigurator, \
+    HIST_PLOT_TYPE, HistogramPlotConfigurator, LINE_PLOT_TYPE, \
+    LinePlotConfigurator, SCATTER_PLOT_TYPE, ScatterPlotConfigurator
 from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
     ScatterRendererStyle, SingleLinePlotStyle
-from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
 
 TEST_DF = pd.DataFrame({"Col_1": [1, 2, 3, 4, 5, 6, 7, 8],
                         "Col_2": np.array([1, 2, 3, 4, 5, 6, 7, 8])[::-1],

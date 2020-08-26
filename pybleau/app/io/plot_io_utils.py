@@ -3,7 +3,7 @@
 import logging
 import pandas as pd
 
-from pybleau.app.plotting.api import BAR_PLOT_TYPE, LINE_PLOT_TYPE, \
+from pybleau.app.plotting.plot_config import BAR_PLOT_TYPE, LINE_PLOT_TYPE, \
     HIST_PLOT_TYPE, SCATTER_PLOT_TYPE
 
 TWO_D_PLOT_TYPES = {SCATTER_PLOT_TYPE, LINE_PLOT_TYPE, BAR_PLOT_TYPE}

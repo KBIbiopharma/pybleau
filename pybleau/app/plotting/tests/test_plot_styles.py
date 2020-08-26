@@ -7,7 +7,7 @@ from chaco.api import ArrayPlotData, Plot
 import pandas as pd
 from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager, \
     plot_from_config
-from pybleau.app.plotting.api import ScatterPlotConfigurator
+from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
 from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
 from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle, \

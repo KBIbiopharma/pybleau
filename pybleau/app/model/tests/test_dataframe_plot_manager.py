@@ -31,9 +31,11 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.model.plot_descriptor import CUSTOM_PLOT_TYPE, \
         PlotDescriptor
     from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-    from pybleau.app.plotting.api import BarPlotConfigurator, \
+    from pybleau.app.plotting.multi_plot_config import \
+        MultiHistogramPlotConfigurator
+    from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HistogramPlotConfigurator, LinePlotConfigurator, \
-        MultiHistogramPlotConfigurator, ScatterPlotConfigurator
+        ScatterPlotConfigurator
     from pybleau.app.plotting.scatter_factories import \
         SELECTION_METADATA_NAME, DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR
     from pybleau.app.plotting.base_factories import DEFAULT_RENDERER_NAME
