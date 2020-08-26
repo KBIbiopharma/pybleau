@@ -2,6 +2,9 @@ from traits.api import Interface, Directory, Callable
 
 
 class IPlotTemplateInteractor(Interface):
+    """ Interface for a plot template interactor, which provides the
+    functions, directory, and extension to save/load plot template files.
+    """
     def get_template_saver(self) -> Callable:
         """Returns the function required to save plot template objects"""
 

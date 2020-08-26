@@ -162,8 +162,7 @@ class DataFramePlotManagerView(ModelView):
     def _build_container_group(self):
         """ Build the view group containing all plot containers.
         """
-        is_horiz = self.model.canvas_manager.container_layout_type == \
-                   "horizontal"  # noqa
+        is_horiz = self.model.canvas_manager.container_layout_type == "horizontal"  # noqa
         cont_height = DEFAULT_CONTAINER_SIZE if is_horiz else -1
         cont_width = -1 if is_horiz else DEFAULT_CONTAINER_SIZE
         group_klass = VGroup if is_horiz else HGroup
@@ -194,8 +193,7 @@ class DataFramePlotManagerView(ModelView):
             error_msgs = []
             for desc in self.model.failed_plots:
                 msg = "Failed to recreate plot number {} ({} of '{}' vs '{" \
-                      "}'," \
-                      " z_col '{}'). It will need to be recreated manually."
+                      "}', z_col '{}'). It will need to be recreated manually."
                 msg = msg.format(desc.id, desc.plot_type, desc.x_col_name,
                                  desc.y_col_name, desc.z_col_name)
                 error_msgs.append(msg)

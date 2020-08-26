@@ -1,9 +1,11 @@
-import logging
 import os
+import logging
+from typing import Optional
+
+import pandas as pd
 from collections import OrderedDict
 from uuid import UUID
 
-import pandas as pd
 from app_common.chaco.constraints_plot_container_manager import \
     ConstraintsPlotContainerManager
 from app_common.model_tools.data_element import DataElement
@@ -100,19 +102,20 @@ class DataFramePlotManager(DataElement):
     containers_in_use = Property(Set,
                                  depends_on="contained_plots:container_idx")
 
+    #: Plot template interactor
     template_interactor = Either(None, IPlotTemplateInteractor, default=None)
-    # template_save = Either(Callable, None, default=None)
-    # template_load = Either(Callable, None, default=None)
-    # template_loc = Either(Directory, None, default=None)
-    #
-    # template_ext = Either(Str, None, default=None)
+
+    #: OrderedDict of all user-created (custom) plot configs
     custom_configs = Property(Instance(OrderedDict, args=()),
                               depends_on="template_interactor")
-    # custom_configs = Property(Instance(OrderedDict, args=()),
-    #                           depends_on="template_ext, template_loc")
+
+    #: Combination of default and custom plot configs
     plot_configs = Property(Instance(OrderedDict, args=()),
                             depends_on="custom_configs")
+
+    #: List of all plot types
     plot_types = Property(Instance(List), depends_on="custom_configs")
+
     _default_configs = OrderedDict([
         (HIST_PLOT_TYPE, HistogramPlotConfigurator),
         (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
@@ -482,6 +485,23 @@ class DataFramePlotManager(DataElement):
     def _get_containers_in_use(self):
         return {desc.container_idx for desc in self.contained_plots}
 
+    def _get_custom_configs(self):
+        if self.template_interactor is None:
+            return OrderedDict()
+        from pathlib import Path
+        path = self.template_interactor.get_template_dir()
+        result = OrderedDict()
+        for filename in os.listdir(path):
+            if filename.endswith(self.template_interactor.get_template_ext()):
+                result[Path(filename).stem] = BasePlotConfigurator
+        return result
+
+    def _get_plot_configs(self):
+        return OrderedDict(**self._default_configs, **self.custom_configs)
+
+    def _get_plot_types(self):
+        return list(self.plot_configs.keys())
+
     # Traits listeners --------------------------------------------------------
 
     @on_trait_change("contained_plots:container_idx")
@@ -584,58 +604,35 @@ class DataFramePlotManager(DataElement):
         desc = self._get_desc_for_menu_manager(manager)
         desc.container_idx = CONTAINER_IDX_REMOVAL
 
-    def _get_custom_configs(self):
-        # if self.template_loc is None or self.template_ext is None:
-        if self.template_interactor is None:
-            return OrderedDict()
-        from pathlib import Path
-        dir = self.template_interactor.get_template_dir()
-        result = OrderedDict()
-        for filename in os.listdir(dir):
-            if filename.endswith(self.template_interactor.get_template_ext()):
-                result[Path(filename).stem] = BasePlotConfigurator
-        return result
-
-    def _get_plot_configs(self):
-        return OrderedDict(**self._default_configs, **self.custom_configs)
-
-    def _get_plot_types(self):
-        return list(self.plot_configs.keys())
-
     @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
                      "template_requested", post_init=True)
     def action_template_requested(self, manager, attr_name, new):
-        if self.template_interactor is None:
-            return
-
-        options = list(self.custom_configs.keys())
-        desc = self._get_desc_for_menu_manager(manager)
-        basis = desc.plot_config.template_basis
-        if basis is not None and basis in options:
-            select = TemplatePlotNameSelector(new_name="",
-                                              string_options=options,
-                                              selected_string=basis,
-                                              replace_old_template=True)
-        else:
-            template_name = desc.plot_title
-            select = TemplatePlotNameSelector(new_name=template_name,
-                                              string_options=options)
-
-        make_template = select.edit_traits(kind="livemodal")
-
-        if make_template is not True:
-            return
-
-        if select.replace_old_template:
-            template_name = select.selected_string
-        else:
-            template_name = select.new_name
+        """ A factory requested a plot template be created. Launch dialog.
+        """
         interactor = self.template_interactor
+        if interactor is None:
+            return
+
+        desc = self._get_desc_for_menu_manager(manager)
+        if desc is None:
+            return
+
+        template_name = self._request_template_name_with_desc(desc)
+        if template_name is None:
+            return
+
         filepath = os.path.join(interactor.get_template_dir(), template_name +
                                 interactor.get_template_ext())
-        save = interactor.get_template_saver()
-        save(filepath=filepath, object_to_save=desc.plot_config)
+        saver = interactor.get_template_saver()
+        saver(filepath=filepath, object_to_save=desc.plot_config)
         self.custom_configs[template_name] = desc.plot_config
+        # TODO:
+        #  * test that interactor.get_template_saver() is called with the
+        #  filepath and plot_config arguments.
+        #  * called with no interactor returns nothing
+        #  * called with no descriptor returns nothing
+        #  * _request_template_name_with_desc return None, then no template
+        #  made
 
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):
@@ -782,6 +779,46 @@ class DataFramePlotManager(DataElement):
             return plot_desc.plot.components[0]
         else:
             return plot_desc.plot
+
+    def _request_template_name_with_desc(self, desc: PlotDescriptor) -> \
+            Optional[str]:
+        """
+        Request the template name from the user.
+
+        Parameters
+        ----------
+        desc : PlotDescriptor
+            A PlotDescriptor that contains a `plot_config`
+
+        Returns
+        -------
+        Optional[str]:
+            If user cancels the process, returns None. If user selects a
+            name or makes a new one, returns that name as a str.
+        """
+        options = list(self.custom_configs.keys())
+        basis = desc.plot_config.template_basis
+        if basis is not None and basis in options:
+            select = TemplatePlotNameSelector(new_name="",
+                                              string_options=options,
+                                              selected_string=basis,
+                                              replace_old_template=True)
+        else:
+            template_name = desc.plot_title
+            select = TemplatePlotNameSelector(new_name=template_name,
+                                              string_options=options)
+
+        make_template = select.edit_traits(kind="livemodal")
+
+        if not make_template.result:
+            return None
+
+        if select.replace_old_template:
+            template_name = select.selected_string
+        else:
+            template_name = select.new_name
+
+        return template_name
 
     # Traits initialization methods -------------------------------------------
 
