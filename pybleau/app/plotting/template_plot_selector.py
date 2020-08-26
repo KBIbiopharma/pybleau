@@ -1,5 +1,5 @@
 from app_common.traitsui.common_modal_dialogs import GuiStringSelector, \
-    StringSelectorHandler
+    StringSelectorHandler, request_string_selection
 from traits.api import Bool, Str, Property
 from traitsui.api import CancelButton, EnumEditor, HGroup, Item, Label, \
     Spring, View, VGroup, TextEditor, Action
@@ -22,20 +22,13 @@ class TemplatePlotNameSelector(GuiStringSelector):
     new_name = Str
 
     def traits_view(self):
-        top_instructions = "\nType a name for the new plot template in the " \
-                           "input below.\nTo replace an existing template, " \
-                           "select its name in the dropdown:\n"
-        bottom_instructions = '\nOnce a name has been provided or selected, ' \
-                              'click "OK" to save the plot template.\nAll ' \
-                              'plot templates are visible and configurable ' \
-                              'via the "Plot Templates" tab in the ' \
-                              'Preferences'
+        middle_instructions = "To replace an existing template, select its " \
+                              "name in the dropdown:"
+        bottom_instructions = 'All plot templates are visible and ' \
+                              'configurable via the "Plot Templates" tab in ' \
+                              'the Preferences.'
         view = View(
             VGroup(
-                HGroup(
-                    Label(top_instructions),
-                    Spring()
-                ),
                 VGroup(
                     HGroup(
                         Item("new_name",
@@ -46,12 +39,20 @@ class TemplatePlotNameSelector(GuiStringSelector):
                              ),
                         Spring()
                     ),
-                    HGroup(
-                        Item('replace_old_template', show_label=False),
-                        Item("selected_string",
-                             editor=EnumEditor(name='string_options'),
-                             enabled_when='replace_old_template',
-                             show_label=True, label=self.label)
+                    VGroup(
+                        HGroup(
+                            Label(middle_instructions),
+                            Spring()
+                        ),
+                        HGroup(
+                            Item('replace_old_template', show_label=False),
+                            Item("selected_string",
+                                 editor=EnumEditor(name='string_options'),
+                                 enabled_when='replace_old_template',
+                                 show_label=True, label=self.label),
+                            Spring()
+                        ),
+                        visible_when="len(string_options) > 0"
                     ),
                 ),
                 HGroup(
@@ -89,3 +90,9 @@ class TemplatePlotNameSelector(GuiStringSelector):
             return self.is_string_selected
         else:
             return self.new_name_is_valid
+
+
+if __name__ == "__main__":
+    y = list('abcde')
+    request_string_selection(string_options=y,
+                             dlg_klass=TemplatePlotNameSelector)

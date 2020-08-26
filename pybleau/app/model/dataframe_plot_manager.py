@@ -605,8 +605,6 @@ class DataFramePlotManager(DataElement):
     @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
                      "template_requested", post_init=True)
     def action_template_requested(self, manager, attr_name, new):
-        # if self.template_save is None or self.template_loc is None or \
-        #         self.template_ext is None:
         if self.template_interactor is None:
             return
 
@@ -625,7 +623,7 @@ class DataFramePlotManager(DataElement):
 
         make_template = select.edit_traits(kind="livemodal")
 
-        if not make_template:
+        if make_template is not True:
             return
 
         if select.replace_old_template:
