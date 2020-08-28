@@ -1,3 +1,4 @@
+from glob import glob
 from os.path import abspath, dirname, join
 from setuptools import setup, find_packages
 
@@ -11,8 +12,7 @@ exec(open(init_file).read(), globals(), info)
 
 
 def read(fname):
-    """ Returns content of the passed file.
-    """
+    """ Returns content of the passed file. """
     return open(join(HERE, fname)).read()
 
 
@@ -30,7 +30,12 @@ setup(
     install_requires=[],
     requires=[],
     # Additional data files
-    data_files=[(".", ["README.md", "LICENSE"])],
+    package_data={
+        "": ["README.md", "LICENSE"],
+        PKG_NAME: ["reporting/tests/*.png",
+                   "reporting/tests/*.json",
+                   "images/*.png"]
+    },
     entry_points={
         'console_scripts': [
             'pybleau_app = {}.app.main:main'.format(PKG_NAME),
