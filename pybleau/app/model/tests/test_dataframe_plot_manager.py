@@ -1,4 +1,7 @@
+from os.path import dirname
 from unittest import TestCase, skipIf
+from unittest.mock import patch
+
 from pandas import DataFrame
 import os
 from numpy.testing import assert_array_equal
@@ -6,11 +9,16 @@ from six import string_types
 
 from chaco.api import Legend
 from pandas.testing import assert_frame_equal
+from traits.has_traits import HasTraits, provides
 from traits.testing.unittest_tools import UnittestTools
+
+from pybleau.app.plotting.i_plot_template_interactor import \
+    IPlotTemplateInteractor
 from pybleau.app.plotting.plot_config import BaseSinglePlotConfigurator
 
 try:
     import kiwisolver  # noqa
+
     KIWI_AVAILABLE = True
 except ImportError:
     KIWI_AVAILABLE = False
@@ -45,7 +53,6 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
         HEATMAP_PLOT_TYPE
 
-
 TEST_DF = DataFrame({"a": [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
                      "b": [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],
                      "c": [1, 2, 3, 4, 2, 3, 1, 1, 4, 4, 5, 6, 4, 4, 5, 6],
@@ -60,6 +67,7 @@ msg = "No UI backend to paint into or missing kiwisolver package"
 
 CMAP_PLOT_TYPES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
 
+HERE = dirname(__file__)
 
 class BasePlotManagerTools(UnittestTools):
 
@@ -675,13 +683,13 @@ class TestPlotManagerMultiContainerHandling(BasePlotManagerTools, TestCase):
     def test_add_plot_non_existent_row(self):
         config = self.config
         num_containers = len(self.model.canvas_manager.container_managers)
-        self.model._add_new_plot(config, container=num_containers+1)
+        self.model._add_new_plot(config, container=num_containers + 1)
         # If non-existent container is requested, the last one is used:
         self.assert_plot_created(renderer_type=BarPlot,
-                                 container_idx=num_containers-1)
+                                 container_idx=num_containers - 1)
         # Desc is sync-ed
         plot_desc = self.model.contained_plots[0]
-        self.assertEqual(plot_desc.container_idx, num_containers-1)
+        self.assertEqual(plot_desc.container_idx, num_containers - 1)
 
     def test_add_3_plots_mode0(self):
         config = self.config
@@ -1250,3 +1258,46 @@ class TestPlotManagerInspectorTools(TestCase, UnittestTools):
         self.assertEqual(overlay0.selection_color, SELECTION_COLOR)
         selection0 = tool0.component.index.metadata[SELECTION_METADATA_NAME]
         self.assertEqual(selection0, second_selection)
+
+
+@provides(IPlotTemplateInteractor)
+class FakeInteractor(HasTraits):
+    def get_template_saver(self):
+        return self.saver
+
+    def get_template_loader(self):
+        return lambda filepath: filepath
+
+    def get_template_ext(self):
+        return ".tmpl"
+
+    def get_template_dir(self):
+        return HERE
+
+    def saver(self, filepath, object_to_save):
+        with open(filepath, 'w'):
+            pass
+
+
+class TestPlotManagerPlotTemplates(TestCase):
+
+    def setUp(self) -> None:
+        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.target_dir = HERE
+        self.model.template_interactor = FakeInteractor()
+
+    @patch.object(DataFramePlotManager, '_get_desc_for_menu_manager')
+    @patch.object(DataFramePlotManager, '_request_template_name_with_desc')
+    def test_template_requested(self, get_name, get_desc):
+        plot_config = BarPlotConfigurator()
+        get_desc.return_value = PlotDescriptor(plot_config=plot_config)
+        get_name.return_value = "plot template test"
+        self.assertEqual(len(self.model.custom_configs), 0)
+
+        self.model.action_template_requested(None, None, None)
+
+        self.assertEqual(len(self.model.custom_configs), 1)
+        ext = self.model.template_interactor.get_template_ext()
+        file = os.path.join(self.target_dir, get_name.return_value + ext)
+        if os.path.exists(file):
+            os.remove(file)

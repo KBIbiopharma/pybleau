@@ -1,5 +1,6 @@
 import os
 import logging
+from pathlib import Path
 from typing import Optional
 
 import pandas as pd
@@ -18,7 +19,7 @@ from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
 from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
 from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
     CUSTOM_PLOT_TYPE, PlotDescriptor
-from pybleau.app.plotting.interface_plot_template_interactor import \
+from pybleau.app.plotting.i_plot_template_interactor import \
     IPlotTemplateInteractor
 from pybleau.app.plotting.multi_plot_config import \
     MultiHistogramPlotConfigurator, MULTI_LINE_PLOT_TYPE, \
@@ -103,7 +104,7 @@ class DataFramePlotManager(DataElement):
                                  depends_on="contained_plots:container_idx")
 
     #: Plot template interactor
-    template_interactor = Either(None, IPlotTemplateInteractor, default=None)
+    template_interactor = Instance(IPlotTemplateInteractor)
 
     #: OrderedDict of all user-created (custom) plot configs
     custom_configs = Property(Instance(OrderedDict, args=()),
@@ -486,11 +487,11 @@ class DataFramePlotManager(DataElement):
         return {desc.container_idx for desc in self.contained_plots}
 
     def _get_custom_configs(self):
-        if self.template_interactor is None:
-            return OrderedDict()
-        from pathlib import Path
-        path = self.template_interactor.get_template_dir()
         result = OrderedDict()
+        if self.template_interactor is None:
+            return result
+        path = self.template_interactor.get_template_dir()
+
         for filename in os.listdir(path):
             if filename.endswith(self.template_interactor.get_template_ext()):
                 result[Path(filename).stem] = BasePlotConfigurator
@@ -599,7 +600,7 @@ class DataFramePlotManager(DataElement):
     @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
                      "delete_requested", post_init=True)
     def action_delete_requested(self, manager, attr_name, new):
-        """ A factory requested its style to be edited. Launch dialog.
+        """ A factory requested a plot be deleted. Launch dialog.
         """
         desc = self._get_desc_for_menu_manager(manager)
         desc.container_idx = CONTAINER_IDX_REMOVAL
@@ -624,15 +625,14 @@ class DataFramePlotManager(DataElement):
         filepath = os.path.join(interactor.get_template_dir(), template_name +
                                 interactor.get_template_ext())
         saver = interactor.get_template_saver()
-        saver(filepath=filepath, object_to_save=desc.plot_config)
-        self.custom_configs[template_name] = desc.plot_config
-        # TODO:
-        #  * test that interactor.get_template_saver() is called with the
-        #  filepath and plot_config arguments.
-        #  * called with no interactor returns nothing
-        #  * called with no descriptor returns nothing
-        #  * _request_template_name_with_desc return None, then no template
-        #  made
+        try:
+            saver(filepath, desc.plot_config)
+        except ValueError:
+            msg = f"The {type(interactor)}'s save function requires a " \
+                  f"filepath and a plot configurator to properly save a " \
+                  f"template."
+            logger.exception(msg)
+            raise ValueError(msg)
 
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):
@@ -797,7 +797,7 @@ class DataFramePlotManager(DataElement):
             name or makes a new one, returns that name as a str.
         """
         options = list(self.custom_configs.keys())
-        basis = desc.plot_config.template_basis
+        basis = desc.plot_config.source_template
         if basis is not None and basis in options:
             select = TemplatePlotNameSelector(new_name="",
                                               string_options=options,

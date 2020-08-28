@@ -19,7 +19,7 @@ DELETE_ACTION_NAME = "Delete plot..."
 CREATE_TEMPLATE_ACTION_NAME = "Create template from plot..."
 
 ALL_ACTIONS = [STYLE_EDITOR_ACTION_NAME, FILE_EXPORT_ACTION_NAME,
-               DELETE_ACTION_NAME]
+               DELETE_ACTION_NAME, CREATE_TEMPLATE_ACTION_NAME]
 
 
 class PlotContextMenuManager(HasStrictTraits):
@@ -40,19 +40,19 @@ class PlotContextMenuManager(HasStrictTraits):
                             on_perform=self.request_style_editor)
             menu_entries.append(action)
             menu_entries.append(Separator())
-        if FILE_EXPORT_ACTION_NAME:
+        if FILE_EXPORT_ACTION_NAME in self.action_list:
             action = Action(name=FILE_EXPORT_ACTION_NAME,
                             on_perform=self.export_plot_to_file)
             menu_entries.append(action)
             menu_entries.append(Separator())
 
-        if DELETE_ACTION_NAME:
+        if DELETE_ACTION_NAME in self.action_list:
             action = Action(name=DELETE_ACTION_NAME,
                             on_perform=self.request_delete)
             menu_entries.append(action)
             menu_entries.append(Separator())
 
-        if CREATE_TEMPLATE_ACTION_NAME:
+        if CREATE_TEMPLATE_ACTION_NAME in self.action_list:
             action = Action(name=CREATE_TEMPLATE_ACTION_NAME,
                             on_perform=self.request_plot_template)
             menu_entries.append(action)

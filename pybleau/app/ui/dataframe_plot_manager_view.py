@@ -14,6 +14,8 @@ from traitsui.extras.checkbox_column import CheckboxColumn
 from pybleau.app.model.dataframe_plot_manager import CONTAINER_IDX_REMOVAL, \
     DataFramePlotManager
 from pybleau.app.model.multi_canvas_manager import CONTAINER_TRAIT_NAME
+from pybleau.app.plotting.i_plot_template_interactor import \
+    IPlotTemplateInteractor
 
 logger = logging.getLogger(__name__)
 
@@ -214,7 +216,7 @@ class DataFramePlotManagerView(ModelView):
             view_klass=self.view_klass,
             num_containers=self.model.canvas_manager.num_container_managers,
             container_idx=AUTO_TARGET_CONTAINER,
-            _plot_types=self.model.plot_types
+            plot_types=self.model.plot_types
         )
         ui = selector.edit_traits(kind="modal")
         if not ui.result:
@@ -222,15 +224,19 @@ class DataFramePlotManagerView(ModelView):
 
         plot_type = selector.plot_type
 
-        if plot_type in list(self.model.custom_configs.keys()) and \
-                self.model.template_interactor is not None:
+        if plot_type in list(self.model.custom_configs.keys()):
+            if self.model.template_interactor is None:
+                msg = f"A {type(self.model)} requires a " \
+                      f"{type(IPlotTemplateInteractor)} to load templates."
+                logger.exception(msg)
+                raise AttributeError(msg)
             interactor = self.model.template_interactor
             filepath = os.path.join(interactor.get_template_dir(), plot_type +
                                     interactor.get_template_ext())
             loader = interactor.get_template_loader()
             configurator = loader(filepath)
             configurator.data_source = self.model.data_source
-            configurator.template_basis = plot_type
+            configurator.source_template = plot_type
         else:
             next_plot_num = len(self.model.contained_plots) + 1
             if plot_type.startswith("Multi"):
@@ -273,10 +279,10 @@ class PlotTypeSelector(HasStrictTraits):
     """ Tiny UI to select the type of plot to create.
     """
     #: Selected plot type
-    plot_type = Enum(values="_plot_types")
+    plot_type = Enum(values="plot_types")
 
     #: Available plot types
-    _plot_types = List(Str)
+    plot_types = List(Str)
 
     #: Selected container for the future plot
     container_idx = Any

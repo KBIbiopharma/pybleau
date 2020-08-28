@@ -80,7 +80,7 @@ class BaseSinglePlotConfigurator_Serializer(DataElement_Serializer):
         """ Build the list of attributes to serialize from attributes exported
         and passed to the factory.
         """
-        keys_to_serialize = ["plot_style", "template_basis"]
+        keys_to_serialize = ["plot_style", "source_template"]
         # These are needed by the factory but not to serialize since they are
         # read from the DF:
         skip = {"x_arr", "y_arr", "z_arr", 'hover_data'}

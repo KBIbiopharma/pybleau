@@ -14,15 +14,16 @@ from traits.api import Any, Bool, cached_property, Constant, Dict, \
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 
-from .bar_plot_style import BarPlotStyle
-from .heatmap_plot_style import HeatmapPlotStyle
-from .histogram_plot_style import HistogramPlotStyle
-from .plot_style import BaseColorXYPlotStyle, BaseXYPlotStyle, \
-    SingleLinePlotStyle, SingleScatterPlotStyle
-from .renderer_style import BarRendererStyle, CmapScatterRendererStyle, \
-    LineRendererStyle, ScatterRendererStyle
-from ..utils.string_definitions import BAR_PLOT_TYPE, CMAP_SCATTER_PLOT_TYPE, \
-    HEATMAP_PLOT_TYPE, HIST_PLOT_TYPE, LINE_PLOT_TYPE, SCATTER_PLOT_TYPE
+from pybleau.app.plotting.bar_plot_style import BarPlotStyle
+from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
+from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
+from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
+    BaseXYPlotStyle, SingleLinePlotStyle, SingleScatterPlotStyle
+from pybleau.app.plotting.renderer_style import BarRendererStyle, \
+    CmapScatterRendererStyle, LineRendererStyle, ScatterRendererStyle
+from pybleau.app.utils.string_definitions import BAR_PLOT_TYPE, \
+    CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE, HIST_PLOT_TYPE, \
+    LINE_PLOT_TYPE, SCATTER_PLOT_TYPE
 
 X_COL_NAME_LABEL = "Column to plot along X"
 
@@ -153,8 +154,8 @@ class BaseSinglePlotConfigurator(BasePlotConfigurator):
     #: Type of plot generated
     plot_type = Str
 
-    #: Template basis of plot (if exists)
-    template_basis = Either(None, Str, default=None)
+    #: Template that the plot is made from (if exists)
+    source_template = Str
 
     #: Column name to display along the x-axis
     x_col_name = Str
