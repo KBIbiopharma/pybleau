@@ -9,7 +9,7 @@ from six import string_types
 
 from chaco.api import Legend
 from pandas.testing import assert_frame_equal
-from traits.has_traits import HasTraits, provides
+from traits.api import HasTraits, provides
 from traits.testing.unittest_tools import UnittestTools
 
 from pybleau.app.plotting.i_plot_template_interactor import \
@@ -1298,6 +1298,6 @@ class TestPlotManagerPlotTemplates(TestCase):
 
         self.assertEqual(len(self.model.custom_configs), 1)
         ext = self.model.template_interactor.get_template_ext()
-        file = os.path.join(self.target_dir, get_name.return_value + ext)
-        if os.path.exists(file):
-            os.remove(file)
+        result = os.path.join(self.target_dir, get_name.return_value + ext)
+        if os.path.exists(result):
+            os.remove(result)

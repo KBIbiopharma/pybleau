@@ -1,11 +1,12 @@
-from app_common.traitsui.common_modal_dialogs import GuiStringSelector, \
-    StringSelectorHandler
+from app_common.traitsui.common_modal_dialogs import StringSelectorHandler, \
+    BaseDlg
 from traits.api import Bool, Str, Property, List
+from traits.trait_types import Instance
 from traitsui.api import CancelButton, EnumEditor, HGroup, Item, Label, \
     Spring, VGroup, TextEditor, Action
 
 
-class TemplatePlotNameSelector(GuiStringSelector):
+class TemplatePlotNameSelector(BaseDlg):
     """Tiny UI to name a plot template, or select from the existing ones
     """
     #: Title of the window
@@ -18,23 +19,20 @@ class TemplatePlotNameSelector(GuiStringSelector):
     selected_string = Str
 
     #: Property defining whether there is a string selected or not
-    is_string_selected = Property(Bool(False), depends_on="selected_string, "
-                                                          "string_options[]")
-
-    #: Label for the replace-template checkbox
-    label = "Replace an existing template:"
+    is_string_selected = Property(Bool(), depends_on="selected_string, "
+                                                     "string_options[]")
 
     #: Property defining whether the new name is valid
-    new_name_is_valid = Property(Bool(False), depends_on="new_name")
+    new_name_is_valid = Property(Bool(), depends_on="new_name")
 
     #: Property defining whether the new name should be marked as invalid
     new_name_is_invalid = Property(
-        Bool(True), depends_on="new_name, replace_old_template"
+        Bool(), depends_on="new_name, replace_old_template"
     )
 
     #: Property that defines if the user can click the OK button
-    input_is_valid = Property(Bool(False), depends_on="new_name_is_valid, "
-                                                      "string_is_selected")
+    input_is_valid = Property(Bool(), depends_on="new_name_is_valid, "
+                                                 "string_is_selected")
 
     #: Checkbox used to define whether a template will be created or replaced
     replace_old_template = Bool(False)
@@ -42,13 +40,15 @@ class TemplatePlotNameSelector(GuiStringSelector):
     #: User input new name for the template
     new_name = Str
 
+    ok_button = Instance(Action)
+
     def traits_view(self):
         dropdown_msg = "Replace an existing template by \nselecting it from " \
                        "the dropdown."
         error_message = "Name must contain only numbers and letters, <br>" \
                         "and cannot match an existing template."
         name_error_msg = f'<p style="color:red">{error_message}</p>'
-        or_msg = f'<p style="font-size:20px"> OR </p>'
+        or_msg = '<p style="font-size:20px"> OR </p>'
         view = self.view_klass(
             HGroup(
                 VGroup(
@@ -94,6 +94,8 @@ class TemplatePlotNameSelector(GuiStringSelector):
 
         return view
 
+    # Traits property getters/setters -----------------------------------------
+
     def _get_new_name_is_valid(self):
         value = self.new_name
         no_spaces = value.replace(" ", "")
@@ -109,9 +111,6 @@ class TemplatePlotNameSelector(GuiStringSelector):
         return not self.new_name_is_valid and not self.replace_old_template \
                and len(self.new_name) > 0
 
-    def _ok_button_default(self):
-        return Action(name='OK', enabled_when='input_is_valid')
-
     def _get_input_is_valid(self):
         if self.replace_old_template:
             return self.is_string_selected
@@ -120,6 +119,11 @@ class TemplatePlotNameSelector(GuiStringSelector):
 
     def _get_is_string_selected(self):
         return self.selected_string in self.string_options
+
+    # Traits initialization methods -------------------------------------------
+
+    def _ok_button_default(self):
+        return Action(name='OK', enabled_when='input_is_valid')
 
 
 if __name__ == "__main__":

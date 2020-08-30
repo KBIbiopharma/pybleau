@@ -14,7 +14,7 @@ from app_common.std_lib.sys_utils import extract_traceback
 from chaco.api import BasePlotContainer, HPlotContainer, \
     OverlayPlotContainer, Plot
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
-    Property, Set, Str, Either
+    Property, Set, Str
 
 from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
 from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
@@ -608,7 +608,7 @@ class DataFramePlotManager(DataElement):
     @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
                      "template_requested", post_init=True)
     def action_template_requested(self, manager, attr_name, new):
-        """ A factory requested a plot template be created. Launch dialog.
+        """ A plot requested a plot template be created.
         """
         interactor = self.template_interactor
         if interactor is None:
@@ -627,10 +627,10 @@ class DataFramePlotManager(DataElement):
         saver = interactor.get_template_saver()
         try:
             saver(filepath, desc.plot_config)
-        except ValueError:
-            msg = f"The {type(interactor)}'s save function requires a " \
-                  f"filepath and a plot configurator to properly save a " \
-                  f"template."
+        except Exception:
+            msg = f"The {type(interactor)}'s save function is expected to " \
+                  f"receive a filepath and a Configurator object to save to " \
+                  f"a template file"
             logger.exception(msg)
             raise ValueError(msg)
 
@@ -782,8 +782,7 @@ class DataFramePlotManager(DataElement):
 
     def _request_template_name_with_desc(self, desc: PlotDescriptor) -> \
             Optional[str]:
-        """
-        Request the template name from the user.
+        """ Request the template name from the user.
 
         Parameters
         ----------
