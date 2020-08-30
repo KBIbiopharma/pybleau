@@ -9,8 +9,7 @@ import logging
 
 import pandas as pd
 from traits.api import Any, Bool, cached_property, Constant, Dict, \
-    HasStrictTraits, Instance, Int, List, on_trait_change, Property, Str, \
-    Either
+    HasStrictTraits, Instance, Int, List, on_trait_change, Property, Str
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 

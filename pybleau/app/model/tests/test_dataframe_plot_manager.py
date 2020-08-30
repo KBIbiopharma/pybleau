@@ -69,6 +69,7 @@ CMAP_PLOT_TYPES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
 
 HERE = dirname(__file__)
 
+
 class BasePlotManagerTools(UnittestTools):
 
     def setUp(self):
