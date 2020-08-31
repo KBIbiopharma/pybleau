@@ -1,18 +1,18 @@
 """ Illustrates how to programmatically create a DF analyzer with populated
 plots in the plotter tool.
 """
-from pandas import DataFrame
-import numpy as np
-from chaco.api import Plot, ArrayPlotData
 
+import numpy as np
 from app_common.std_lib.logging_utils import initialize_logging
+from chaco.api import Plot, ArrayPlotData
+from pandas import DataFrame
 
 from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView, \
     DataFramePlotManager
 from pybleau.app.model.plot_descriptor import PlotDescriptor
-from pybleau.app.plotting.api import BarPlotConfigurator, \
-    HistogramPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
 from pybleau.app.plotting.multi_plot_config import MultiLinePlotConfigurator
+from pybleau.app.plotting.plot_config import HistogramPlotConfigurator, \
+    BarPlotConfigurator, ScatterPlotConfigurator, LinePlotConfigurator
 
 initialize_logging(logging_level="DEBUG")
 

@@ -1,16 +1,24 @@
-from unittest import TestCase, skipIf
-from pandas import DataFrame
 import os
-from numpy.testing import assert_array_equal
-from six import string_types
+from collections import OrderedDict
+from os.path import dirname
+from unittest import TestCase, skipIf
+from unittest.mock import patch
 
 from chaco.api import Legend
+from numpy.testing import assert_array_equal
+from pandas import DataFrame
 from pandas.testing import assert_frame_equal
+from six import string_types
+from traits.api import HasTraits, provides
 from traits.testing.unittest_tools import UnittestTools
+
+from pybleau.app.plotting.i_plot_template_interactor import \
+    IPlotTemplateInteractor
 from pybleau.app.plotting.plot_config import BaseSinglePlotConfigurator
 
 try:
     import kiwisolver  # noqa
+
     KIWI_AVAILABLE = True
 except ImportError:
     KIWI_AVAILABLE = False
@@ -31,9 +39,11 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.model.plot_descriptor import CUSTOM_PLOT_TYPE, \
         PlotDescriptor
     from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-    from pybleau.app.plotting.api import BarPlotConfigurator, \
+    from pybleau.app.plotting.multi_plot_config import \
+        MultiHistogramPlotConfigurator
+    from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HistogramPlotConfigurator, LinePlotConfigurator, \
-        MultiHistogramPlotConfigurator, ScatterPlotConfigurator
+        ScatterPlotConfigurator
     from pybleau.app.plotting.scatter_factories import \
         SELECTION_METADATA_NAME, DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR
     from pybleau.app.plotting.base_factories import DEFAULT_RENDERER_NAME
@@ -42,7 +52,6 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
     from pybleau.app.utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
         HEATMAP_PLOT_TYPE
-
 
 TEST_DF = DataFrame({"a": [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
                      "b": [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],
@@ -673,13 +682,13 @@ class TestPlotManagerMultiContainerHandling(BasePlotManagerTools, TestCase):
     def test_add_plot_non_existent_row(self):
         config = self.config
         num_containers = len(self.model.canvas_manager.container_managers)
-        self.model._add_new_plot(config, container=num_containers+1)
+        self.model._add_new_plot(config, container=num_containers + 1)
         # If non-existent container is requested, the last one is used:
         self.assert_plot_created(renderer_type=BarPlot,
-                                 container_idx=num_containers-1)
+                                 container_idx=num_containers - 1)
         # Desc is sync-ed
         plot_desc = self.model.contained_plots[0]
-        self.assertEqual(plot_desc.container_idx, num_containers-1)
+        self.assertEqual(plot_desc.container_idx, num_containers - 1)
 
     def test_add_3_plots_mode0(self):
         config = self.config
@@ -1248,3 +1257,63 @@ class TestPlotManagerInspectorTools(TestCase, UnittestTools):
         self.assertEqual(overlay0.selection_color, SELECTION_COLOR)
         selection0 = tool0.component.index.metadata[SELECTION_METADATA_NAME]
         self.assertEqual(selection0, second_selection)
+
+
+@provides(IPlotTemplateInteractor)
+class FakeInteractor(HasTraits):
+    def get_template_saver(self):
+        return self.saver
+
+    def get_template_loader(self):
+        return lambda filepath: None
+
+    def get_template_ext(self):
+        return ".tmpl"
+
+    def get_template_dir(self):
+        return dirname(__file__)
+
+    def saver(self, filepath, object_to_save):
+        with open(filepath, 'w'):
+            pass
+
+
+class TestPlotManagerPlotTemplates(TestCase):
+
+    def setUp(self) -> None:
+        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.target_dir = dirname(__file__)
+        self.model.template_interactor = FakeInteractor()
+
+    def _get_fake_ordered_dict(self):
+        return OrderedDict([("test_temp", ScatterPlotConfigurator)])
+
+    @patch.object(DataFramePlotManager, '_get_desc_for_menu_manager')
+    @patch.object(DataFramePlotManager, '_request_template_name_with_desc')
+    def test_template_requested(self, get_name, get_desc):
+        plot_config = BarPlotConfigurator()
+        get_desc.return_value = PlotDescriptor(plot_config=plot_config)
+        get_name.return_value = "plot template test"
+        self.assertEqual(len(self.model.custom_configs), 0)
+
+        self.model.action_template_requested(None, None, None)
+
+        self.assertEqual(len(self.model.custom_configs), 1)
+        ext = self.model.template_interactor.get_template_ext()
+        result = os.path.join(self.target_dir, get_name.return_value + ext)
+        if os.path.exists(result):
+            os.remove(result)
+
+    def test_custom_configs_populated_correctly(self):
+        interactor = FakeInteractor()
+        file_path = os.path.join(dirname(__file__), "test_temp.tmpl")
+        try:
+            with open(file_path, 'w'):
+                pass
+            self.model.template_interactor = interactor
+            keys = self.model.custom_configs.keys()
+            expected_keys = self._get_fake_ordered_dict().keys()
+            self.assertEqual(keys, expected_keys)
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)

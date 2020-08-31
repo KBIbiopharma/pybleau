@@ -1,25 +1,40 @@
-import pandas as pd
 import logging
+import os
+from collections import OrderedDict
+from pathlib import Path
+from typing import Optional
 from uuid import UUID
 
-from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
-    Property, Set, Str
-from chaco.api import BasePlotContainer, HPlotContainer, OverlayPlotContainer,\
-    Plot
-
-from app_common.std_lib.sys_utils import extract_traceback
+import pandas as pd
 from app_common.chaco.constraints_plot_container_manager import \
     ConstraintsPlotContainerManager
 from app_common.model_tools.data_element import DataElement
+from app_common.std_lib.sys_utils import extract_traceback
+from chaco.api import BasePlotContainer, HPlotContainer, \
+    OverlayPlotContainer, Plot
+from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
+    Property, Set, Str
 
-from .plot_descriptor import CONTAINER_IDX_REMOVAL, CUSTOM_PLOT_TYPE, \
-    PlotDescriptor
-from ..plotting.plot_config import BaseSinglePlotConfigurator
-from ..plotting.plot_factories import DEFAULT_FACTORIES, \
+from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
+from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
+    CUSTOM_PLOT_TYPE, PlotDescriptor
+from pybleau.app.plotting.i_plot_template_interactor import \
+    IPlotTemplateInteractor
+from pybleau.app.plotting.multi_plot_config import \
+    MultiHistogramPlotConfigurator, MULTI_LINE_PLOT_TYPE, \
+    MultiLinePlotConfigurator
+from pybleau.app.plotting.plot_config import BAR_PLOT_TYPE, \
+    BarPlotConfigurator, HeatmapPlotConfigurator, LINE_PLOT_TYPE, \
+    LinePlotConfigurator, SCATTER_PLOT_TYPE, ScatterPlotConfigurator, \
+    BasePlotConfigurator
+from pybleau.app.plotting.plot_config import BaseSinglePlotConfigurator, \
+    HistogramPlotConfigurator
+from pybleau.app.plotting.plot_factories import DEFAULT_FACTORIES, \
     DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR, SELECTION_METADATA_NAME
-from ..utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
-    HEATMAP_PLOT_TYPE
-from ..model.multi_canvas_manager import MultiCanvasManager
+from pybleau.app.plotting.template_plot_selector import \
+    TemplatePlotNameSelector
+from pybleau.app.utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
+    HEATMAP_PLOT_TYPE, HIST_PLOT_TYPE, MULTI_HIST_PLOT_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +101,30 @@ class DataFramePlotManager(DataElement):
 
     containers_in_use = Property(Set,
                                  depends_on="contained_plots:container_idx")
+
+    #: Plot template interactor
+    template_interactor = Instance(IPlotTemplateInteractor)
+
+    #: OrderedDict of all user-created (custom) plot configs
+    custom_configs = Property(Instance(OrderedDict, args=()),
+                              depends_on="template_interactor")
+
+    #: Combination of default and custom plot configs
+    plot_configs = Property(Instance(OrderedDict, args=()),
+                            depends_on="custom_configs")
+
+    #: List of all plot types
+    plot_types = Property(Instance(List), depends_on="custom_configs")
+
+    _default_configs = OrderedDict([
+        (HIST_PLOT_TYPE, HistogramPlotConfigurator),
+        (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
+        (BAR_PLOT_TYPE, BarPlotConfigurator),
+        (LINE_PLOT_TYPE, LinePlotConfigurator),
+        (MULTI_LINE_PLOT_TYPE, MultiLinePlotConfigurator),
+        (SCATTER_PLOT_TYPE, ScatterPlotConfigurator),
+        (HEATMAP_PLOT_TYPE, HeatmapPlotConfigurator)
+    ])
 
     def __init__(self, **traits):
         if "source_analyzer" in traits:
@@ -237,9 +276,9 @@ class DataFramePlotManager(DataElement):
                     self._add_raw_plot(desc, position=i, list_op="replace")
             except Exception as e:
                 tb = extract_traceback()
-                msg = "Failed to recreate the plot number {} ({} named {} of "\
-                      "'{}' vs '{}', z_col '{}').\nError was {}. Traceback " \
-                      "was:\n{}"
+                msg = "Failed to recreate the plot number {} ({} named {}" \
+                      " of '{}' vs '{}', z_col '{}').\nError was {}. " \
+                      "Traceback was:\n{}"
                 msg = msg.format(i, desc.plot_type, desc.plot_title,
                                  desc.x_col_name, desc.y_col_name,
                                  desc.z_col_name, e, tb)
@@ -446,6 +485,23 @@ class DataFramePlotManager(DataElement):
     def _get_containers_in_use(self):
         return {desc.container_idx for desc in self.contained_plots}
 
+    def _get_custom_configs(self):
+        result = OrderedDict()
+        if self.template_interactor is None:
+            return result
+        path = self.template_interactor.get_template_dir()
+
+        for filename in os.listdir(path):
+            if filename.endswith(self.template_interactor.get_template_ext()):
+                result[Path(filename).stem] = BasePlotConfigurator
+        return result
+
+    def _get_plot_configs(self):
+        return OrderedDict(**self._default_configs, **self.custom_configs)
+
+    def _get_plot_types(self):
+        return list(self.plot_configs.keys())
+
     # Traits listeners --------------------------------------------------------
 
     @on_trait_change("contained_plots:container_idx")
@@ -543,10 +599,36 @@ class DataFramePlotManager(DataElement):
     @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
                      "delete_requested", post_init=True)
     def action_delete_requested(self, manager, attr_name, new):
-        """ A factory requested its style to be edited. Launch dialog.
+        """ A factory requested a plot be deleted. Launch dialog.
         """
         desc = self._get_desc_for_menu_manager(manager)
         desc.container_idx = CONTAINER_IDX_REMOVAL
+
+    @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
+                     "template_requested", post_init=True)
+    def action_template_requested(self, manager, attr_name, new):
+        """ A plot requested a plot template be created.
+        """
+        interactor = self.template_interactor
+        if interactor is None:
+            return
+
+        desc = self._get_desc_for_menu_manager(manager)
+        template_name = self._request_template_name_with_desc(desc)
+        if template_name is None:
+            return
+
+        filepath = os.path.join(interactor.get_template_dir(), template_name +
+                                interactor.get_template_ext())
+        saver = interactor.get_template_saver()
+        try:
+            saver(filepath, desc.plot_config)
+        except Exception as e:
+            msg = f"The {type(interactor)}'s save function is expected to " \
+                  f"receive a filepath and a Configurator object to save to " \
+                  f"a template file. Error was {e}"
+            logger.exception(msg)
+            raise ValueError(msg)
 
     @on_trait_change("contained_plots:style_edited", post_init=True)
     def update_styling(self, plot_desc, attr_name, new):
@@ -672,7 +754,7 @@ class DataFramePlotManager(DataElement):
 
     # Private interface methods -----------------------------------------------
 
-    def _get_desc_for_menu_manager(self, manager):
+    def _get_desc_for_menu_manager(self, manager) -> PlotDescriptor:
         desc = None
         for desc in self.contained_plots:
             if desc.plot_factory is None:
@@ -680,6 +762,10 @@ class DataFramePlotManager(DataElement):
                 continue
             if desc.plot_factory.context_menu_manager is manager:
                 break
+        if desc is None:
+            msg = f"Matching {type(manager)} not found in contained plots."
+            logger.exception(msg=msg)
+            raise RuntimeError(msg)
         return desc
 
     def _get_source_analyzer_id(self):
@@ -693,6 +779,45 @@ class DataFramePlotManager(DataElement):
             return plot_desc.plot.components[0]
         else:
             return plot_desc.plot
+
+    def _request_template_name_with_desc(self, desc: PlotDescriptor) -> \
+            Optional[str]:
+        """ Request the template name from the user.
+
+        Parameters
+        ----------
+        desc : PlotDescriptor
+            A PlotDescriptor that contains a `plot_config`
+
+        Returns
+        -------
+        Optional[str]:
+            If user cancels the process, returns None. If user selects a
+            name or makes a new one, returns that name as a str.
+        """
+        options = list(self.custom_configs.keys())
+        basis = desc.plot_config.source_template
+        if basis is not None and basis in options:
+            select = TemplatePlotNameSelector(new_name="",
+                                              string_options=options,
+                                              selected_string=basis,
+                                              replace_old_template=True)
+        else:
+            template_name = desc.plot_title
+            select = TemplatePlotNameSelector(new_name=template_name,
+                                              string_options=options)
+
+        make_template = select.edit_traits(kind="livemodal")
+
+        if not make_template.result:
+            return None
+
+        if select.replace_old_template:
+            template_name = select.selected_string
+        else:
+            template_name = select.new_name
+
+        return template_name
 
     # Traits initialization methods -------------------------------------------
 
