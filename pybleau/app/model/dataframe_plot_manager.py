@@ -623,10 +623,10 @@ class DataFramePlotManager(DataElement):
         saver = interactor.get_template_saver()
         try:
             saver(filepath, desc.plot_config)
-        except Exception:
+        except Exception as e:
             msg = f"The {type(interactor)}'s save function is expected to " \
                   f"receive a filepath and a Configurator object to save to " \
-                  f"a template file"
+                  f"a template file. Error was {e}"
             logger.exception(msg)
             raise ValueError(msg)
 
@@ -765,7 +765,7 @@ class DataFramePlotManager(DataElement):
         if desc is None:
             msg = f"Matching {type(manager)} not found in contained plots."
             logger.exception(msg=msg)
-            raise NameError(msg)
+            raise RuntimeError(msg)
         return desc
 
     def _get_source_analyzer_id(self):

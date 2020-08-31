@@ -38,6 +38,7 @@ class TestTemplatePlotSelector(TestCase):
     def test_input_is_valid(self):
         options = list('abcde')
         select = TemplatePlotNameSelector(string_options=options)
+        self.assertEqual(select.new_name, '')
         select.replace_old_template = False
         select.new_name = 'abc'
         self.assertTrue(select.input_is_valid)

@@ -1312,8 +1312,8 @@ class TestPlotManagerPlotTemplates(TestCase):
                 pass
             self.model.template_interactor = interactor
             keys = self.model.custom_configs.keys()
-            fake_keys = self._get_fake_ordered_dict().keys()
-            self.assertEqual(keys, fake_keys)
+            expected_keys = self._get_fake_ordered_dict().keys()
+            self.assertEqual(keys, expected_keys)
         finally:
             if os.path.exists(file_path):
                 os.remove(file_path)

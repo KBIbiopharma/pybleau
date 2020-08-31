@@ -77,9 +77,9 @@ class TestDataFramePlotManagerView(TestCase):
         view = DataFramePlotManagerView(model=self.plotter)
         plot_type = 'template plot'
         with self.assertRaises(AttributeError):
-            view.create_configurator_from_file(plot_type)
+            view.create_config_for_custom_type(plot_type)
         self.plotter.template_interactor = FakeInteractor()
-        config = view.create_configurator_from_file(plot_type)
+        config = view.create_config_for_custom_type(plot_type)
         self.assertIsInstance(config, ScatterPlotConfigurator)
         self.assertEqual(config.source_template, plot_type)
         assert_frame_equal(config.data_source, self.plotter.data_source)

@@ -225,7 +225,7 @@ class DataFramePlotManagerView(ModelView):
         plot_type = selector.plot_type
 
         if plot_type in list(self.model.custom_configs.keys()):
-            configurator = self.create_configurator_from_file(plot_type)
+            configurator = self.create_config_for_custom_type(plot_type)
         else:
             next_plot_num = len(self.model.contained_plots) + 1
             if plot_type.startswith("Multi"):
@@ -247,7 +247,7 @@ class DataFramePlotManagerView(ModelView):
         self.model.add_new_plot(plot_type, configurator,
                                 container=selector.container_idx)
 
-    def create_configurator_from_file(self, plot_type):
+    def create_config_for_custom_type(self, plot_type):
         if self.model.template_interactor is None:
             msg = f"A {type(self.model)} requires an " \
                   f"{type(IPlotTemplateInteractor)} to load templates."
