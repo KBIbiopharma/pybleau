@@ -225,18 +225,7 @@ class DataFramePlotManagerView(ModelView):
         plot_type = selector.plot_type
 
         if plot_type in list(self.model.custom_configs.keys()):
-            if self.model.template_interactor is None:
-                msg = f"A {type(self.model)} requires a " \
-                      f"{type(IPlotTemplateInteractor)} to load templates."
-                logger.exception(msg)
-                raise AttributeError(msg)
-            interactor = self.model.template_interactor
-            filepath = os.path.join(interactor.get_template_dir(), plot_type +
-                                    interactor.get_template_ext())
-            loader = interactor.get_template_loader()
-            configurator = loader(filepath)
-            configurator.data_source = self.model.data_source
-            configurator.source_template = plot_type
+            configurator = self.create_configurator_from_file(plot_type)
         else:
             next_plot_num = len(self.model.contained_plots) + 1
             if plot_type.startswith("Multi"):
@@ -257,6 +246,21 @@ class DataFramePlotManagerView(ModelView):
 
         self.model.add_new_plot(plot_type, configurator,
                                 container=selector.container_idx)
+
+    def create_configurator_from_file(self, plot_type):
+        if self.model.template_interactor is None:
+            msg = f"A {type(self.model)} requires an " \
+                  f"{type(IPlotTemplateInteractor)} to load templates."
+            logger.exception(msg)
+            raise AttributeError(msg)
+        interactor = self.model.template_interactor
+        filepath = os.path.join(interactor.get_template_dir(), plot_type +
+                                interactor.get_template_ext())
+        loader = interactor.get_template_loader()
+        configurator = loader(filepath)
+        configurator.data_source = self.model.data_source
+        configurator.source_template = plot_type
+        return configurator
 
     def _export_plots_button_fired(self):
         from pybleau.app.io.dataframe_plot_manager_exporter import \

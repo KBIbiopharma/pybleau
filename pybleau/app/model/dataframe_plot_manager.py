@@ -1,12 +1,11 @@
-import os
 import logging
+import os
+from collections import OrderedDict
 from pathlib import Path
 from typing import Optional
-
-import pandas as pd
-from collections import OrderedDict
 from uuid import UUID
 
+import pandas as pd
 from app_common.chaco.constraints_plot_container_manager import \
     ConstraintsPlotContainerManager
 from app_common.model_tools.data_element import DataElement
@@ -615,9 +614,6 @@ class DataFramePlotManager(DataElement):
             return
 
         desc = self._get_desc_for_menu_manager(manager)
-        if desc is None:
-            return
-
         template_name = self._request_template_name_with_desc(desc)
         if template_name is None:
             return
@@ -766,6 +762,10 @@ class DataFramePlotManager(DataElement):
                 continue
             if desc.plot_factory.context_menu_manager is manager:
                 break
+        if desc is None:
+            msg = f"Matching {type(manager)} not found in contained plots."
+            logger.exception(msg=msg)
+            raise NameError(msg)
         return desc
 
     def _get_source_analyzer_id(self):

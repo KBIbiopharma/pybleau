@@ -1,14 +1,14 @@
+import os
+from collections import OrderedDict
 from os.path import dirname
 from unittest import TestCase, skipIf
 from unittest.mock import patch
 
-from pandas import DataFrame
-import os
-from numpy.testing import assert_array_equal
-from six import string_types
-
 from chaco.api import Legend
+from numpy.testing import assert_array_equal
+from pandas import DataFrame
 from pandas.testing import assert_frame_equal
+from six import string_types
 from traits.api import HasTraits, provides
 from traits.testing.unittest_tools import UnittestTools
 
@@ -66,8 +66,6 @@ NUM_D_VALUES = len(set(TEST_DF["d"]))
 msg = "No UI backend to paint into or missing kiwisolver package"
 
 CMAP_PLOT_TYPES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
-
-HERE = dirname(__file__)
 
 
 class BasePlotManagerTools(UnittestTools):
@@ -1267,13 +1265,13 @@ class FakeInteractor(HasTraits):
         return self.saver
 
     def get_template_loader(self):
-        return lambda filepath: filepath
+        return lambda filepath: None
 
     def get_template_ext(self):
         return ".tmpl"
 
     def get_template_dir(self):
-        return HERE
+        return dirname(__file__)
 
     def saver(self, filepath, object_to_save):
         with open(filepath, 'w'):
@@ -1284,8 +1282,11 @@ class TestPlotManagerPlotTemplates(TestCase):
 
     def setUp(self) -> None:
         self.model = DataFramePlotManager(data_source=TEST_DF)
-        self.target_dir = HERE
+        self.target_dir = dirname(__file__)
         self.model.template_interactor = FakeInteractor()
+
+    def _get_fake_ordered_dict(self):
+        return OrderedDict([("test_temp", ScatterPlotConfigurator)])
 
     @patch.object(DataFramePlotManager, '_get_desc_for_menu_manager')
     @patch.object(DataFramePlotManager, '_request_template_name_with_desc')
@@ -1302,3 +1303,17 @@ class TestPlotManagerPlotTemplates(TestCase):
         result = os.path.join(self.target_dir, get_name.return_value + ext)
         if os.path.exists(result):
             os.remove(result)
+
+    def test_custom_configs_populated_correctly(self):
+        interactor = FakeInteractor()
+        file_path = os.path.join(dirname(__file__), "test_temp.tmpl")
+        try:
+            with open(file_path, 'w'):
+                pass
+            self.model.template_interactor = interactor
+            keys = self.model.custom_configs.keys()
+            fake_keys = self._get_fake_ordered_dict().keys()
+            self.assertEqual(keys, fake_keys)
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)

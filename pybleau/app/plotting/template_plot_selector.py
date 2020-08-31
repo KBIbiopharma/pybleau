@@ -1,9 +1,9 @@
 from app_common.traitsui.common_modal_dialogs import StringSelectorHandler, \
     BaseDlg
-from traits.api import Bool, Str, Property, List
-from traits.trait_types import Instance
-from traitsui.api import CancelButton, EnumEditor, HGroup, Item, Label, \
-    Spring, VGroup, TextEditor, Action
+from app_common.traitsui.label_with_html import Label
+from traits.api import Bool, Str, Property, List, Instance
+from traitsui.api import CancelButton, EnumEditor, HGroup, Item, Spring, \
+    VGroup, TextEditor, Action
 
 
 class TemplatePlotNameSelector(BaseDlg):
@@ -23,15 +23,15 @@ class TemplatePlotNameSelector(BaseDlg):
                                                      "string_options[]")
 
     #: Property defining whether the new name is valid
-    new_name_is_valid = Property(Bool(), depends_on="new_name")
+    new_name_entry_is_valid = Property(Bool(), depends_on="new_name")
 
     #: Property defining whether the new name should be marked as invalid
-    new_name_is_invalid = Property(
+    new_name_is_required_and_invalid = Property(
         Bool(), depends_on="new_name, replace_old_template"
     )
 
     #: Property that defines if the user can click the OK button
-    input_is_valid = Property(Bool(), depends_on="new_name_is_valid, "
+    input_is_valid = Property(Bool(), depends_on="new_name_entry_is_valid, "
                                                  "string_is_selected")
 
     #: Checkbox used to define whether a template will be created or replaced
@@ -47,25 +47,25 @@ class TemplatePlotNameSelector(BaseDlg):
                        "the dropdown."
         error_message = "Name must contain only numbers and letters, <br>" \
                         "and cannot match an existing template."
-        name_error_msg = f'<p style="color:red">{error_message}</p>'
-        or_msg = '<p style="font-size:20px"> OR </p>'
         view = self.view_klass(
             HGroup(
                 VGroup(
                     Item("new_name",
-                         editor=TextEditor(invalid="new_name_is_invalid"),
+                         editor=TextEditor(
+                             invalid="new_name_is_required_and_invalid"
+                         ),
                          enabled_when='not replace_old_template',
                          label="New template name:"
                          ),
                     HGroup(
-                        Label(name_error_msg),
-                        visible_when="new_name_is_invalid"
+                        Label(error_message, color="red"),
+                        visible_when="new_name_is_required_and_invalid"
                     ),
                     show_border=True
                 ),
                 VGroup(
                     Spring(),
-                    Label(or_msg),
+                    Label("OR", font_size=20),
                     Spring(),
                     visible_when="len(string_options) > 0"
                 ),
@@ -96,7 +96,7 @@ class TemplatePlotNameSelector(BaseDlg):
 
     # Traits property getters/setters -----------------------------------------
 
-    def _get_new_name_is_valid(self):
+    def _get_new_name_entry_is_valid(self):
         value = self.new_name
         no_spaces = value.replace(" ", "")
         no_underscores = no_spaces.replace("_", "")
@@ -107,15 +107,15 @@ class TemplatePlotNameSelector(BaseDlg):
 
         return test1 and test2 and test3
 
-    def _get_new_name_is_invalid(self):
-        return not self.new_name_is_valid and not self.replace_old_template \
-               and len(self.new_name) > 0
+    def _get_new_name_is_required_and_invalid(self):
+        return not self.new_name_entry_is_valid and not \
+            self.replace_old_template and len(self.new_name) > 0
 
     def _get_input_is_valid(self):
         if self.replace_old_template:
             return self.is_string_selected
         else:
-            return self.new_name_is_valid
+            return self.new_name_entry_is_valid
 
     def _get_is_string_selected(self):
         return self.selected_string in self.string_options
