@@ -10,7 +10,8 @@ from app_common.apptools.testing_utils import \
     reraise_traits_notification_exceptions
 from pybleau.app.model.dataframe_analyzer import \
     DEFAULT_CATEG_SUMMARY_ELEMENTS, DEFAULT_SUMMARY_ELEMENTS, \
-    REVERSED_SUFFIX, DataFramePlotManager, NO_SORTING_ENTRY
+    REVERSED_SUFFIX, NO_SORTING_ENTRY
+from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
 from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
 
 

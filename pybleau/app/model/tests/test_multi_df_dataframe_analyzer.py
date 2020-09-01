@@ -1,7 +1,7 @@
 from unittest import skipIf, TestCase
 import os
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 from .base_dataframe_analyzer import Analyzer, DisplayingDataFrameAnalyzer, \
     FilterDataFrameAnalyzer, SelectionPlotDataFrameAnalyzer, \
@@ -49,6 +49,36 @@ class TestAnalyzer(Analyzer, TestCase):
         self.assertGreater(len(common_columns), 0)
         with self.assertRaises(ValueError):
             self.analyzer_klass(_source_dfs={"a": self.df, "b": self.df2})
+
+    def test_modify_source_df_value(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        analyzer.set_source_df_val(1, "a", "xyz")
+        self.assertEqual(analyzer.source_df.loc[1, "a"], "xyz")
+        analyzer.set_source_df_val(3, "x", 15)
+        self.assertEqual(analyzer.source_df.loc[3, "x"], 15)
+
+    def test_modify_source_df_value_bad_col(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        with self.assertRaises(KeyError):
+            analyzer.set_source_df_val(1, "NON-EXISTENT", "xyz")
+
+    def test_modify_existing_source_df_col(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        analyzer.set_source_df_col("a", "xyz")
+        expected = pd.Series(["xyz"]*len(analyzer.source_df), name="a")
+        assert_series_equal(analyzer.source_df["a"], expected)
+
+    def test_add_source_df_col(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        with self.assertRaises(ValueError):
+            analyzer.set_source_df_col("NEW_COL", "xyz")
+
+        analyzer.set_source_df_col("NEW_COL", "xyz", target_df="b")
+        self.assertIn("NEW_COL", analyzer.source_df.columns)
 
 
 @skipIf(not BACKEND_AVAILABLE, msg)

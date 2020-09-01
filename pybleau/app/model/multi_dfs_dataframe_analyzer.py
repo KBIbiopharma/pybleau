@@ -116,10 +116,13 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
     def set_source_df_val(self, index, col, value):
         """ Set a DF element to a value.
 
+        WARNING: per the .loc implementation in pandas, the index doesn't
+        exist, a new row will be added to the DF!
+
         Parameters
         ----------
         index : any
-            Value of the index to set. Must exist.
+            Value of the index to set.
 
         col : any
             Value of the column to set. Must exist.
