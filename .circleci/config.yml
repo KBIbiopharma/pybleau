@@ -10,7 +10,7 @@ jobs:
       # Commands are run in a Windows virtual machine environment
       - checkout
       - run: dir
-      - cmd: install-edm-windows.cmd
+      - run: install-edm-windows.cmd
 
 workflows:
   main:
