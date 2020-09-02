@@ -134,9 +134,8 @@ class DataFramePlotManager(DataElement):
         # Support passing a custom Chaco plot/container to the list of
         # contained plots:
         if "contained_plots" in traits:
-            contained_plots = self.preprocess_plot_list(
+            traits["contained_plots"] = self.preprocess_plot_list(
                 traits["contained_plots"])
-            traits["contained_plots"] = contained_plots
 
         super(DataFramePlotManager, self).__init__(**traits)
 
@@ -655,8 +654,13 @@ class DataFramePlotManager(DataElement):
                            initial_creation=False, **desc_kw)
 
     def _contained_plots_items_changed(self, event):
-        if event.removed:
-            self.delete_plots(event.removed)
+        # Warning: replacing an element of the contained_plot list by the same
+        # element will lead to that element being in both the event's added and
+        # removed lists. Therefore the need to remove only what is removed and
+        # not added (back):
+        removed = set(event.removed) - set(event.added)
+        if removed:
+            self.delete_plots(removed)
 
     @on_trait_change("contained_plots:visible", post_init=True)
     def show_hide_plot(self, plot_desc, attr_name, old, visible):
