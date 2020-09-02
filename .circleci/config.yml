@@ -17,6 +17,9 @@ jobs:
       - run: 
           name: list content
           command: dir
+      - run: 
+          name: Check edm install
+          command: edm --version
       - run:
           name: create dev env
           command: python etstools.py install
