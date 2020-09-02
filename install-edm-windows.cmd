@@ -10,9 +10,7 @@ SET URL=https://package-data.enthought.com/edm/win_x86_64/%EDM_MAJOR_MINOR%/%EDM
 SET COMMAND="(new-object net.webclient).DownloadFile('%URL%', '%EDM_INSTALLER_PATH%')"
 
 IF NOT EXIST %EDM_INSTALLER_PATH% CALL powershell.exe -Command %COMMAND% || GOTO error
-
-SET EDMAPPDIR=edm
-CALL msiexec /qn /i %EDM_INSTALLER_PATH% EDMAPPDIR=%EDMAPPDIR% || GOTO error
+CALL msiexec /qn /i %EDM_INSTALLER_PATH% EDMAPPDIR=edm || GOTO error
 
 ENDLOCAL
 @ECHO.DONE
