@@ -15,7 +15,7 @@ jobs:
       - run: 
           name : setup edm
           command: |
-            INSTALL_EDM_VERSION=3.0.1
+            SET INSTALL_EDM_VERSION=3.0.1
             .\install-edm-windows.cmd
 
 workflows:
