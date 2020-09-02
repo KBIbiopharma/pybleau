@@ -9,8 +9,8 @@ jobs:
     steps:
       # Commands are run in a Windows virtual machine environment
       - checkout
-      # - run: dir
-      - run: cmd install-edm-windows.cmd
+      - run: dir
+      - run: .\install-edm-windows.cmd
 
 workflows:
   main:
