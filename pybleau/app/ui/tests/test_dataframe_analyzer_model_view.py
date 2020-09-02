@@ -247,13 +247,13 @@ class TestDataFrameAnalyzerTableView(TestCase):
         view = DataFrameAnalyzerView(model=self.analyzer, fonts="Arial")
         with temp_bringup_ui_for(view):
             # Here, size is set by traitsUI's font handling:
-            self.assert_font_equal(view, "Arial 13")
+            self.assert_font_equal(view, "Arial 16")
 
     def test_bring_up_attempt_non_existent_fonts(self):
         view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True,
                                      fonts="NON-EXISTENT")
         with temp_bringup_ui_for(view):
-            self.assert_font_equal(view, "NON-EXISTENT 13")
+            self.assert_font_equal(view, "NON-EXISTENT 14")
 
     def test_bring_up_control_font_size(self):
         view = DataFrameAnalyzerView(model=self.analyzer, font_size=20)
