@@ -32,9 +32,9 @@ The project provides 2 entry-points for high-level tools it contains:
 ### Requirements
 
 For all components:
-  - Python 2.7 and 3.6+
-  - pandas (> 0.20 recommended)
-  - app_common 0.12+
+  - Python 3.6+
+  - pandas (> 0.24 recommended)
+  - app_common 0.12.7+
 
 For ETS app tools:
   - traitsUI 6.0+ (>7.0.1 recommended), traits, pyface
