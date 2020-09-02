@@ -9,7 +9,7 @@ from pybleau.app.io.serializer import serialize
 from pybleau.app.io.deserializer import deserialize
 from pybleau.app.api import DataFrameAnalyzer, DataFramePlotManager
 from pybleau.app.model.plot_descriptor import PlotDescriptor
-from pybleau.app.plotting.api import BarPlotConfigurator, \
+from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
     HeatmapPlotConfigurator, HistogramPlotConfigurator, LinePlotConfigurator, \
     ScatterPlotConfigurator
 
@@ -28,9 +28,12 @@ TEST_DF2 = pd.DataFrame({"Col_1": [1, 2, 1, 2],
 
 class TestRoundTripDataFramePlotManager(TestCase):
     def setUp(self):
+        # Ignore the content of the canvas manager, the data source and the
+        # next_plot_id because the plots cannot be rebuilt since the data
+        # source isn't rebuilt:
         self.ignore = ("source_analyzer", "data_source", "canvas_manager",
                        "plot", "plot_factory", "contained_plot_map",
-                       "inspectors")
+                       "inspectors", "next_plot_id")
 
     def test_round_trip_df_plotter_with_hist(self):
         config = HistogramPlotConfigurator(data_source=TEST_DF)

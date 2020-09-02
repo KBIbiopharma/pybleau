@@ -1,16 +1,24 @@
-from unittest import TestCase, skipIf
-from pandas import DataFrame
 import os
-from numpy.testing import assert_array_equal
-from six import string_types
+from collections import OrderedDict
+from os.path import dirname
+from unittest import TestCase, skipIf
+from unittest.mock import patch
 
 from chaco.api import Legend
+from numpy.testing import assert_array_equal
+from pandas import DataFrame
 from pandas.testing import assert_frame_equal
+from six import string_types
+from traits.api import HasTraits, provides
 from traits.testing.unittest_tools import UnittestTools
+
+from pybleau.app.plotting.i_plot_template_interactor import \
+    IPlotTemplateInteractor
 from pybleau.app.plotting.plot_config import BaseSinglePlotConfigurator
 
 try:
     import kiwisolver  # noqa
+
     KIWI_AVAILABLE = True
 except ImportError:
     KIWI_AVAILABLE = False
@@ -31,9 +39,11 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.model.plot_descriptor import CUSTOM_PLOT_TYPE, \
         PlotDescriptor
     from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-    from pybleau.app.plotting.api import BarPlotConfigurator, \
+    from pybleau.app.plotting.multi_plot_config import \
+        MultiHistogramPlotConfigurator
+    from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HistogramPlotConfigurator, LinePlotConfigurator, \
-        MultiHistogramPlotConfigurator, ScatterPlotConfigurator
+        ScatterPlotConfigurator
     from pybleau.app.plotting.scatter_factories import \
         SELECTION_METADATA_NAME, DISCONNECTED_SELECTION_COLOR, SELECTION_COLOR
     from pybleau.app.plotting.base_factories import DEFAULT_RENDERER_NAME
@@ -42,7 +52,6 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.plotting.histogram_factory import HISTOGRAM_Y_LABEL
     from pybleau.app.utils.string_definitions import CMAP_SCATTER_PLOT_TYPE, \
         HEATMAP_PLOT_TYPE
-
 
 TEST_DF = DataFrame({"a": [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
                      "b": [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],
@@ -393,7 +402,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         self.assertEqual(bar_renderer2.fill_color, "red")
         self.assertEqual(len(new_plot_desc2.plot.data.arrays["a"]), 20)
 
-    def test_change_style_doesnt_loose_desc_attrs(self):
+    def test_change_style_doesnt_lose_desc_attrs(self):
         self.model._add_new_plot(self.config)
 
         plot_desc1 = self.model.contained_plots[0]
@@ -418,32 +427,19 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
                              getattr(plot_desc1, attr))
 
     def test_change_style_range(self):
-        self.model._add_new_plot(self.config)
+        """ Change style range in x and y dim and check all renderers update.
+        """
+        for config in [self.config, self.config3, self.config4]:
+            for dim in ["x", "y"]:
+                for end, new_val in zip(["low", "high"], [-2, 6.5]):
+                    self.model._add_new_plot(config)
+                    self.assert_change_style_range_changes_renderers(
+                        config.plot_style, dim, end, new_val
+                    )
+                    # Clean up for the next loop
+                    self.model.contained_plots.pop(0)
 
-        plot = self.model.contained_plots[0].plot
-        plot_high = plot.x_axis.mapper.range.high
-        self.assertEqual(self.config.plot_style.x_axis_style.range_high,
-                         plot_high)
-        self.assertEqual(self.config.plot_style.x_axis_style.auto_range_high,
-                         plot_high)
-
-        plot_desc1 = self.model.contained_plots[0]
-        plot_desc1.container_idx = 1
-        self.assertNotAlmostEqual(plot_high, 6.5)
-        plot_desc1.plot_config.plot_style.x_axis_style.range_high = 6.5
-
-        # Trigger a regeneration of the plot (normally done by clicking OK in
-        # GUI):
-        plot_desc1.style_edited = True
-
-        # The old plot_desc2 has been removed from the contained plots:
-        self.assertNotIn(plot_desc1, self.model.contained_plots)
-        # and the new one that replaced it has the new properties requested:
-        new_plot_desc1 = self.model.contained_plots[0]
-        plot_high = new_plot_desc1.plot.x_axis.mapper.range.high
-        self.assertAlmostEqual(plot_high, 6.5)
-
-    def test_change_style_y_axis(self):
+    def test_change_style_y_axis_orientation(self):
         self.model._add_new_plot(self.config4)
         desc = self.model.contained_plots[0]
         rend_styles = desc.plot_config.plot_style.renderer_styles
@@ -460,7 +456,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         self.assert_renderer_aligned(renderer, desc.plot.second_y_axis,
                                      dim="value")
 
-    def test_change_style_y_axis_back(self):
+    def test_change_style_y_axis_orientation_back(self):
         self.model._add_new_plot(self.config4)
         desc = self.model.contained_plots[0]
         rend_styles = desc.plot_config.plot_style.renderer_styles
@@ -576,6 +572,41 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         self.assertEqual(rend_range.low, axis_range.low)
         self.assertEqual(rend_range.high, axis_range.high)
 
+    def assert_change_style_range_changes_renderers(self, plot_style, dim, end,
+                                                    new_val):
+        plot = self.model.contained_plots[0].plot
+        range = getattr(plot, dim + "_axis").mapper.range
+        plot_val = getattr(range, end)
+        style = getattr(plot_style, dim + "_axis_style")
+        self.assertEqual(getattr(style, "range_" + end), plot_val)
+        self.assertEqual(getattr(style, "auto_range_" + end), plot_val)
+
+        # Change style
+        self.assertNotAlmostEqual(plot_val, new_val)
+        setattr(style, "range_" + end, new_val)
+
+        # Trigger a regeneration of the plot (normally done by
+        # clicking OK in GUI):
+        plot_desc1 = self.model.contained_plots[0]
+        plot_desc1.style_edited = True
+
+        # The old plot_desc1 has been removed from the contained
+        # plots:
+        self.assertNotIn(plot_desc1, self.model.contained_plots)
+        # so grab the new one:
+        plot_desc1 = self.model.contained_plots[0]
+
+        axis = getattr(plot_desc1.plot, dim + "_axis")
+        plot_high = getattr(axis.mapper.range, end)
+        self.assertAlmostEqual(plot_high, new_val)
+        for i, renderer in enumerate(plot_desc1.plot.components):
+            if dim == "x":
+                mapper = renderer.index_mapper
+            else:
+                mapper = renderer.value_mapper
+
+            self.assertAlmostEqual(getattr(mapper.range, end), new_val)
+
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
 class TestPlotManagerMultiContainerHandling(BasePlotManagerTools, TestCase):
@@ -651,13 +682,13 @@ class TestPlotManagerMultiContainerHandling(BasePlotManagerTools, TestCase):
     def test_add_plot_non_existent_row(self):
         config = self.config
         num_containers = len(self.model.canvas_manager.container_managers)
-        self.model._add_new_plot(config, container=num_containers+1)
+        self.model._add_new_plot(config, container=num_containers + 1)
         # If non-existent container is requested, the last one is used:
         self.assert_plot_created(renderer_type=BarPlot,
-                                 container_idx=num_containers-1)
+                                 container_idx=num_containers - 1)
         # Desc is sync-ed
         plot_desc = self.model.contained_plots[0]
-        self.assertEqual(plot_desc.container_idx, num_containers-1)
+        self.assertEqual(plot_desc.container_idx, num_containers - 1)
 
     def test_add_3_plots_mode0(self):
         config = self.config
@@ -1226,3 +1257,63 @@ class TestPlotManagerInspectorTools(TestCase, UnittestTools):
         self.assertEqual(overlay0.selection_color, SELECTION_COLOR)
         selection0 = tool0.component.index.metadata[SELECTION_METADATA_NAME]
         self.assertEqual(selection0, second_selection)
+
+
+@provides(IPlotTemplateInteractor)
+class FakeInteractor(HasTraits):
+    def get_template_saver(self):
+        return self.saver
+
+    def get_template_loader(self):
+        return lambda filepath: None
+
+    def get_template_ext(self):
+        return ".tmpl"
+
+    def get_template_dir(self):
+        return dirname(__file__)
+
+    def saver(self, filepath, object_to_save):
+        with open(filepath, 'w'):
+            pass
+
+
+class TestPlotManagerPlotTemplates(TestCase):
+
+    def setUp(self) -> None:
+        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.target_dir = dirname(__file__)
+        self.model.template_interactor = FakeInteractor()
+
+    def _get_fake_ordered_dict(self):
+        return OrderedDict([("test_temp", ScatterPlotConfigurator)])
+
+    @patch.object(DataFramePlotManager, '_get_desc_for_menu_manager')
+    @patch.object(DataFramePlotManager, '_request_template_name_with_desc')
+    def test_template_requested(self, get_name, get_desc):
+        plot_config = BarPlotConfigurator()
+        get_desc.return_value = PlotDescriptor(plot_config=plot_config)
+        get_name.return_value = "plot template test"
+        self.assertEqual(len(self.model.custom_configs), 0)
+
+        self.model.action_template_requested(None, None, None)
+
+        self.assertEqual(len(self.model.custom_configs), 1)
+        ext = self.model.template_interactor.get_template_ext()
+        result = os.path.join(self.target_dir, get_name.return_value + ext)
+        if os.path.exists(result):
+            os.remove(result)
+
+    def test_custom_configs_populated_correctly(self):
+        interactor = FakeInteractor()
+        file_path = os.path.join(dirname(__file__), "test_temp.tmpl")
+        try:
+            with open(file_path, 'w'):
+                pass
+            self.model.template_interactor = interactor
+            keys = self.model.custom_configs.keys()
+            expected_keys = self._get_fake_ordered_dict().keys()
+            self.assertEqual(keys, expected_keys)
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)

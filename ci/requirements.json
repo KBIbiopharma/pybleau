@@ -1,10 +1,11 @@
 [
-  "app_common",
+  "app_common==0.12.7",
   "apptools",
   "chaco",
   "dash",
   "kiwisolver",
   "matplotlib",
+  "openpyxl",
   "pandas",
   "plotly",
   "pytables",

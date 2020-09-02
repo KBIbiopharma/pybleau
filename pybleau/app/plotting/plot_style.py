@@ -168,6 +168,20 @@ class BaseXYPlotStyle(HasStrictTraits):
     def apply_axis_ranges(self, plot, x_mapper=None, y_mapper=None,
                           second_y_mapper=None):
         """ Apply to the plot's mappers the ranges stored in this style object.
+
+        Parameters
+        ----------
+        plot : Plot, OverlayPlotContainer
+            Plot to apply the style's ranges to.
+
+        x_mapper : Mapper, optional
+            Mapper to apply the x range values to.
+
+        y_mapper : Mapper, optional
+            Mapper to apply the y range values to.
+
+        second_y_mapper : Mapper, optional
+            Mapper to apply the secondary y range values to.
         """
         x_mapper, y_mapper, second_y_mapper = self._get_plot_mappers(
             plot, x_mapper=x_mapper, y_mapper=y_mapper,
@@ -261,6 +275,28 @@ class BaseXYPlotStyle(HasStrictTraits):
     def _get_plot_mappers(self, plot, x_mapper=None, y_mapper=None,
                           second_y_mapper=None):
         """ Retrieve the plot's mappers to synchronize with the style.
+
+        Parameters
+        ----------
+        plot : Plot-like
+            Chaco Plot-like class that holds up to 3 axis attributes to apply
+            style ranges to: x_axis, y_axis and second_y_axis. Each must be an
+            instance of a PlotAxis.
+
+        x_mapper : Mapper
+            Already identified Mapper to align with the x range.
+
+        y_mapper : Mapper
+            Already identified Mapper to align with the y range.
+
+        second_y_mapper : Mapper
+            Already identified Mapper to align with the secondary y range.
+
+        Returns
+        -------
+        tuple
+            The x_mapper, y_mapper and secondary_y_mapper found on provided
+            plot.
         """
         missing_mapper_msg = "The plot is missing the attribute {}. Please " \
                              "provide the mapper explicitly"
@@ -289,7 +325,9 @@ class BaseXYPlotStyle(HasStrictTraits):
     # Traits initialization methods -------------------------------------------
 
     def _x_axis_style_default(self):
-        return AxisStyle(axis_name="X")
+        # Not always text labels along x but that's a possibility so enable
+        # text label controls:
+        return AxisStyle(axis_name="X", support_text_labels=True)
 
     def _y_axis_style_default(self):
         return AxisStyle(axis_name="Y")
@@ -314,7 +352,10 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
     """
     #: Name of the palette to pick colors when generating multiple renderers
     # (Ignored when colorizing by a float: then the renderer's palette is used)
-    color_palette = Enum(DEFAULT_DIVERG_PALETTE, values=ALL_MPL_PALETTES)
+    color_palette = Enum(DEFAULT_DIVERG_PALETTE, values="_all_palettes")
+
+    #: List of possible palettes available for color_palette
+    _all_palettes = List(ALL_MPL_PALETTES)
 
     #: Font used to draw the color dimension title
     color_axis_title_style = Instance(TitleStyle, ())

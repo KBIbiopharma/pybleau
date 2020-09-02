@@ -16,8 +16,10 @@ FILE_EXPORT_ACTION_NAME = "Export plot..."
 
 DELETE_ACTION_NAME = "Delete plot..."
 
+CREATE_TEMPLATE_ACTION_NAME = "Create template from plot..."
+
 ALL_ACTIONS = [STYLE_EDITOR_ACTION_NAME, FILE_EXPORT_ACTION_NAME,
-               DELETE_ACTION_NAME]
+               DELETE_ACTION_NAME, CREATE_TEMPLATE_ACTION_NAME]
 
 
 class PlotContextMenuManager(HasStrictTraits):
@@ -29,6 +31,8 @@ class PlotContextMenuManager(HasStrictTraits):
 
     delete_requested = Event
 
+    template_requested = Event
+
     def build_menu(self):
         menu_entries = []
         if STYLE_EDITOR_ACTION_NAME in self.action_list:
@@ -36,15 +40,21 @@ class PlotContextMenuManager(HasStrictTraits):
                             on_perform=self.request_style_editor)
             menu_entries.append(action)
             menu_entries.append(Separator())
-        if FILE_EXPORT_ACTION_NAME:
+        if FILE_EXPORT_ACTION_NAME in self.action_list:
             action = Action(name=FILE_EXPORT_ACTION_NAME,
                             on_perform=self.export_plot_to_file)
             menu_entries.append(action)
             menu_entries.append(Separator())
 
-        if DELETE_ACTION_NAME:
+        if DELETE_ACTION_NAME in self.action_list:
             action = Action(name=DELETE_ACTION_NAME,
                             on_perform=self.request_delete)
+            menu_entries.append(action)
+            menu_entries.append(Separator())
+
+        if CREATE_TEMPLATE_ACTION_NAME in self.action_list:
+            action = Action(name=CREATE_TEMPLATE_ACTION_NAME,
+                            on_perform=self.request_plot_template)
             menu_entries.append(action)
             menu_entries.append(Separator())
 
@@ -61,6 +71,11 @@ class PlotContextMenuManager(HasStrictTraits):
         """
         if confirm(None, "Delete the plot?") == YES:
             self.delete_requested = True
+
+    def request_plot_template(self):
+        """ Trigger plot template event and let DFPlotManager handle.
+        """
+        self.template_requested = True
 
     def export_plot_to_file(self):
         filepath = to_png_file_requester(title="Select export path")

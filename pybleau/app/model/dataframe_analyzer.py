@@ -3,8 +3,8 @@ from pandas import concat, DataFrame
 import numpy as np
 from functools import partial
 
-from traits.api import Bool, Callable, Enum, Event, Instance,\
-    Int, List, on_trait_change, Str
+from traits.api import Bool, cached_property, Callable, Enum, Event, Instance,\
+    Int, List, on_trait_change, Property, Str
 
 from app_common.std_lib.str_utils import add_suffix_if_exists, sanitize_string
 from app_common.model_tools.data_element import DataElement
@@ -93,13 +93,13 @@ class DataFrameAnalyzer(DataElement):
     sort_by_col = Enum(values='sort_by_col_list')
 
     #: List of possible values for the sort_by_col
-    sort_by_col_list = List
+    sort_by_col_list = Property(List, depends_on="source_df")
 
     #: Whether the source data's index is sorted
     data_sorted = Bool
 
     #: Name of the index if any
-    index_name = Str
+    index_name = Property(Str, depends_on="source_df")
 
     #: List of DF row locations currently selected. Used by PlotManager and
     #: TableEditor, but not invariant under sorting operations.
@@ -159,9 +159,6 @@ class DataFrameAnalyzer(DataElement):
         if self.source_df is not None:
             self.compute_summary()
             self.compute_categorical_summary()
-
-        if NO_SORTING_ENTRY not in self.sort_by_col_list:
-            self.sort_by_col_list.insert(0, NO_SORTING_ENTRY)
 
         if sort_by:
             self.sort_by_col = sort_by
@@ -361,24 +358,41 @@ class DataFrameAnalyzer(DataElement):
             self.sort_by_col = self.index_name
 
     def _sort_by_col_changed(self, new):
-        if new == NO_SORTING_ENTRY or self.filtered_df is None:
-            return
+        self.filtered_df = self._sort_df_by(self.filtered_df, new)
+        # Remap the selections
+        if self.data_selected:
+            self.selected_idx = self.map_df_index_to_idx(self.data_selected)
 
-        if new.endswith(REVERSED_SUFFIX):
-            new = new[:-len(REVERSED_SUFFIX)]
+    def _sort_df_by(self, df, by):
+        """ Returns a sorted version the provided Dataframe by specified key.
+
+        Parse the 'by' key to see if need to sort ascending or descending, or
+        if needing to sort by the index or one of the columns.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe to sort.
+
+        by : str
+            Name of the index or of the column to sort the DF by. Can contain a
+            prefix to sort in descending order rather than the default
+            ascending.
+        """
+        if by == NO_SORTING_ENTRY or df is None:
+            return df
+
+        if by.endswith(REVERSED_SUFFIX):
+            by = by[:-len(REVERSED_SUFFIX)]
             ascending = False
         else:
             ascending = True
 
-        if new == self.index_name:
-            self.filtered_df = self.filtered_df.sort_index(ascending=ascending)
+        if by == self.index_name:
+            df = df.sort_index(ascending=ascending)
         else:
-            self.filtered_df = self.filtered_df.sort_values(
-                by=new, ascending=ascending)
-
-        # Remap the selections
-        if self.data_selected:
-            self.selected_idx = self.map_df_index_to_idx(self.data_selected)
+            df = df.sort_values(by=by, ascending=ascending)
+        return df
 
     # Private interface -------------------------------------------------------
 
@@ -412,27 +426,20 @@ class DataFrameAnalyzer(DataElement):
         self.selected_idx = []
 
         if not self.filter_exp.strip():
-            return self.source_df
-
-        query = self.filter_transformation(
-            self._clean_filter_exp(self.filter_exp)
-        )
-        if not self._validate_query(query):
-            msg = "Invalid filter expression error: {}.".format(query)
-            logger.error(msg)
-            raise InvalidQuery(msg)
-
-        new_df = self.source_df.query(query)
-        # FIXME: this custom code should be replaced by a call to
-        # _sort_by_col_changed
-        if self.sort_by_col:
-            if self.sort_by_col in new_df.columns:
-                new_df = new_df.sort_values(self.sort_by_col)
-            else:
-                msg = "Trying to sort the DF by a column that doesn't exist " \
-                      "in the DF: {}. Skipping.".format(self.sort_by_col)
+            new_df = self.source_df
+        else:
+            query = self.filter_transformation(
+                self._clean_filter_exp(self.filter_exp)
+            )
+            if not self._validate_query(query):
+                msg = "Invalid filter expression error: {}.".format(query)
                 logger.error(msg)
-                self.sort_by_col = NO_SORTING_ENTRY
+                raise InvalidQuery(msg)
+
+            new_df = self.source_df.query(query)
+
+        if self.sort_by_col:
+            new_df = self._sort_df_by(new_df, self.sort_by_col)
 
         return new_df
 
@@ -478,15 +485,10 @@ class DataFrameAnalyzer(DataElement):
 
         return displayed_df
 
-    # Traits initialization methods -------------------------------------------
+    # Property getters/setters ------------------------------------------------
 
-    def _displayed_df_default(self):
-        return self._compute_displayed_df()
-
-    def _filtered_df_default(self):
-        return self._compute_filtered_df()
-
-    def _sort_by_col_list_default(self):
+    @cached_property
+    def _get_sort_by_col_list(self):
         if self.source_df is None:
             return []
 
@@ -500,10 +502,8 @@ class DataFrameAnalyzer(DataElement):
             cols.append(col + REVERSED_SUFFIX)
         return cols
 
-    def _filter_transformation_default(self):
-        return lambda x: x
-
-    def _index_name_default(self):
+    @cached_property
+    def _get_index_name(self):
         if self.source_df is None:
             return ""
 
@@ -511,6 +511,17 @@ class DataFrameAnalyzer(DataElement):
         if index_col is None:
             index_col = "index"
         return index_col
+
+    # Traits initialization methods -------------------------------------------
+
+    def _displayed_df_default(self):
+        return self._compute_displayed_df()
+
+    def _filtered_df_default(self):
+        return self._compute_filtered_df()
+
+    def _filter_transformation_default(self):
+        return lambda x: x
 
     def _num_display_increment_default(self):
         return self.num_displayed_rows

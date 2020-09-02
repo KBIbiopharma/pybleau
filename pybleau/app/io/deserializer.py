@@ -23,6 +23,8 @@ def deserialize(serial_data, array_collection=None):
 
 class dataFrameAnalyzerDeSerializer(dataElementDeSerializer):
 
+    protocol_version = 1
+
     def get_instance(self, constructor_data):
         instance = super(dataFrameAnalyzerDeSerializer, self).get_instance(
             constructor_data
@@ -168,6 +170,9 @@ class titleStyleDeSerializer(dataElementDeSerializer):
 
 
 class axisStyleDeSerializer(dataElementDeSerializer):
+
+    protocol_version = 1
+
     def _klass_default(self):
         from pybleau.app.plotting.axis_style import AxisStyle
         return AxisStyle

@@ -32,9 +32,11 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.reporting.string_definitions import IDX_NAME_KEY, \
         CONTENT_KEY, DATASETS_KEY
     from pybleau.app.model.plot_descriptor import PlotDescriptor
-    from pybleau.app.plotting.api import BarPlotConfigurator, \
+    from pybleau.app.plotting.multi_plot_config import \
+        MultiHistogramPlotConfigurator
+    from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
         HistogramPlotConfigurator, LinePlotConfigurator, \
-        MultiHistogramPlotConfigurator, ScatterPlotConfigurator
+        ScatterPlotConfigurator
     from pybleau.vega_translators.vega_chaco import df_to_vega, \
         TARGET_VEGA_SCHEMA
 

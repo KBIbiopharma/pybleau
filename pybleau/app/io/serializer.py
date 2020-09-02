@@ -38,10 +38,12 @@ def serialize(obj, array_collection=None):
 
 class DataFrameAnalyzer_Serializer(DataElement_Serializer):
 
+    protocol_version = 1
+
     def attr_names_to_serialize(self, obj):
         return ['name', 'uuid', 'source_df', 'filter_exp', 'summary_index',
                 'sort_by_col', 'data_selected', 'num_displayed_rows',
-                'index_name', "plot_manager_list"]
+                "plot_manager_list"]
 
 
 class DataFramePlotManager_Serializer(DataElement_Serializer):
@@ -78,7 +80,7 @@ class BaseSinglePlotConfigurator_Serializer(DataElement_Serializer):
         """ Build the list of attributes to serialize from attributes exported
         and passed to the factory.
         """
-        keys_to_serialize = ["plot_style"]
+        keys_to_serialize = ["plot_style", "source_template"]
         # These are needed by the factory but not to serialize since they are
         # read from the DF:
         skip = {"x_arr", "y_arr", "z_arr", 'hover_data'}
@@ -207,9 +209,12 @@ class HeatmapRendererStyle_Serializer(BaseRendererStyle_Serializer):
 
 
 class AxisStyle_Serializer(Serializer):
+
+    protocol_version = 1
+
     def attr_names_to_serialize(self, obj):
         return ["axis_name", "range_low", "range_high", "auto_range_low",
-                "auto_range_high", "title_style"]
+                "auto_range_high", "title_style", "support_text_labels"]
 
 
 class TitleStyle_Serializer(Serializer):

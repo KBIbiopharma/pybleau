@@ -16,22 +16,20 @@ from app_common.traitsui.common_traitsui_groups import make_window_title_group
 from app_common.pyface.ui.extra_file_dialogs import request_csv_file
 from app_common.std_lib.filepath_utils import open_file
 
-from ..model.dataframe_analyzer import DataFrameAnalyzer
+from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
 try:
-    from .dataframe_plot_manager_view import DataFramePlotManager, \
-        DataFramePlotManagerView
+    from pybleau.app.ui.dataframe_plot_manager_view import \
+        DataFramePlotManager, DataFramePlotManagerView
 except ImportError:
     DataFramePlotManager = object
     DataFramePlotManagerView = object
 
-from ..tools.filter_expression_manager import FilterExpression, \
+from pybleau.app.tools.filter_expression_manager import FilterExpression, \
     FilterExpressionManager
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_FONT = 'Courier'
-
-SHOW_COLUMN_CONTROL = u"\u2190 Show column control"
 
 
 class DataFrameAnalyzerView(ModelView):
@@ -62,7 +60,7 @@ class DataFrameAnalyzerView(ModelView):
     show_column_controls = Bool
 
     #: Open control for what columns to analyze (popup when many columns)
-    open_column_controls = Button(SHOW_COLUMN_CONTROL)
+    open_column_controls = Button("Show column control")
 
     #: Button to launch the plotter tool when plotter_layout=popup
     plotter_launcher = Button("Launch Plot Tool")
@@ -353,7 +351,8 @@ class DataFrameAnalyzerView(ModelView):
                      show_label=False),
             ),
             HGroup(
-                Item("show_column_controls", label=SHOW_COLUMN_CONTROL,
+                Item("show_column_controls",
+                     label="\u2190 Show column control",
                      visible_when="not _many_columns"),
                 Item("open_column_controls", show_label=False,
                      visible_when="_many_columns"),
@@ -482,7 +481,7 @@ class DataFrameAnalyzerView(ModelView):
     def _open_column_controls_fired(self):
         """ Pop-up a new view on the column list control.
         """
-        if self._control_popup:
+        if self._control_popup and self._control_popup.control:
             # If there is an existing window, bring it in focus:
             # Discussion: https://stackoverflow.com/questions/2240717/in-qt-how-do-i-make-a-window-be-the-current-window  # noqa
             self._control_popup.control._mw.activateWindow()
@@ -590,24 +589,27 @@ class DataFrameAnalyzerView(ModelView):
         if not self._df_editors:
             self._collect_df_editors()
 
-        for df_name in ["displayed_df", "summary_df"]:
+        # Rebuild the column list (col name, column id) for the tabular
+        # adapter:
+        all_visible_cols = [(col, col) for col in self.visible_columns]
+
+        df = self.model.source_df
+        cat_dtypes = self.model.categorical_dtypes
+        summarizable_df = df.select_dtypes(exclude=cat_dtypes)
+        summary_visible_cols = [(col, col) for col in self.visible_columns
+                                if col in summarizable_df.columns]
+
+        for df_name, cols in zip(["displayed_df", "summary_df"],
+                                 [all_visible_cols, summary_visible_cols]):
             df = getattr(self.model, df_name)
             index_name = df.index.name
             if index_name is None:
                 index_name = ''
 
-            # Rebuild the column list (col name, column id) for the tabular
-            # adapter:
-            all_cols = [(col, col) for col in self.all_data_columns
-                        if col in self.visible_columns]
-            try:
-                # This grabs the corresponding _DataFrameEditor (not the editor
-                # factory) which has access to the adapter object:
-                editor = self._df_editors[df_name]
-                editor.adapter.columns = [(index_name, 'index')] + all_cols
-            except Exception as e:
-                msg = "Error trying to collect the tabular adapter: {}"
-                logger.error(msg.format(e))
+            # This grabs the corresponding _DataFrameEditor (not the editor
+            # factory) which has access to the adapter object:
+            editor = self._df_editors[df_name]
+            editor.adapter.columns = [(index_name, 'index')] + cols
 
     def _collect_df_editors(self):
         for df_name in ["displayed_df", "summary_df"]:
