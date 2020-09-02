@@ -14,6 +14,9 @@ jobs:
       - run: 
           name : setup edm
           command: .\install-edm-windows.cmd
+      - run: 
+          name: list content
+          command: dir
       - run:
           name: create dev env
           command: python etstools.py install
