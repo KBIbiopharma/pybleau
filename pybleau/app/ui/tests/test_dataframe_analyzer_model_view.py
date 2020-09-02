@@ -20,7 +20,7 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
 
 FONT_DEFAULT_SIZE = {"darwin": 13,
                      "linux": 9,
-                     "win32": 13}
+                     "win32": 8}
 
 msg = "No UI backend to paint into or missing kiwisolver package"
 
