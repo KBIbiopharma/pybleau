@@ -18,6 +18,9 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView, \
         DataFramePlotManager, DataFramePlotManagerView
 
+FONT_DEFAULT_SIZE = {"darwin": 13,
+                     "linux": 9}
+
 msg = "No UI backend to paint into or missing kiwisolver package"
 
 
@@ -247,13 +250,16 @@ class TestDataFrameAnalyzerTableView(TestCase):
         view = DataFrameAnalyzerView(model=self.analyzer, fonts="Arial")
         with temp_bringup_ui_for(view):
             # Here, size is set by traitsUI's font handling:
-            self.assert_font_equal(view, "Arial 16")
+            expected = "Arial " + str(FONT_DEFAULT_SIZE[platform])
+            self.assert_font_equal(view, expected)
 
     def test_bring_up_attempt_non_existent_fonts(self):
         view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True,
                                      fonts="NON-EXISTENT")
         with temp_bringup_ui_for(view):
-            self.assert_font_equal(view, "NON-EXISTENT 14")
+            # Here, size is set by traitsUI's font handling:
+            expected = "NON-EXISTENT " + str(FONT_DEFAULT_SIZE[platform])
+            self.assert_font_equal(view, expected)
 
     def test_bring_up_control_font_size(self):
         view = DataFrameAnalyzerView(model=self.analyzer, font_size=20)
