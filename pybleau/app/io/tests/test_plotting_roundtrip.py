@@ -104,11 +104,12 @@ class TestRoundTripDataFramePlotManager(TestCase):
                                z_col_name="Col_3",
                                plot_config=config7, plot_title="Plot 7")
 
-        self.assert_df_plotter_roundtrip(desc7, source_df=TEST_DF2)
+        self.assert_df_plotter_roundtrip(desc7)
 
     # Support methods ---------------------------------------------------------
 
-    def assert_df_plotter_roundtrip(self, desc, source_df=TEST_DF):
+    def assert_df_plotter_roundtrip(self, desc):
+        source_df = desc.plot_config.data_source
         analyzer = DataFrameAnalyzer(source_df=source_df)
 
         options = [[desc], [desc.plot_config], [desc.plot_config] * 3]

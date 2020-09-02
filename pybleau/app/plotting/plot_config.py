@@ -725,7 +725,6 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
         return view
 
     def _get_z_arr(self):
-        import pdb ; pdb.set_trace()
         return self.data_source.pivot_table(index=self.y_col_name,
                                             columns=self.x_col_name,
                                             values=self.z_col_name).values
