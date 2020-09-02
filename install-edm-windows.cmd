@@ -2,11 +2,7 @@
 
 SETLOCAL EnableDelayedExpansion
 
-FOR /F "tokens=1,2,3 delims=." %%a in ("%INSTALL_EDM_VERSION%") do (
-    SET MAJOR=%%a
-    SET MINOR=%%b
-    SET REVISION=%%c
-)
+SET INSTALL_EDM_VERSION=3.0.1
 
 SET EDM_MAJOR_MINOR=%MAJOR%.%MINOR%
 SET EDM_PACKAGE=edm_cli_%INSTALL_EDM_VERSION%_x86_64.msi
