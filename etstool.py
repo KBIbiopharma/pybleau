@@ -258,11 +258,12 @@ def test(runtime, toolkit, environment):
 def flake8(runtime, toolkit, environment):
     """ Run flake8 on the source code.
     """
+    parameters = get_parameters(runtime, toolkit, environment)
     commands = [
         "edm run -e {environment} flake8 setup.py " + PKG_NAME,
     ]
 
-    execute(commands)
+    execute(commands, parameters)
     click.echo('Done flake8')
 
 
@@ -415,7 +416,12 @@ def do_in_tempdir(files=(), capture_files=()):
         rmtree(path)
 
 
-def execute(commands, parameters):
+def execute(commands, parameters=None):
+    """ Execute command line commands.
+    """
+    if parameters is None:
+        parameters = {}
+
     for command in commands:
         click.echo("[EXECUTING] {}".format(command.format(**parameters)))
         try:
