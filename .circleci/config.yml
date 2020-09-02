@@ -24,10 +24,10 @@ jobs:
           name: create dev env
           command: |
             pip install click
-            python etstools.py install
+            python etstool.py install
       - run:
           name: Run test suite
-          command: python etstools.py test
+          command: python etstool.py test
 
 workflows:
   main:
