@@ -14,14 +14,12 @@ jobs:
       - run: 
           name : setup edm
           command: .\install-edm-windows.cmd
-      - run: 
-          name: list content
-          command: |
-            dir
-            dir ..
       - run:
-          name: create devenv
-          command: edm
+          name: create dev env
+          command: python etstools.py install
+      - run:
+          name: Run test suite
+          command: python etstools.py test
 
 workflows:
   main:
