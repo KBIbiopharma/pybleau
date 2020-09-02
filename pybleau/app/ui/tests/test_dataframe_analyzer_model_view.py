@@ -19,7 +19,8 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
         DataFramePlotManager, DataFramePlotManagerView
 
 FONT_DEFAULT_SIZE = {"darwin": 13,
-                     "linux": 9}
+                     "linux": 9,
+                     "win32": 13}
 
 msg = "No UI backend to paint into or missing kiwisolver package"
 
