@@ -56,14 +56,13 @@ For development:
   - flake8
   
  
-For complete list of dependencies, please refer to `ci/requirements.json`.
+For complete list of dependencies, please refer to `ci/requirements.json` for 
+the content of the environment used to test pybleau in CI.
 
 ### Installation steps
 
-`pybleau` is tested under python version `3.6` but should work on `2.7`, `3.7` 
-and `3.8` too. To build the development environment, refer to the 
-"Requirements" section above. 
-Afterwards, end users should install `pybleau` itself using: 
+To install pybleau within an existing Python environment, end-users should 
+install `pybleau` itself using: 
 ```bash
 python setup.py install
 ```
