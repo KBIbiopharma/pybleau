@@ -236,15 +236,12 @@ def test(runtime, toolkit, environment):
 
     parameters["integrationtests"] = os.path.abspath("integrationtests")
     commands = [
-        "edm run -e {environment} -- coverage run -p -m unittest discover -v " + PKG_NAME,
-        # coverage run prevents local images to be loaded for demo examples
-        # which are not defined in Python packages. Run with python directly
-        # instead.
-        "edm run -e {environment} -- python -m unittest discover -v {integrationtests}",
+        "edm run -e {environment} -- coverage run -p -m unittest discover -v "
+        + PKG_NAME,
     ]
 
-    # We run in a tempdir to avoid accidentally picking up wrong traitsui
-    # code from a local dir.  We need to ensure a good .coveragerc is in
+    # We run in a tempdir to avoid accidentally picking up wrong package
+    # code from a local dir. We need to ensure a good .coveragerc is in
     # that directory, plus coverage has a bug that means a non-local coverage
     # file doesn't get populated correctly.
     click.echo("Running tests in '{environment}'".format(**parameters))
@@ -252,6 +249,7 @@ def test(runtime, toolkit, environment):
         os.environ.update(environ)
         execute(commands, parameters)
     click.echo('Done test')
+
 
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
@@ -283,6 +281,7 @@ def test_clean(runtime, toolkit):
         test(args=args, standalone_mode=False)
     finally:
         cleanup(args=args, standalone_mode=False)
+
 
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
