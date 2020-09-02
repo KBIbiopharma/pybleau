@@ -104,18 +104,18 @@ class TestRoundTripDataFramePlotManager(TestCase):
                                z_col_name="Col_3",
                                plot_config=config7, plot_title="Plot 7")
 
-        self.assert_df_plotter_roundtrip(desc7)
+        self.assert_df_plotter_roundtrip(desc7, source_df=TEST_DF2)
 
     # Support methods ---------------------------------------------------------
 
-    def assert_df_plotter_roundtrip(self, desc):
-        analyzer = DataFrameAnalyzer(source_df=TEST_DF)
+    def assert_df_plotter_roundtrip(self, desc, source_df=TEST_DF):
+        analyzer = DataFrameAnalyzer(source_df=source_df)
 
         options = [[desc], [desc.plot_config], [desc.plot_config] * 3]
         for contained_plots in options:
             plot_manager = DataFramePlotManager(
                 contained_plots=contained_plots,
-                data_source=TEST_DF, source_analyzer=analyzer
+                data_source=source_df, source_analyzer=analyzer
             )
             self.assert_roundtrip_identical(plot_manager, ignore=self.ignore)
 
