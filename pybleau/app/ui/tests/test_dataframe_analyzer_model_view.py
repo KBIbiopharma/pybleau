@@ -2,6 +2,7 @@ from unittest import TestCase, skipIf
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 import os
+from sys import platform
 
 try:
     import kiwisolver  # noqa
@@ -12,6 +13,7 @@ except ImportError:
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
 if KIWI_AVAILABLE and BACKEND_AVAILABLE:
+    from app_common.std_lib.sys_utils import IS_LINUX, IS_OSX
     from app_common.apptools.testing_utils import temp_bringup_ui_for
     from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView, \
         DataFramePlotManager, DataFramePlotManagerView
@@ -221,7 +223,9 @@ class TestDataFrameAnalyzerTableView(TestCase):
             # Because the DF is set as `dtype=object`:
             self.assertEqual(view.info.displayed_df.adapter.format, "%s")
 
+    @skipIf(IS_LINUX or IS_OSX, "Linux and OSX's OS overrides this.")
     def test_bring_up_control_fonts(self):
+        # FIXME: figure out if we need to remove or improve
         view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True,
                                      fonts="Roman 24")
         with temp_bringup_ui_for(view):
