@@ -22,7 +22,9 @@ jobs:
           command: edm --version
       - run:
           name: create dev env
-          command: python etstools.py install
+          command: |
+            pip install click
+            python etstools.py install
       - run:
           name: Run test suite
           command: python etstools.py test
