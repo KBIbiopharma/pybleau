@@ -14,6 +14,8 @@ IF NOT EXIST %EDM_INSTALLER_PATH% CALL powershell.exe -Command %COMMAND% || GOTO
 
 CALL msiexec /qn /i %EDM_INSTALLER_PATH% || GOTO error
 
+CALL edm --version || GOTO error
+
 ENDLOCAL
 @ECHO.DONE
 EXIT
