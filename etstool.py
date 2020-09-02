@@ -105,9 +105,11 @@ DEV_DEPENDENCIES = "ci/dev_requirements.json"
 dependencies = set(json.load(open(DEPENDENCIES)) +
                    json.load(open(DEV_DEPENDENCIES)))
 
+# Remove app_common to always test pybleau with app_common master:
 for dep in dependencies:
     if dep.startswith("app_common"):
-        dependencies.remove(dep)
+        dependencies = dependencies - {dep}
+        break
 
 source_dependencies = {
     "app_common": "git+https://github.com/KBIbiopharma/app_common#egg=app_common",
