@@ -255,6 +255,21 @@ def test(runtime, toolkit, environment):
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
 @click.option('--environment', default=None)
+def flake8(runtime, toolkit, environment):
+    """ Run flake8 on the source code.
+    """
+    commands = [
+        "edm run -e {environment} flake8 setup.py " + PKG_NAME,
+    ]
+
+    execute(commands)
+    click.echo('Done flake8')
+
+
+@cli.command()
+@click.option('--runtime', default=DEFAULT_RUNTIME)
+@click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--environment', default=None)
 def cleanup(runtime, toolkit, environment):
     """ Remove a development environment.
 
