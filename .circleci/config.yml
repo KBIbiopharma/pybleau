@@ -1,19 +1,16 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@0.2.1
+  win: circleci/windows@2.2.0
 
 jobs:
-  build-and-test:
-    executor: python/default
+  build: # name of your job
+    executor: win/default # executor type
+
     steps:
+      # Commands are run in a Windows virtual machine environment
       - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
-      - run:
-          command: ./manage.py test
-          name: Test
+      - run: dir
 
 workflows:
   main:
