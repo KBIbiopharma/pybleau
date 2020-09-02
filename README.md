@@ -1,4 +1,5 @@
 # pybleau
+[![Build Status](https://travis-ci.org/KBIbiopharma/pybleau.svg?branch=master)](https://travis-ci.org/KBIbiopharma/pybleau)
 
 ## Project stage
 Though used in production by multiple projects, this project is still under
