@@ -105,7 +105,9 @@ DEV_DEPENDENCIES = "ci/dev_requirements.json"
 dependencies = set(json.load(open(DEPENDENCIES)) +
                    json.load(open(DEV_DEPENDENCIES)))
 
-dependencies.remove("app_common")
+for dep in dependencies:
+    if dep.startswith("app_common"):
+        dependencies.remove(dep)
 
 source_dependencies = {
     "app_common": "git+https://github.com/KBIbiopharma/app_common#egg=app_common",
