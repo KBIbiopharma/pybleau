@@ -4,9 +4,8 @@ orbs:
   win: circleci/windows@2.2.0
 
 jobs:
-  build: # name of your job
+  build-and-test: # name of your job
     executor: win/default # executor type
-
     steps:
       # Commands are run in a Windows virtual machine environment
       - checkout
