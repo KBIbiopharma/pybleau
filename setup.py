@@ -1,4 +1,4 @@
-from glob import glob
+
 from os.path import abspath, dirname, join
 from setuptools import setup, find_packages
 
