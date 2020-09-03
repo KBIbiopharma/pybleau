@@ -9,17 +9,8 @@ jobs:
     steps:
       - checkout
       - run: 
-          name: list content
-          command: dir
-      - run: 
           name : setup edm
           command: .\install-edm-windows.cmd
-      - run: 
-          name: list content
-          command: dir
-      - run: 
-          name: Check edm install
-          command: edm --version
       - run:
           name: create dev env
           command: |
