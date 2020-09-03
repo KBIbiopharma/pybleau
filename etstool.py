@@ -168,7 +168,7 @@ def install(runtime, toolkit, environment, edm_dir, editable):
 
     # edm commands to setup the development environment
     commands = [
-        "(edm_dir)edm environments create {environment} --force "
+        "{edm_dir}edm environments create {environment} --force "
         "--version={runtime}",
         "{edm_dir}edm install -y -e {environment} " + packages,
         "{edm_dir}edm run -e {environment} -- python setup.py clean --all",
@@ -178,24 +178,24 @@ def install(runtime, toolkit, environment, edm_dir, editable):
     # pip install pyqt5 and pyside2, because we don't have them in EDM yet
     if toolkit == 'pyside2':
         commands.append(
-            "edm run -e {environment} -- pip install pyside2==5.11"
+            "{edm_dir}edm run -e {environment} -- pip install pyside2==5.11"
         )
     elif toolkit == 'wx':
         if sys.platform != 'linux':
             commands.append(
-                "edm run -e {environment} -- pip install wxPython"
+                "{edm_dir}edm run -e {environment} -- pip install wxPython"
             )
         else:
             # XXX this is mainly for TravisCI workers; need a generic solution
             commands.append(
-                "edm run -e {environment} -- pip install -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython"
+                "{edm_dir}edm run -e {environment} -- pip install -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython"
             )
 
     click.echo("Creating environment '{environment}'".format(**parameters))
     execute(commands, parameters)
 
     if source_dependencies:
-        cmd_fmt = "edm plumbing remove-package --environment {environment} " \
+        cmd_fmt = "{edm_dir}edm plumbing remove-package --environment {environment} " \
                   "--force "
         commands = [cmd_fmt+dependency
                     for dependency in source_dependencies.keys()]
@@ -205,7 +205,7 @@ def install(runtime, toolkit, environment, edm_dir, editable):
             "python -m pip install {pkg} --no-deps".format(pkg=pkg)
             for pkg in source_pkgs
         ]
-        commands = ["edm run -e {environment} -- " + command
+        commands = ["{edm_dir}edm run -e {environment} -- " + command
                     for command in commands]
         execute(commands, parameters)
 
