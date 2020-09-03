@@ -147,12 +147,13 @@ def cli():
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
 @click.option('--environment', default=None)
+@click.option('--edm-dir', default="")
 @click.option(
     "--editable/--not-editable",
     default=False,
     help="Install main package in 'editable' mode?  [default: --not-editable]",
 )
-def install(runtime, toolkit, environment, editable):
+def install(runtime, toolkit, environment, edm_dir, editable):
     """ Install project and dependencies into a clean EDM environment.
 
     """
@@ -163,19 +164,15 @@ def install(runtime, toolkit, environment, editable):
         | runtime_dependencies.get(runtime, set())
         | test_dependencies
     )
-
-    # install_pkg = "edm run -e {environment} -- pip install "
-    # if editable:
-    #     install_pkg += "--editable "
-    # install_pkg += "."
-    install_pkg = "edm run -e {environment} -- python setup.py install"
+    parameters["edm_dir"] = edm_dir
 
     # edm commands to setup the development environment
     commands = [
-        "edm environments create {environment} --force --version={runtime}",
-        "edm install -y -e {environment} " + packages,
-        "edm run -e {environment} -- python setup.py clean --all",
-        install_pkg,
+        "(edm_dir)edm environments create {environment} --force "
+        "--version={runtime}",
+        "{edm_dir}edm install -y -e {environment} " + packages,
+        "{edm_dir}edm run -e {environment} -- python setup.py clean --all",
+        "{edm_dir}edm run -e {environment} -- python setup.py install",
     ]
 
     # pip install pyqt5 and pyside2, because we don't have them in EDM yet

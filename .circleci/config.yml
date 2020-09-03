@@ -24,7 +24,7 @@ jobs:
           name: create dev env
           command: |
             pip install click
-            python etstool.py install
+            python etstool.py install --edm-dir="C:\Users\circleci\AppData\Local\Programs\Enthought\edm\embedded\"
       - run:
           name: Run test suite
           command: python etstool.py test
