@@ -215,12 +215,15 @@ def install(runtime, toolkit, environment, edm_dir, editable):
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-def test(runtime, toolkit, environment):
+def test(runtime, toolkit, edm_dir, environment):
     """ Run the test suite in a given environment with the specified toolkit.
 
     """
     parameters = get_parameters(runtime, toolkit, environment)
+    parameters["edm_dir"] = edm_dir
+
     environ = environment_vars.get(toolkit, {}).copy()
     environ['PYTHONUNBUFFERED'] = "1"
 
@@ -231,10 +234,9 @@ def test(runtime, toolkit, environment):
     else:
         environ["EXCLUDE_TESTS"] = "(wx|qt)"
 
-    parameters["integrationtests"] = os.path.abspath("integrationtests")
     commands = [
-        "edm run -e {environment} -- coverage run -p -m unittest discover -v "
-        + PKG_NAME,
+        "{edm_dir}edm run -e {environment} -- coverage run -p -m unittest "
+        "discover -v " + PKG_NAME,
     ]
 
     # We run in a tempdir to avoid accidentally picking up wrong package
@@ -251,13 +253,16 @@ def test(runtime, toolkit, environment):
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-def flake8(runtime, toolkit, environment):
+def flake8(runtime, toolkit, edm_dir, environment):
     """ Run flake8 on the source code.
     """
     parameters = get_parameters(runtime, toolkit, environment)
+    parameters["edm_dir"] = edm_dir
+
     commands = [
-        "edm run -e {environment} flake8 setup.py " + PKG_NAME,
+        "{edm_dir}edm run -e {environment} flake8 setup.py " + PKG_NAME,
     ]
 
     execute(commands, parameters)

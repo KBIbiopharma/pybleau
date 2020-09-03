@@ -27,7 +27,10 @@ jobs:
             python etstool.py install --edm-dir="C:\Users\circleci\AppData\Local\Programs\Enthought\edm\embedded\"
       - run:
           name: Run test suite
-          command: python etstool.py test
+          command: python etstool.py test  --edm-dir="C:\Users\circleci\AppData\Local\Programs\Enthought\edm\embedded\"
+      - run:
+          name: Run flake8
+          command: python etstool.py flake8  --edm-dir="C:\Users\circleci\AppData\Local\Programs\Enthought\edm\embedded\"
 
 workflows:
   main:
