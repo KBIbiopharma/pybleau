@@ -1,4 +1,5 @@
 from unittest import TestCase, skipIf
+from unittest.mock import patch
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 import os
@@ -113,6 +114,13 @@ class TestDataFrameAnalyzerView(TestCase):
         view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True)
         with temp_bringup_ui_for(view):
             view._show_summary = False
+
+    @patch.object(DataFrameAnalyzerView, "view_cat_summary_group_builder")
+    def test_show_categorical_summary(self, mock):
+        view = DataFrameAnalyzerView(model=self.analyzer,
+                                     show_categorical_summary=False)
+        with temp_bringup_ui_for(view):
+            self.assertFalse(mock.called)
 
     def test_change_column_list(self):
         view = DataFrameAnalyzerView(model=self.analyzer)

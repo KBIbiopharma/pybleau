@@ -39,10 +39,10 @@ class DataFrameAnalyzerView(ModelView):
     it can easily be subclassed and customized.
 
     TODO: add traits events to pass update/refresh notifications to the
-    DFEditors once we have updated TraitsUI.
+     DFEditors once we have updated TraitsUI.
 
     TODO: Add traits events to receive notifications that a column/row was
-    clicked/double-clicked.
+     clicked/double-clicked.
     """
     #: Model being viewed
     model = Instance(DataFrameAnalyzer)
@@ -55,6 +55,9 @@ class DataFrameAnalyzerView(ModelView):
 
     #: Check box to hide/show what stats are included in the summary DF
     show_summary_controls = Bool
+
+    #: Show the summary categorical df
+    show_categorical_summary = Bool(True)
 
     #: Check box to hide/show what columns to analyze (panel when few columns)
     show_column_controls = Bool
@@ -96,7 +99,7 @@ class DataFrameAnalyzerView(ModelView):
     #: Exploration group label: visible only when plotter_layout="Tabbed"
     exploration_group_label = Str("Exploration Tools")
 
-    #: PLotting group label: visible only when plotter_layout="Tabbed"
+    #: Plotting group label: visible only when plotter_layout="Tabbed"
     plotting_group_label = Str("Plotting Tools")
 
     #: UI title for the data summary section
@@ -230,7 +233,10 @@ class DataFrameAnalyzerView(ModelView):
         column_controls_group = self.view_data_control_group_builder()
         summary_group = self.view_summary_group_builder()
         summary_controls_group = self.view_summary_control_group_builder()
-        cat_summary_group = self.view_cat_summary_group_builder()
+        if self.show_categorical_summary:
+            cat_summary_group = self.view_cat_summary_group_builder()
+        else:
+            cat_summary_group = None
         plotter_group = self.view_plotter_group_builder()
 
         button_content = [
@@ -510,7 +516,7 @@ class DataFrameAnalyzerView(ModelView):
 
     def _manage_filter_button_fired(self):
         """ TODO: review if replaceing the copy by a deepcopy or removing the
-        copy altogether would help traits trigger listeners correctly
+             copy altogether would help traits trigger listeners correctly
         """
 
         # Make a copy of the list of filters so the model can listen to changes
@@ -522,8 +528,8 @@ class DataFrameAnalyzerView(ModelView):
         ui = filter_manager.edit_traits(kind="livemodal")
         if ui.result:
             # FIXME: figure out why this simpler assignment doesn't trigger the
-            # traits listener on the model when changing a FilterExpression
-            # attribute:
+            #  traits listener on the model when changing a FilterExpression
+            #  attribute:
             # self.model.known_filter_exps = filter_manager.known_filter_exps
 
             self.model.known_filter_exps = [
