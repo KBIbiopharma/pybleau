@@ -129,7 +129,5 @@ class TemplatePlotNameSelector(ManageTemplatesAccessor):
 
 if __name__ == "__main__":
     y = list('abcde')
-    select = TemplatePlotNameSelector(
-        string_options=y
-    )
+    select = TemplatePlotNameSelector(string_options=y)
     select.edit_traits(kind="livemodal")
