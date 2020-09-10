@@ -5,17 +5,22 @@ import os
 
 from enable.component_editor import ComponentEditor
 from pyface.api import warning
-from traits.api import Any, Bool, Button, Enum, HasStrictTraits, Instance, \
+from traits.api import Any, Bool, Button, Enum, Instance, \
     Int, List, Str
 from traitsui.api import EnumEditor, HGroup, Item, Label, ModelView, \
-    OKCancelButtons, Spring, TableEditor, VGroup, View, VSplit, ObjectColumn
+    Spring, TableEditor, VGroup, View, VSplit, ObjectColumn
 from traitsui.extras.checkbox_column import CheckboxColumn
+from traitsui.menu import CancelButton, OKButton
 
 from pybleau.app.model.dataframe_plot_manager import CONTAINER_IDX_REMOVAL, \
     DataFramePlotManager
 from pybleau.app.model.multi_canvas_manager import CONTAINER_TRAIT_NAME
+from pybleau.app.model.tests.test_plot_template_manager import \
+    FakePlotTemplateInteractor
 from pybleau.app.plotting.i_plot_template_interactor import \
     IPlotTemplateInteractor
+from pybleau.app.ui.manage_templates_accessor import ManageTemplatesAccessor, \
+    ManageTemplatesHandler
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +221,8 @@ class DataFramePlotManagerView(ModelView):
             view_klass=self.view_klass,
             num_containers=self.model.canvas_manager.num_container_managers,
             container_idx=AUTO_TARGET_CONTAINER,
-            plot_types=self.model.plot_types
+            plot_types=self.model.plot_types,
+            template_manager=self.model.template_manager
         )
         ui = selector.edit_traits(kind="modal")
         if not ui.result:
@@ -279,7 +285,7 @@ class DataFramePlotManagerView(ModelView):
                 'z_axis_title', "data_filter", 'container_idx']
 
 
-class PlotTypeSelector(HasStrictTraits):
+class PlotTypeSelector(ManageTemplatesAccessor):
     """ Tiny UI to select the type of plot to create.
     """
     #: Selected plot type
@@ -298,9 +304,6 @@ class PlotTypeSelector(HasStrictTraits):
     #: Total number of containers available to place the future plot
     num_containers = Int(1)
 
-    #: View class to use. Modify to customize.
-    view_klass = Any(View)
-
     def traits_view(self):
         if self.container_layout_type == "horizontal":
             idx_description = "Row"
@@ -317,8 +320,22 @@ class PlotTypeSelector(HasStrictTraits):
                      visible_when="num_containers > 1",
                      tooltip="Can be changed later in the plot list."),
             ),
-            buttons=OKCancelButtons,
+            buttons=[OKButton, CancelButton, self.man_temp_button],
             title="Select Plot Type and {}".format(idx_description),
-            resizable=True
+            resizable=True,
+            handler=ManageTemplatesHandler()
         )
         return view
+
+
+if __name__ == "__main__":
+    plot_manager = DataFramePlotManager(
+        template_interactor=FakePlotTemplateInteractor()
+    )
+    selector = PlotTypeSelector(
+        num_containers=plot_manager.canvas_manager.num_container_managers,
+        container_idx=AUTO_TARGET_CONTAINER,
+        plot_types=plot_manager.plot_types,
+        template_manager=plot_manager.template_manager
+    )
+    ui = selector.configure_traits()

@@ -1,12 +1,13 @@
-from app_common.traitsui.common_modal_dialogs import StringSelectorHandler, \
-    BaseDlg
 from app_common.traitsui.label_with_html import Label
 from traits.api import Bool, Str, Property, List, Instance
 from traitsui.api import CancelButton, EnumEditor, HGroup, Item, Spring, \
     VGroup, TextEditor, Action
 
+from pybleau.app.ui.manage_templates_accessor import ManageTemplatesAccessor, \
+    ManageTemplatesHandler
 
-class TemplatePlotNameSelector(BaseDlg):
+
+class TemplatePlotNameSelector(ManageTemplatesAccessor):
     """Tiny UI to name a plot template, or select from the existing ones
     """
     #: Title of the window
@@ -86,8 +87,8 @@ class TemplatePlotNameSelector(BaseDlg):
                     show_border=True
                 ),
             ),
-            buttons=[self.ok_button, CancelButton],
-            handler=StringSelectorHandler(),
+            buttons=[self.ok_button, self.man_temp_button, CancelButton],
+            handler=ManageTemplatesHandler(),
             title=self.title,
             height=140
         )
@@ -128,5 +129,7 @@ class TemplatePlotNameSelector(BaseDlg):
 
 if __name__ == "__main__":
     y = list('abcde')
-    select = TemplatePlotNameSelector(string_options=y)
+    select = TemplatePlotNameSelector(
+        string_options=y
+    )
     select.edit_traits(kind="livemodal")
