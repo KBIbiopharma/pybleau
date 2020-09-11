@@ -8,7 +8,7 @@ from pybleau.app.ui.manage_templates_accessor import ManageTemplatesAccessor, \
 
 
 class TemplatePlotNameSelector(ManageTemplatesAccessor):
-    """Tiny UI to name a plot template, or select from the existing ones
+    """ Tiny UI to name a plot template, or select from the existing ones
     """
     #: Title of the window
     title = "Create a template plot..."

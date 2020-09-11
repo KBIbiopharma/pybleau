@@ -9,7 +9,8 @@ from pybleau.app.plotting.i_plot_template_interactor import \
 
 
 class PlotTemplateManager(HasStrictTraits):
-
+    """ Model for the dialog used to manage plot templates
+    """
     #: Names of all the available plot templates
     names = Property(List(Str), depends_on="list_changed")
 

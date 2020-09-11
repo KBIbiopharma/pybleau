@@ -14,6 +14,10 @@ class ManageTemplatesHandler(Handler):
 
 
 class ManageTemplatesAccessor(BaseDlg):
+    """ Base class for UI elements that want to include a button for managing
+    plot templates
+    """
+
     #: PlotTemplateManager for creating a template manager view
     template_manager = Instance(PlotTemplateManager)
 

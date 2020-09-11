@@ -11,7 +11,8 @@ from pybleau.app.model.tests.test_plot_template_manager import \
 
 
 class PlotTemplateManagerView(HasStrictTraits):
-
+    """ Pop-up dialog for viewing and deleting available plot templates
+    """
     # View model
     model = Instance(PlotTemplateManager)
 
