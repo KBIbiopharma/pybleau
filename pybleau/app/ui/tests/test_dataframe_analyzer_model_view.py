@@ -117,13 +117,11 @@ class TestDataFrameAnalyzerView(TestCase):
 
     @patch.object(DataFrameAnalyzerView, "view_cat_summary_group_builder")
     def test_show_categorical_summary(self, mock):
-        view = DataFrameAnalyzerView(model=self.analyzer)
-        with temp_bringup_ui_for(view):
-            self.assertTrue(mock.called)            
-        view.show_categorical_summary = False
+        view = DataFrameAnalyzerView(model=self.analyzer,
+                                     show_categorical_summary=False)
         with temp_bringup_ui_for(view):
             self.assertFalse(mock.called)
-            
+
     def test_change_column_list(self):
         view = DataFrameAnalyzerView(model=self.analyzer)
         init_len = len(view.visible_columns)
