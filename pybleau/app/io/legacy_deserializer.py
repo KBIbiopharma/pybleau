@@ -20,7 +20,7 @@ class axisStyleDeSerializer_v0(axisStyleDeSerializer):
 
     def get_instance(self, constructor_data):
         # Enable text label controls for all x-axis even for old plots:
-        if constructor_data['axis_name'] == "x":
+        if constructor_data.get('axis_name', "") == "x":
             constructor_data['support_text_labels'] = True
 
         return super(axisStyleDeSerializer_v0, self).get_instance(
