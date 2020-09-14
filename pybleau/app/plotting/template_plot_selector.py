@@ -13,15 +13,12 @@ class TemplatePlotNameSelector(ManageTemplatesAccessor):
     #: Title of the window
     title = "Create a template plot..."
 
-    #: The available options in the dropdown
-    string_options = List(Str)
-
     #: The selected option in the dropdown
     selected_string = Str
 
     #: Property defining whether there is a string selected or not
     is_string_selected = Property(Bool(), depends_on="selected_string, "
-                                                     "string_options[]")
+                                                     "plot_types[]")
 
     #: Property defining whether the new name is valid
     new_name_entry_is_valid = Property(Bool(), depends_on="new_name")
@@ -68,7 +65,7 @@ class TemplatePlotNameSelector(ManageTemplatesAccessor):
                     Spring(),
                     Label("OR", font_size=20),
                     Spring(),
-                    visible_when="len(string_options) > 0"
+                    visible_when="len(plot_types) > 0"
                 ),
                 VGroup(
                     HGroup(
@@ -78,12 +75,12 @@ class TemplatePlotNameSelector(ManageTemplatesAccessor):
                     ),
                     HGroup(
                         Item("selected_string",
-                             editor=EnumEditor(name='string_options'),
+                             editor=EnumEditor(name='plot_types'),
                              enabled_when='replace_old_template',
                              show_label=False),
                         Spring(),
                     ),
-                    visible_when="len(string_options) > 0",
+                    visible_when="len(plot_types) > 0",
                     show_border=True
                 ),
             ),
@@ -104,7 +101,7 @@ class TemplatePlotNameSelector(ManageTemplatesAccessor):
 
         test1 = len(no_underscores) > 0
         test2 = no_underscores.isalnum()
-        test3 = value not in self.string_options
+        test3 = value not in self.plot_types
 
         return test1 and test2 and test3
 
@@ -119,7 +116,7 @@ class TemplatePlotNameSelector(ManageTemplatesAccessor):
             return self.new_name_entry_is_valid
 
     def _get_is_string_selected(self):
-        return self.selected_string in self.string_options
+        return self.selected_string in self.plot_types
 
     # Traits initialization methods -------------------------------------------
 
@@ -129,5 +126,5 @@ class TemplatePlotNameSelector(ManageTemplatesAccessor):
 
 if __name__ == "__main__":
     y = list('abcde')
-    select = TemplatePlotNameSelector(string_options=y)
+    select = TemplatePlotNameSelector(plot_types=y)
     select.edit_traits(kind="livemodal")

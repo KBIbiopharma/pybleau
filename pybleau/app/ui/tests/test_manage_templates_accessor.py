@@ -9,10 +9,10 @@ class TestManageTemplatesAccessor(TestCase):
 
     def setUp(self) -> None:
         self.accessor = ManageTemplatesAccessor(
-            template_manager=Mock(PlotTemplateManager))
+            model=Mock(PlotTemplateManager))
 
     def test_templates_exist_returns_correct(self):
-        self.accessor.template_manager.names = list('abc')
+        self.accessor.model.names = list('abc')
         self.assertTrue(self.accessor.templates_exist)
-        self.accessor.template_manager.names = []
+        self.accessor.model.names = []
         self.assertFalse(self.accessor.templates_exist)

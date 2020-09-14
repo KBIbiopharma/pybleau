@@ -12,7 +12,7 @@ class PlotTemplateManager(HasStrictTraits):
     """ Model for the dialog used to manage plot templates
     """
     #: Names of all the available plot templates
-    names = Property(List(Str), depends_on="list_changed")
+    names = Property(List(Str), depends_on="templates_changed")
 
     #: IPlotTemplateInteractor used to save/load/locate plot templates
     interactor = Instance(IPlotTemplateInteractor, args=())
@@ -21,14 +21,14 @@ class PlotTemplateManager(HasStrictTraits):
     plot_template_directory = Property(Directory)
 
     #: Set to True whenever the list of templates changes or to refresh list
-    list_changed = Event
+    templates_changed = Event
 
     # Public interface --------------------------------------------------------
 
     def delete_template(self, template_name: str):
         """ Given a template name (e.g. 'ecd_time') delete the template file.
 
-        Fires the list_changed event upon successful deletion.
+        Fires the templates_changed event upon successful deletion.
 
         Parameters
         ----------
@@ -40,10 +40,10 @@ class PlotTemplateManager(HasStrictTraits):
         filepath = os.path.join(path, template_name + ext)
         if os.path.exists(filepath):
             os.remove(filepath)
-            self.list_changed = True
+            self.templates_changed = True
 
     def rescan_template_dir(self):
-        self.list_changed = True
+        self.templates_changed = True
 
     # Traits property getters/setters -----------------------------------------
 

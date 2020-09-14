@@ -222,9 +222,9 @@ class DataFramePlotManagerView(ModelView):
             num_containers=self.model.canvas_manager.num_container_managers,
             container_idx=AUTO_TARGET_CONTAINER,
             plot_types=self.model.plot_types,
-            template_manager=self.model.template_manager
+            model=self.model.template_manager
         )
-        ui = selector.edit_traits(kind="modal")
+        ui = selector.edit_traits(kind="livemodal")
         if not ui.result:
             return
 
@@ -243,7 +243,7 @@ class DataFramePlotManagerView(ModelView):
             configurator = config_klass(data_source=self.model.data_source,
                                         plot_title=new_plot_default_title,
                                         view_klass=self.view_klass)
-            ui = configurator.edit_traits(kind="modal")
+            ui = configurator.edit_traits(kind="livemodal")
             if not ui.result:
                 return
 
@@ -291,9 +291,6 @@ class PlotTypeSelector(ManageTemplatesAccessor):
     #: Selected plot type
     plot_type = Enum(values="plot_types")
 
-    #: Available plot types
-    plot_types = List(Str)
-
     #: Selected container for the future plot
     container_idx = Any
 
@@ -336,6 +333,6 @@ if __name__ == "__main__":
         num_containers=plot_manager.canvas_manager.num_container_managers,
         container_idx=AUTO_TARGET_CONTAINER,
         plot_types=plot_manager.plot_types,
-        template_manager=plot_manager.template_manager
+        model=plot_manager.template_manager
     )
     ui = selector.configure_traits()

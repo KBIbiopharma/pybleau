@@ -53,14 +53,14 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
 
     def test_delete_template_deletes_file(self):
         self.assertEqual(len(self.manager.names), 2)
-        with self.assertTraitChanges(self.manager, "list_changed"):
+        with self.assertTraitChanges(self.manager, "templates_changed"):
             self.manager.delete_template(self.template_names[0])
         file_exists = os.path.exists(self.template_paths[0])
         self.assertFalse(file_exists)
         self.assertEqual(len(self.manager.names), 1)
 
     def test_rescan_template_dir_raises_event(self):
-        with self.assertTraitChanges(self.manager, "list_changed"):
+        with self.assertTraitChanges(self.manager, "templates_changed"):
             self.manager.rescan_template_dir()
 
     def test_get_names_returns_list(self):

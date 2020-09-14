@@ -808,17 +808,17 @@ class DataFramePlotManager(DataElement):
         if basis is not None and basis in options:
             select = TemplatePlotNameSelector(
                 new_name="",
-                string_options=options,
+                plot_types=options,
                 selected_string=basis,
-                template_manager=self.template_manager,
+                model=self.template_manager,
                 replace_old_template=True
             )
         else:
             template_name = desc.plot_title
             select = TemplatePlotNameSelector(
                 new_name=template_name,
-                string_options=options,
-                template_manager=self.template_manager,
+                plot_types=options,
+                model=self.template_manager,
             )
 
         make_template = select.edit_traits(kind="livemodal")
