@@ -27,6 +27,9 @@ class FakePlotTemplateInteractor(HasStrictTraits):
     def get_template_dir(self) -> str:
         return HERE
 
+    def delete_templates(self, temps) -> bool:
+        return True
+
 
 class TestPlotTemplateManager(TestCase, UnittestTools):
 
@@ -51,13 +54,10 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
             if os.path.isfile(file):
                 os.remove(file)
 
-    def test_delete_template_deletes_file(self):
+    def test_delete_template_calls_interactor_delete(self):
         self.assertEqual(len(self.manager.names), 2)
         with self.assertTraitChanges(self.manager, "templates_changed"):
-            self.manager.delete_template(self.template_names[0])
-        file_exists = os.path.exists(self.template_paths[0])
-        self.assertFalse(file_exists)
-        self.assertEqual(len(self.manager.names), 1)
+            self.manager.delete_templates([self.template_names[0]])
 
     def test_rescan_template_dir_raises_event(self):
         with self.assertTraitChanges(self.manager, "templates_changed"):
