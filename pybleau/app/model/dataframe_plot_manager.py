@@ -311,6 +311,8 @@ class DataFramePlotManager(DataElement):
             Container to add the plot to. If left as None, it's up to the
             canvas' to select the container based on its configuration.
         """
+        logger.log(ACTION_LEVEL, "Embedding raw plot...")
+
         if position is None:
             position = self.next_plot_id
 
@@ -364,7 +366,7 @@ class DataFramePlotManager(DataElement):
         if position is None:
             position = self.next_plot_id
 
-        msg = "Generating {} plot".format(config.plot_type)
+        msg = "Generating {} plot...".format(config.plot_type)
         logger.log(ACTION_LEVEL, msg)
 
         factory = self._factory_from_config(config)
