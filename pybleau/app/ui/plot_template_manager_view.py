@@ -31,6 +31,9 @@ class PlotTemplateManagerView(HasStrictTraits):
     #: View class to use. Modify to customize.
     view_klass = Any(View)
 
+    #: Is the UI interactive? Set to False for testing
+    interactive = Bool(True)
+
     def traits_view(self):
         plot_template_edit = ListStrEditor(selected="selected_plot_templates",
                                            multi_select=True, editable=True,
@@ -62,13 +65,19 @@ class PlotTemplateManagerView(HasStrictTraits):
         return len(self.selected_plot_templates) > 0
 
     def _delete_from_templates_fired(self):
-        msg = "Delete the {} selected items?\n\nOnce deleted, a template is " \
-              "not recoverable."
-        msg = msg.format(len(self.selected_plot_templates))
-        confirmed = confirm(None, msg)
+        selected_templates = self.selected_plot_templates
+        self._delete_templates(selected_templates)
+
+    def _delete_templates(self, selected_templates):
+        confirmed = YES
+        if self.interactive:
+            num = len(selected_templates)
+            msg = f"Delete the {num} selected items?\n\n" \
+                  f"Once deleted, a template is not recoverable."
+            msg = msg.format(len(selected_templates))
+            confirmed = confirm(None, msg)
         if confirmed == YES:
-            for item in self.selected_plot_templates:
-                self.model.delete_template(item)
+            self.model.delete_templates(selected_templates)
             self.selected_plot_templates = []
 
     def _rescan_for_templates_fired(self):

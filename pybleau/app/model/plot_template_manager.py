@@ -25,21 +25,9 @@ class PlotTemplateManager(HasStrictTraits):
 
     # Public interface --------------------------------------------------------
 
-    def delete_template(self, template_name: str):
-        """ Given a template name (e.g. 'ecd_time') delete the template file.
-
-        Fires the templates_changed event upon successful deletion.
-
-        Parameters
-        ----------
-        template_name : Str
-            Name of the template, without the file extension.
-        """
-        path = self.interactor.get_template_dir()
-        ext = self.interactor.get_template_ext()
-        filepath = os.path.join(path, template_name + ext)
-        if os.path.exists(filepath):
-            os.remove(filepath)
+    def delete_templates(self, templates_names: list):
+        removed = self.interactor.delete_templates(templates_names)
+        if removed:
             self.templates_changed = True
 
     def rescan_template_dir(self):

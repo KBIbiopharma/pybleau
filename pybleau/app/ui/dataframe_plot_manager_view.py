@@ -6,7 +6,7 @@ import os
 from enable.component_editor import ComponentEditor
 from pyface.api import warning
 from traits.api import Any, Bool, Button, Enum, Instance, \
-    Int, List, Str
+    Int, List
 from traitsui.api import EnumEditor, HGroup, Item, Label, ModelView, \
     Spring, TableEditor, VGroup, View, VSplit, ObjectColumn
 from traitsui.extras.checkbox_column import CheckboxColumn

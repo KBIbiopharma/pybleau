@@ -1,4 +1,6 @@
-from traits.api import Interface, Callable, Union
+from typing import Union
+
+from traits.api import Interface, Callable
 
 
 class IPlotTemplateInteractor(Interface):
@@ -23,3 +25,17 @@ class IPlotTemplateInteractor(Interface):
     def get_template_dir(self) -> str:
         """Return a directory object giving the location of the plot
         templates"""
+
+    def delete_templates(self, template_names: Union[list, str]) -> bool:
+        """Delete the templates in the supplied list
+
+        Parameters
+        ----------
+        template_names : list or str
+            name or list of names of the templates to be deleted
+
+        Returns
+        -------
+        bool
+            Returns True if any template files were deleted; False otherwise
+        """

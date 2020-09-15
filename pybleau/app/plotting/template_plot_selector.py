@@ -1,5 +1,5 @@
 from app_common.traitsui.label_with_html import Label
-from traits.api import Bool, Str, Property, List, Instance
+from traits.api import Bool, Str, Property, Instance
 from traitsui.api import CancelButton, EnumEditor, HGroup, Item, Spring, \
     VGroup, TextEditor, Action
 

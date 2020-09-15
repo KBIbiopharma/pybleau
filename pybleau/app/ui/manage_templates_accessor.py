@@ -1,6 +1,5 @@
 from app_common.traitsui.common_modal_dialogs import BaseDlg
 from traits.api import Bool, Instance, Property, List, Str, observe
-from traits.observation.expression import trait
 from traitsui.api import Handler, Action
 
 from pybleau.app.model.plot_template_manager import PlotTemplateManager
@@ -45,19 +44,27 @@ class ManageTemplatesAccessor(BaseDlg):
 
     @observe("model:names", post_init=True)
     def template_list_changed(self, event):
-        """ Based on the new and old items in the event, change the
-        templates list"""
+        """ Based on the new and old versions of the template name list,
+        change the templates in the plot types list"""
         if event.old == event.new:
             # no changes
             return
-        if event.old is None:
+        else:
+            old = event.old
+            new = event.new
+            self._reconcile_plot_types_list(old, new)
+
+    # Private interface -------------------------------------------------------
+
+    def _reconcile_plot_types_list(self, old_list, new_list):
+        if old_list is None:
             # there is no old list, so all items are new
-            added = event.new
+            added = new_list
             removed = False
         else:
             # there are both new and old items, so find the differences
-            added = set(event.new).difference(set(event.old))
-            removed = set(event.old).difference(set(event.new))
+            added = set(new_list).difference(set(old_list))
+            removed = set(old_list).difference(set(new_list))
         if added:
             # add all the new items that aren't in the old list
             for item in added:
