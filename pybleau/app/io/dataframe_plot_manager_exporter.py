@@ -16,6 +16,7 @@ from traitsui.api import FileEditor, HGroup, Item, Label, OKCancelButtons, \
 
 from app_common.chaco.plot_io import save_plot_to_file
 from app_common.std_lib.filepath_utils import open_file, string2filename
+from app_common.std_lib.logging_utils import ACTION_LEVEL
 
 from ...vega_translators.vega_chaco import chaco2vega
 from ...vega_translators.vega_utils import df_to_vega
@@ -193,7 +194,7 @@ class DataFramePlotManagerExporter(HasStrictTraits):
 
         if not self.interactive or ui.result:
             msg = "Exporting plot content to {}.".format(self.export_format)
-            logger.info(msg)
+            logger.log(ACTION_LEVEL, msg)
 
             to_meth = getattr(self, METHOD_MAP[self.export_format])
             try:

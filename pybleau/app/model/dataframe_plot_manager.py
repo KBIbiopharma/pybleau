@@ -6,14 +6,16 @@ from typing import Optional
 from uuid import UUID
 
 import pandas as pd
-from app_common.chaco.constraints_plot_container_manager import \
-    ConstraintsPlotContainerManager
-from app_common.model_tools.data_element import DataElement
-from app_common.std_lib.sys_utils import extract_traceback
 from chaco.api import BasePlotContainer, HPlotContainer, \
     OverlayPlotContainer, Plot
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
+
+from app_common.chaco.constraints_plot_container_manager import \
+    ConstraintsPlotContainerManager
+from app_common.model_tools.data_element import DataElement
+from app_common.std_lib.sys_utils import extract_traceback
+from app_common.std_lib.logging_utils import ACTION_LEVEL
 
 from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
 from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
@@ -363,7 +365,7 @@ class DataFramePlotManager(DataElement):
             position = self.next_plot_id
 
         msg = "Generating {} plot".format(config.plot_type)
-        logger.info(msg)
+        logger.log(ACTION_LEVEL, msg)
 
         factory = self._factory_from_config(config)
         desc = factory.generate_plot()
