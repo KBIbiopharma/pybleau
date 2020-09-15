@@ -65,4 +65,4 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
 
     def test_get_names_returns_list(self):
         names = ["temp1", "temp2"]
-        self.assertListEqual(names, self.manager.names)
+        self.assertCountEqual(names, self.manager.names)
