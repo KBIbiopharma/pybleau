@@ -362,6 +362,9 @@ class DataFramePlotManager(DataElement):
         if position is None:
             position = self.next_plot_id
 
+        msg = "Generating {} plot".format(config.plot_type)
+        logger.info(msg)
+
         factory = self._factory_from_config(config)
         desc = factory.generate_plot()
         plot = desc["plot"]

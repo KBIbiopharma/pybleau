@@ -192,6 +192,9 @@ class DataFramePlotManagerExporter(HasStrictTraits):
             ui = self.edit_traits(kind="livemodal")
 
         if not self.interactive or ui.result:
+            msg = "Exporting plot content to {}.".format(self.export_format)
+            logger.info(msg)
+
             to_meth = getattr(self, METHOD_MAP[self.export_format])
             try:
                 to_meth()
