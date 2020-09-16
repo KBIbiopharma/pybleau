@@ -1,5 +1,7 @@
 # pybleau
-[![Build Status](https://travis-ci.org/KBIbiopharma/pybleau.svg?branch=master)](https://travis-ci.org/KBIbiopharma/pybleau)
+Linux, OSX: [![Build Status](https://travis-ci.org/KBIbiopharma/pybleau.svg?branch=master)](https://travis-ci.org/KBIbiopharma/pybleau)
+
+Win: [![Build status](https://ci.appveyor.com/api/projects/status/obwb8u205yn75pey/branch/master?svg=true)](https://ci.appveyor.com/project/jonathanrocher/pybleau/branch/master)
 
 ## Project stage
 Though used in production by multiple projects, this project is still under
