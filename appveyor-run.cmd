@@ -11,9 +11,7 @@ SET operation=%1
 SET runtime=%2
 SET toolkit=%3
 
-CALL dir C:\Users\pybleau\
 CALL edm run -- python etstool.py !operation! --runtime=!runtime! --toolkit=!toolkit! --edm-dir="C:\Users\pybleau\" || GOTO error
-CALL edm run -- python etstool.py !operation! --runtime=!runtime! --toolkit=!toolkit! || GOTO error
 POPD
 
 GOTO end
