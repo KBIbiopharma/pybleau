@@ -117,7 +117,7 @@ class TestRoundTripDataFramePlotManager(TestCase):
         source_df = desc.plot_config.data_source
         analyzer = DataFrameAnalyzer(source_df=source_df)
 
-        options = [desc, desc.plot_config]
+        options = [[desc, desc.plot_config]]
         for contained_plots in options:
             plot_manager = DataFramePlotManager(
                 contained_plots=contained_plots,
