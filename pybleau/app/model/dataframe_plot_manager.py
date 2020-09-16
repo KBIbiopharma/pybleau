@@ -366,7 +366,7 @@ class DataFramePlotManager(DataElement):
         if position is None:
             position = self.next_plot_id
 
-        msg = "Generating {} plot...".format(config.plot_type)
+        msg = f"Generating {config.plot_type} plot..."
         logger.log(ACTION_LEVEL, msg)
 
         factory = self._factory_from_config(config)
