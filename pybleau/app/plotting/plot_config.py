@@ -109,10 +109,10 @@ class BasePlotConfigurator(HasStrictTraits):
             raise ValueError(msg)
 
         out = {}
+        known_cols = self.transformed_data.columns
         for key in self._dict_keys:
             if isinstance(key, str):
                 val = out[key] = getattr(self, key)
-                known_cols = self.transformed_data.columns
                 if key.endswith("col_name") and val and val not in known_cols:
                     msg = "Unknown column name requested: '{}'.".format(val)
                     logger.exception(msg)
