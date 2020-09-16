@@ -12,7 +12,7 @@ SET COMMAND="(new-object net.webclient).DownloadFile('%URL%', '%EDM_INSTALLER_PA
 
 IF NOT EXIST %EDM_INSTALLER_PATH% CALL powershell.exe -Command %COMMAND% || GOTO error
 
-CALL msiexec /qn /i %EDM_INSTALLER_PATH% || GOTO error
+CALL msiexec /qn /i %EDM_INSTALLER_PATH% EDMAPPDIR=C:\Enthought\edm || GOTO error
 
 ENDLOCAL
 @ECHO.DONE
