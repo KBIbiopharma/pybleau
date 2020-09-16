@@ -16,6 +16,7 @@ from traitsui.api import FileEditor, HGroup, Item, Label, OKCancelButtons, \
 
 from app_common.chaco.plot_io import save_plot_to_file
 from app_common.std_lib.filepath_utils import open_file, string2filename
+from app_common.std_lib.logging_utils import ACTION_LEVEL
 
 from ...vega_translators.vega_chaco import chaco2vega
 from ...vega_translators.vega_utils import df_to_vega
@@ -192,11 +193,14 @@ class DataFramePlotManagerExporter(HasStrictTraits):
             ui = self.edit_traits(kind="livemodal")
 
         if not self.interactive or ui.result:
+            msg = f"Exporting plot content to {self.export_format}."
+            logger.log(ACTION_LEVEL, msg)
+
             to_meth = getattr(self, METHOD_MAP[self.export_format])
             try:
                 to_meth()
             except Exception as e:
-                msg = "Failed to export the plot list. Error was {}.".format(e)
+                msg = f"Failed to export the plot list. Error was {e}."
                 logger.exception(msg)
                 if self.interactive:
                     error(None, msg)
@@ -356,9 +360,9 @@ class DataFramePlotManagerExporter(HasStrictTraits):
 
         if self.target_file:
             if isfile(self.target_file) and not self.overwrite_file_if_exists:
-                msg = "Target description file path specified already exists" \
-                      ": {}. Move the file or select the 'overwrite' checkbox."
-                msg = msg.format(self.target_file)
+                msg = f"Target description file path specified already " \
+                    f"exists: {self.target_file}. Move the file or select " \
+                    f"the 'overwrite' checkbox."
                 logger.exception(msg)
                 raise IOError(msg)
 
