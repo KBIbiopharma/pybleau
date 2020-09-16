@@ -91,11 +91,11 @@ class TestRoundTripDataFramePlotManager(TestCase):
         config.z_col_name = "Col_4"
         desc = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                               z_col_name="Col_4",
-                              plot_config=config, plot_title="Plot 6")
+                              plot_config=config, plot_title="Plot 7")
 
         # Skipping the color_ attribute since it behaves strangely and is a
         # proxy for the renderer color attribute anyway:
-        self.assert_df_plotter_roundtrip(desc, adtl_ignore={"color_"})
+        self.assert_df_plotter_roundtrip(desc, adtl_ignore=["color_"])
 
     def test_round_trip_df_plotter_heatmap_types(self):
         config7 = HeatmapPlotConfigurator(data_source=TEST_DF2)
@@ -104,18 +104,20 @@ class TestRoundTripDataFramePlotManager(TestCase):
         config7.z_col_name = "Col_3"
         desc7 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                                z_col_name="Col_3",
-                               plot_config=config7, plot_title="Plot 7")
+                               plot_config=config7, plot_title="Plot 8")
 
         self.assert_df_plotter_roundtrip(desc7)
 
     # Support methods ---------------------------------------------------------
 
-    def assert_df_plotter_roundtrip(self, desc, adtl_ignore=()):
-        adtl_ignore = list(adtl_ignore)
+    def assert_df_plotter_roundtrip(self, desc, adtl_ignore=None):
+        if adtl_ignore is None:
+            adtl_ignore = []
+
         source_df = desc.plot_config.data_source
         analyzer = DataFrameAnalyzer(source_df=source_df)
 
-        options = [[desc], [desc.plot_config], [desc.plot_config] * 3]
+        options = [desc, desc.plot_config]
         for contained_plots in options:
             plot_manager = DataFramePlotManager(
                 contained_plots=contained_plots,
