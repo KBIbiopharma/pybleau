@@ -28,7 +28,6 @@ init:
 
 install:
   - install-edm-windows.cmd
-  - dir C:\Enthought\edm\
   - edm install -y wheel click coverage
   - appveyor-run.cmd install %runtime% %toolkits%
 test_script:
