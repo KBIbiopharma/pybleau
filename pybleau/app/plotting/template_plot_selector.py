@@ -3,11 +3,11 @@ from traits.api import Bool, Str, Property, Instance
 from traitsui.api import CancelButton, EnumEditor, HGroup, Item, Spring, \
     VGroup, TextEditor, Action
 
-from pybleau.app.ui.manage_templates_accessor import ManageTemplatesAccessor, \
+from pybleau.app.ui.base_templates_list_dlg import BaseTemplateListDlg, \
     ManageTemplatesHandler
 
 
-class TemplatePlotNameSelector(ManageTemplatesAccessor):
+class TemplatePlotNameSelector(BaseTemplateListDlg):
     """ Tiny UI to name a plot template, or select from the existing ones
     """
     #: Title of the window

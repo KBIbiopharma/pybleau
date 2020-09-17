@@ -59,8 +59,8 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
     def test_delete_template_calls_interactor_delete(self, delete):
         self.assertEqual(len(self.manager.names), 2)
         with self.assertTraitChanges(self.manager, "templates_changed"):
-            self.manager.delete_templates([self.template_names[0]])
-        delete.assert_called_with([self.template_names[0]])
+            self.manager.delete_templates(self.template_names[0])
+        delete.assert_called_with(self.template_names[0])
 
     def test_rescan_template_dir_raises_event(self):
         self.assertCountEqual(self.manager.names, self.template_names)

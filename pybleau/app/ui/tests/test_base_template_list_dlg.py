@@ -2,15 +2,15 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 from pybleau.app.model.plot_template_manager import PlotTemplateManager
-from pybleau.app.ui.manage_templates_accessor import ManageTemplatesAccessor
+from pybleau.app.ui.base_templates_list_dlg import BaseTemplateListDlg
 
 
-class TestManageTemplatesAccessor(TestCase):
+class TestBaseTemplateListDlg(TestCase):
 
     def setUp(self) -> None:
         model = MagicMock(PlotTemplateManager)
         model.names = MagicMock(list)
-        self.accessor = ManageTemplatesAccessor(model=model)
+        self.accessor = BaseTemplateListDlg(model=model)
 
     def test_templates_exist_returns_correct(self):
         self.accessor.model.names = list('abc')

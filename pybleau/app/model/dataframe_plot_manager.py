@@ -814,6 +814,9 @@ class DataFramePlotManager(DataElement):
                 replace_old_template=True
             )
         else:
+            if basis is not None and basis not in options:
+                logger.warning(f'"{desc.plot_title}" is a template, but does '
+                               f'not exist in the current template set')
             template_name = desc.plot_title
             select = TemplatePlotNameSelector(
                 new_name=template_name,

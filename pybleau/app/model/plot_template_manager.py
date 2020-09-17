@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Union
 
 from traits.api import cached_property, Str, List, Instance, Directory, \
     Property, Event, HasStrictTraits
@@ -25,8 +26,8 @@ class PlotTemplateManager(HasStrictTraits):
 
     # Public interface --------------------------------------------------------
 
-    def delete_templates(self, templates_names: list):
-        removed = self.interactor.delete_templates(templates_names)
+    def delete_templates(self, template_names: Union[list, str]):
+        removed = self.interactor.delete_templates(template_names)
         if removed:
             self.templates_changed = True
 

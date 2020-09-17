@@ -19,7 +19,7 @@ from pybleau.app.model.tests.test_plot_template_manager import \
     FakePlotTemplateInteractor
 from pybleau.app.plotting.i_plot_template_interactor import \
     IPlotTemplateInteractor
-from pybleau.app.ui.manage_templates_accessor import ManageTemplatesAccessor, \
+from pybleau.app.ui.base_templates_list_dlg import BaseTemplateListDlg, \
     ManageTemplatesHandler
 
 logger = logging.getLogger(__name__)
@@ -285,7 +285,7 @@ class DataFramePlotManagerView(ModelView):
                 'z_axis_title', "data_filter", 'container_idx']
 
 
-class PlotTypeSelector(ManageTemplatesAccessor):
+class PlotTypeSelector(BaseTemplateListDlg):
     """ Tiny UI to select the type of plot to create.
     """
     #: Selected plot type

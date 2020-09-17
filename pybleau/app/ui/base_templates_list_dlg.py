@@ -13,7 +13,7 @@ class ManageTemplatesHandler(Handler):
         manager.edit_traits(kind='livemodal')
 
 
-class ManageTemplatesAccessor(BaseDlg):
+class BaseTemplateListDlg(BaseDlg):
     """ Base class for UI elements that want to include a button for managing
     plot templates
     """

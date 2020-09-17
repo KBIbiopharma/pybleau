@@ -6,8 +6,6 @@ from traitsui.api import ListStrEditor, VGroup, HGroup, Spring, Readonly, \
     Item, View
 
 from pybleau.app.model.plot_template_manager import PlotTemplateManager
-from pybleau.app.model.tests.test_plot_template_manager import \
-    FakePlotTemplateInteractor
 
 
 class PlotTemplateManagerView(HasStrictTraits):
@@ -36,7 +34,7 @@ class PlotTemplateManagerView(HasStrictTraits):
 
     def traits_view(self):
         plot_template_edit = ListStrEditor(selected="selected_plot_templates",
-                                           multi_select=True, editable=True,
+                                           multi_select=True,
                                            drag_move=False)
         delete_tooltip = "Deleting a template is irreversible."
         rescan_tooltip = "Rescanning the template directory will refresh " \
@@ -57,7 +55,8 @@ class PlotTemplateManagerView(HasStrictTraits):
                 ),
                 Spring(),
                 show_border=True
-            )
+            ),
+            title="Manage plot templates..."
         )
         return view
 
@@ -74,7 +73,6 @@ class PlotTemplateManagerView(HasStrictTraits):
             num = len(selected_templates)
             msg = f"Delete the {num} selected items?\n\n" \
                   f"Once deleted, a template is not recoverable."
-            msg = msg.format(len(selected_templates))
             confirmed = confirm(None, msg)
         if confirmed == YES:
             self.model.delete_templates(selected_templates)
@@ -85,6 +83,9 @@ class PlotTemplateManagerView(HasStrictTraits):
 
 
 if __name__ == "__main__":
+    from pybleau.app.model.tests.test_plot_template_manager import \
+        FakePlotTemplateInteractor
+
     model = PlotTemplateManager(interactor=FakePlotTemplateInteractor())
     temp = PlotTemplateManagerView(model=model)
     temp.configure_traits()
