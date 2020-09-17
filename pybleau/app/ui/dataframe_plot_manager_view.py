@@ -223,11 +223,11 @@ class DataFramePlotManagerView(ModelView):
             return
 
         plot_type = selector.plot_type
-        initial_creation = True
         if plot_type in list(self.model.custom_configs.keys()):
-            configurator = self.create_config_for_custom_type(plot_type)
             initial_creation = False
+            configurator = self.create_config_for_custom_type(plot_type)
         else:
+            initial_creation = True
             next_plot_num = len(self.model.contained_plots) + 1
             if plot_type.startswith("Multi"):
                 new_plot_default_title = "Plot {i}"

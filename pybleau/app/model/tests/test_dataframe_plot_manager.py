@@ -153,6 +153,20 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         self.model._add_new_plot(config)
         self.assert_plot_created(renderer_type=BarPlot, container_idx=0)
 
+    @patch.object(DataFramePlotManager, "_initialize_config_plot_ranges")
+    @patch.object(DataFramePlotManager, "_apply_style_ranges")
+    def test_add_pre_existing_plot(self, apply, initialize):
+        config = LinePlotConfigurator(data_source=TEST_DF,
+                                      plot_title="Plot")
+        config.x_col_name = "a"
+        config.y_col_name = "b"
+        self.model._add_new_plot(config, initial_creation=False)
+        apply.assert_called_once()
+        initialize.assert_not_called()
+        self.model._add_new_plot(config)
+        apply.assert_called_once()
+        initialize.assert_called_once()
+
     def test_add_histogram(self):
         config = self.config
         self.model._add_new_plot(config)
