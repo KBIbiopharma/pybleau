@@ -230,7 +230,7 @@ class DataFramePlotManagerView(ModelView):
 
         plot_type = selector.plot_type
 
-        if plot_type in list(self.model.custom_configs.keys()):
+        if plot_type in self.model.custom_configs:
             configurator = self.create_config_for_custom_type(plot_type)
         else:
             next_plot_num = len(self.model.contained_plots) + 1

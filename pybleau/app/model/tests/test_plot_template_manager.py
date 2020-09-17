@@ -1,6 +1,7 @@
 import os
 from os.path import dirname
 from unittest import TestCase
+from unittest.mock import patch
 
 from traits.api import Callable
 from traits.has_traits import provides, HasStrictTraits
@@ -54,14 +55,27 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
             if os.path.isfile(file):
                 os.remove(file)
 
-    def test_delete_template_calls_interactor_delete(self):
+    @patch.object(FakePlotTemplateInteractor, "delete_templates")
+    def test_delete_template_calls_interactor_delete(self, delete):
         self.assertEqual(len(self.manager.names), 2)
         with self.assertTraitChanges(self.manager, "templates_changed"):
             self.manager.delete_templates([self.template_names[0]])
+        delete.assert_called_with([self.template_names[0]])
 
     def test_rescan_template_dir_raises_event(self):
+        self.assertCountEqual(self.manager.names, self.template_names)
+        self.assertEqual(len(self.manager.names), 2)
+
+        self.template_names.append("new_template")
+        path = os.path.join(HERE, "new_template" + self.template_ext)
+        self.template_paths.append(path)
+        with open(path, "w"):
+            pass
         with self.assertTraitChanges(self.manager, "templates_changed"):
             self.manager.rescan_template_dir()
+
+        self.assertCountEqual(self.manager.names, self.template_names)
+        self.assertEqual(len(self.manager.names), 3)
 
     def test_get_names_returns_list(self):
         names = ["temp1", "temp2"]
