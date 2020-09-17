@@ -272,8 +272,7 @@ class DataFramePlotManager(DataElement):
 
                 if desc.plot_config.plot_type in self.plot_factories.keys():
                     self._add_new_plot(desc.plot_config, position=i,
-                                       list_op="replace",
-                                       initial_creation=False, **desc_attrs)
+                                       list_op="replace", **desc_attrs)
                 else:
                     self._add_raw_plot(desc, position=i, list_op="replace")
             except Exception as e:
