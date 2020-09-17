@@ -20,6 +20,7 @@ from app_common.std_lib.logging_utils import ACTION_LEVEL
 from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
 from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
     CUSTOM_PLOT_TYPE, PlotDescriptor
+from pybleau.app.model.plot_template_manager import PlotTemplateManager
 from pybleau.app.plotting.i_plot_template_interactor import \
     IPlotTemplateInteractor
 from pybleau.app.plotting.multi_plot_config import \
@@ -103,6 +104,9 @@ class DataFramePlotManager(DataElement):
 
     containers_in_use = Property(Set,
                                  depends_on="contained_plots:container_idx")
+
+    #: Plot template manager
+    template_manager = Instance(PlotTemplateManager)
 
     #: Plot template interactor
     template_interactor = Instance(IPlotTemplateInteractor)
@@ -809,14 +813,23 @@ class DataFramePlotManager(DataElement):
         options = list(self.custom_configs.keys())
         basis = desc.plot_config.source_template
         if basis is not None and basis in options:
-            select = TemplatePlotNameSelector(new_name="",
-                                              string_options=options,
-                                              selected_string=basis,
-                                              replace_old_template=True)
+            select = TemplatePlotNameSelector(
+                new_name="",
+                plot_types=options,
+                selected_string=basis,
+                model=self.template_manager,
+                replace_old_template=True
+            )
         else:
+            if basis is not None and basis not in options:
+                logger.warning(f'"{desc.plot_title}" is a template, but does '
+                               f'not exist in the current template set')
             template_name = desc.plot_title
-            select = TemplatePlotNameSelector(new_name=template_name,
-                                              string_options=options)
+            select = TemplatePlotNameSelector(
+                new_name=template_name,
+                plot_types=options,
+                model=self.template_manager,
+            )
 
         make_template = select.edit_traits(kind="livemodal")
 
@@ -837,6 +850,9 @@ class DataFramePlotManager(DataElement):
 
     def _name_default(self):
         return "Data plotter"
+
+    def _template_manager_default(self):
+        return PlotTemplateManager(interactor=self.template_interactor)
 
 
 def embed_plot_in_desc(plot):
