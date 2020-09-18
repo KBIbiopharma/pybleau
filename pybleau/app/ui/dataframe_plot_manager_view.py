@@ -5,17 +5,22 @@ import os
 
 from enable.component_editor import ComponentEditor
 from pyface.api import warning
-from traits.api import Any, Bool, Button, Enum, HasStrictTraits, Instance, \
-    Int, List, Str
+from traits.api import Any, Bool, Button, Enum, Instance, \
+    Int, List
 from traitsui.api import EnumEditor, HGroup, Item, Label, ModelView, \
-    OKCancelButtons, Spring, TableEditor, VGroup, View, VSplit, ObjectColumn
+    Spring, TableEditor, VGroup, View, VSplit, ObjectColumn
 from traitsui.extras.checkbox_column import CheckboxColumn
+from traitsui.menu import CancelButton, OKButton
 
 from pybleau.app.model.dataframe_plot_manager import CONTAINER_IDX_REMOVAL, \
     DataFramePlotManager
 from pybleau.app.model.multi_canvas_manager import CONTAINER_TRAIT_NAME
+from pybleau.app.model.tests.test_plot_template_manager import \
+    FakePlotTemplateInteractor
 from pybleau.app.plotting.i_plot_template_interactor import \
     IPlotTemplateInteractor
+from pybleau.app.ui.base_templates_list_dlg import BaseTemplateListDlg, \
+    ManageTemplatesHandler
 
 logger = logging.getLogger(__name__)
 
@@ -216,14 +221,16 @@ class DataFramePlotManagerView(ModelView):
             view_klass=self.view_klass,
             num_containers=self.model.canvas_manager.num_container_managers,
             container_idx=AUTO_TARGET_CONTAINER,
-            plot_types=self.model.plot_types
+            plot_types=self.model.plot_types,
+            model=self.model.template_manager
         )
-        ui = selector.edit_traits(kind="modal")
+        ui = selector.edit_traits(kind="livemodal")
         if not ui.result:
             return
 
         plot_type = selector.plot_type
-        if plot_type in list(self.model.custom_configs.keys()):
+
+        if plot_type in self.model.custom_configs:
             initial_creation = False
             configurator = self.create_config_for_custom_type(plot_type)
         else:
@@ -238,7 +245,7 @@ class DataFramePlotManagerView(ModelView):
             configurator = config_klass(data_source=self.model.data_source,
                                         plot_title=new_plot_default_title,
                                         view_klass=self.view_klass)
-            ui = configurator.edit_traits(kind="modal")
+            ui = configurator.edit_traits(kind="livemodal")
             if not ui.result:
                 return
 
@@ -281,14 +288,11 @@ class DataFramePlotManagerView(ModelView):
                 'z_axis_title', "data_filter", 'container_idx']
 
 
-class PlotTypeSelector(HasStrictTraits):
+class PlotTypeSelector(BaseTemplateListDlg):
     """ Tiny UI to select the type of plot to create.
     """
     #: Selected plot type
     plot_type = Enum(values="plot_types")
-
-    #: Available plot types
-    plot_types = List(Str)
 
     #: Selected container for the future plot
     container_idx = Any
@@ -299,9 +303,6 @@ class PlotTypeSelector(HasStrictTraits):
 
     #: Total number of containers available to place the future plot
     num_containers = Int(1)
-
-    #: View class to use. Modify to customize.
-    view_klass = Any(View)
 
     def traits_view(self):
         if self.container_layout_type == "horizontal":
@@ -319,8 +320,22 @@ class PlotTypeSelector(HasStrictTraits):
                      visible_when="num_containers > 1",
                      tooltip="Can be changed later in the plot list."),
             ),
-            buttons=OKCancelButtons,
+            buttons=[OKButton, CancelButton, self.man_temp_button],
             title="Select Plot Type and {}".format(idx_description),
-            resizable=True
+            resizable=True,
+            handler=ManageTemplatesHandler()
         )
         return view
+
+
+if __name__ == "__main__":
+    plot_manager = DataFramePlotManager(
+        template_interactor=FakePlotTemplateInteractor()
+    )
+    selector = PlotTypeSelector(
+        num_containers=plot_manager.canvas_manager.num_container_managers,
+        container_idx=AUTO_TARGET_CONTAINER,
+        plot_types=plot_manager.plot_types,
+        model=plot_manager.template_manager
+    )
+    ui = selector.configure_traits()

@@ -13,7 +13,7 @@ class TestTemplatePlotSelector(TestCase):
 
     def test_new_name_is_valid(self):
         options = list('abcde')
-        select = TemplatePlotNameSelector(string_options=options)
+        select = TemplatePlotNameSelector(plot_types=options)
         select.replace_old_template = False
 
         # test when new name matches current template
@@ -37,7 +37,7 @@ class TestTemplatePlotSelector(TestCase):
 
     def test_input_is_valid(self):
         options = list('abcde')
-        select = TemplatePlotNameSelector(string_options=options)
+        select = TemplatePlotNameSelector(plot_types=options)
         self.assertEqual(select.new_name, '')
         select.replace_old_template = False
         select.new_name = 'abc'
