@@ -58,8 +58,7 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
     @patch.object(FakePlotTemplateInteractor, "delete_templates")
     def test_delete_template_calls_interactor_delete(self, delete):
         self.assertEqual(len(self.manager.names), 2)
-        with self.assertTraitChanges(self.manager, "templates_changed"):
-            self.manager.delete_templates(self.template_names[0])
+        self.manager.delete_templates(self.template_names[0])
         delete.assert_called_with(self.template_names[0])
 
     def test_rescan_template_dir_raises_event(self):
@@ -71,7 +70,7 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
         self.template_paths.append(path)
         with open(path, "w"):
             pass
-        with self.assertTraitChanges(self.manager, "templates_changed"):
+        with self.assertTraitChanges(self.manager, "names"):
             self.manager.rescan_template_dir()
 
         self.assertCountEqual(self.manager.names, self.template_names)
@@ -79,4 +78,12 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
 
     def test_get_names_returns_list(self):
         names = ["temp1", "temp2"]
+        self.assertCountEqual(names, self.manager.names)
+        os.remove(self.template_paths[0])
+        self.manager.rescan_template_dir()
+        names = ["temp2"]
+        self.assertCountEqual(names, self.manager.names)
+        os.remove(self.template_paths[1])
+        self.manager.rescan_template_dir()
+        names = []
         self.assertCountEqual(names, self.manager.names)

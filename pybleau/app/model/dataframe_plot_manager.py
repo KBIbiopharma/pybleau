@@ -812,7 +812,7 @@ class DataFramePlotManager(DataElement):
         """
         options = list(self.custom_configs.keys())
         basis = desc.plot_config.source_template
-        if basis is not None and basis in options:
+        if basis != "" and basis in options:
             select = TemplatePlotNameSelector(
                 new_name="",
                 plot_types=options,
@@ -821,8 +821,8 @@ class DataFramePlotManager(DataElement):
                 replace_old_template=True
             )
         else:
-            if basis is not None and basis not in options:
-                logger.warning(f'"{desc.plot_title}" is a template, but does '
+            if basis != "" and basis not in options:
+                logger.warning(f'"{basis}" is a template, but does '
                                f'not exist in the current template set')
             template_name = desc.plot_title
             select = TemplatePlotNameSelector(
