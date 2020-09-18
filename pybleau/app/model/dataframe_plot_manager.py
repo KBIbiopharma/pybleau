@@ -810,26 +810,24 @@ class DataFramePlotManager(DataElement):
             If user cancels the process, returns None. If user selects a
             name or makes a new one, returns that name as a str.
         """
+        
         options = list(self.custom_configs.keys())
+        template_name = desc.plot_title
+        select = TemplatePlotNameSelector(
+            new_name=template_name,
+            plot_types=options,
+            model=self.template_manager,
+        )
+
         basis = desc.plot_config.source_template
-        if basis != "" and basis in options:
-            select = TemplatePlotNameSelector(
-                new_name="",
-                plot_types=options,
-                selected_string=basis,
-                model=self.template_manager,
-                replace_old_template=True
-            )
-        else:
-            if basis != "" and basis not in options:
+        if basis != "":
+            if basis not in options:
                 logger.warning(f'"{basis}" is a template, but does '
                                f'not exist in the current template set')
-            template_name = desc.plot_title
-            select = TemplatePlotNameSelector(
-                new_name=template_name,
-                plot_types=options,
-                model=self.template_manager,
-            )
+            else:
+                select.new_name = ""
+                select.selected_string = basis
+                select.replace_old_template = True
 
         make_template = select.edit_traits(kind="livemodal")
 
