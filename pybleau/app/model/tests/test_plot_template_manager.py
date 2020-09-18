@@ -87,3 +87,10 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
         self.manager.rescan_template_dir()
         names = []
         self.assertCountEqual(names, self.manager.names)
+
+    def test_get_names_returns_empty_without_interactor(self):
+        names = ["temp1", "temp2"]
+        self.assertCountEqual(names, self.manager.names)
+        self.manager.interactor = None
+        names = self.manager._get_names_from_directory()
+        self.assertCountEqual(names, [])

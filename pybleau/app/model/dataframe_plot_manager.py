@@ -810,7 +810,6 @@ class DataFramePlotManager(DataElement):
             If user cancels the process, returns None. If user selects a
             name or makes a new one, returns that name as a str.
         """
-        
         options = list(self.custom_configs.keys())
         template_name = desc.plot_title
         select = TemplatePlotNameSelector(
