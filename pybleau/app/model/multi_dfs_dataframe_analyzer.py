@@ -14,11 +14,17 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
     # Data storage attributes -------------------------------------------------
 
+    #: Resulting proxy dataframe built from the dataframe parts
     source_df = Property(Instance(pd.DataFrame), depends_on="_source_dfs[]")
 
+    #: Maps dataframe name to dataframe
     _source_dfs = Dict
 
+    #: Maps dataframe name to the list of columns it contains
     _source_df_columns = Dict
+
+    #: Maps a column name to the dataframe it is located in
+    column_loc = Dict
 
     def __init__(self, convert_source_dtypes=False, data_sorted=True,
                  **traits):
@@ -83,6 +89,56 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
                 logger.exception(msg)
                 raise NotImplementedError(msg)
 
+    # Public interface --------------------------------------------------------
+
+    def set_source_df_col(self, col, value, target_df=None):
+        """ Set a DF column to a value or add a new column to one of the DFs.
+
+        Parameters
+        ----------
+        col : any
+            Name of the column to set. Can be an existing column name or a new
+            column to create.
+
+        value : any
+            The value the column should be set to.
+
+        target_df : str
+            Name of the dataframe to add the column to.
+        """
+        if col in self.column_loc:
+            target_df = self.column_loc[col]
+        else:
+            if target_df is None:
+                msg = "Column {} not found, yet no target df was provided."
+                logger.exception(msg)
+                raise ValueError(msg)
+
+            target_df = self._source_dfs[target_df]
+
+        target_df[col] = value
+
+    def set_source_df_val(self, index, col, value):
+        """ Set a DF element to a value.
+
+        WARNING: per the `.loc` implementation in pandas, if the index doesn't
+        exist, a new row will be added to the DF!
+
+        Parameters
+        ----------
+        index : any
+            Value of the index to set.
+
+        col : any
+            Value of the column to set. Must exist.
+
+        value: object
+            The value the column should be set to.
+        """
+        self.column_loc[col].loc[index, col] = value
+
+    # Property getters/setters ------------------------------------------------
+
     def _get_source_df(self):
         """ Rebuild the source_df proxy from _source_dfs.
         """
@@ -113,3 +169,13 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
             for key in self._source_dfs:
                 self._source_dfs[key] = df[self._source_df_columns[key]]
+
+    # Traits initiatlizers ----------------------------------------------------
+
+    def _column_loc_default(self):
+        column_loc = {}
+        for name, df in self._source_dfs.items():
+            for col in df.columns:
+                column_loc[col] = df
+
+        return column_loc
