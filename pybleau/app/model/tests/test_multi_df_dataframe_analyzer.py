@@ -75,8 +75,11 @@ class TestAnalyzer(Analyzer, TestCase):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})
         with self.assertRaises(ValueError):
+            # This has to fail because a new column is supposed to be created
+            # but no target DF is specified:
             analyzer.set_source_df_col("NEW_COL", "xyz")
 
+        # Now, this is supposed to work:
         analyzer.set_source_df_col("NEW_COL", "xyz", target_df="b")
         self.assertIn("NEW_COL", analyzer.source_df.columns)
 

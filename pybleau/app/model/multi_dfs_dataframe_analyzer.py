@@ -109,6 +109,11 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         if col in self.column_loc:
             target_df = self.column_loc[col]
         else:
+            if target_df is None:
+                msg = "Column {} not found, yet no target df was provided."
+                logger.exception(msg)
+                raise ValueError(msg)
+
             target_df = self._source_dfs[target_df]
 
         target_df[col] = value
