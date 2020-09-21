@@ -39,7 +39,7 @@ class PlotTemplateManager(HasStrictTraits):
     def _get_names_from_directory(self):
         result = []
         if self.interactor is None:
-            logger.info("No interactor found; returning []")
+            logger.warning("No interactor found; returning []")
             return result
         path = self.plot_template_directory
         ext = self.interactor.get_template_ext()

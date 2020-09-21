@@ -62,6 +62,11 @@ class DataFramePlotManager(DataElement):
     each plot a PlotDescriptor is created to summarize the plot, and store it
     in contained_plots.
 
+    For consumers of this class, custom plot templates can be created and
+    accessed through an `IPlotTemplateInteractor`. A `DataFramPlotManager`
+    must be created with a `template_interactor` keyword argument for the
+    underlying template interaction functionality to be available.
+
     TODO: Add support for adding new plots (renderers) to an existing Plot.
      That will require to add a legend.
     """
