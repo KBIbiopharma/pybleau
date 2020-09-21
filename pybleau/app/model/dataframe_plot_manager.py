@@ -122,15 +122,8 @@ class DataFramePlotManager(DataElement):
     #: List of all plot types
     plot_types = Property(Instance(List), depends_on="custom_configs")
 
-    _default_configs = OrderedDict([
-        (HIST_PLOT_TYPE, HistogramPlotConfigurator),
-        (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
-        (BAR_PLOT_TYPE, BarPlotConfigurator),
-        (LINE_PLOT_TYPE, LinePlotConfigurator),
-        (MULTI_LINE_PLOT_TYPE, MultiLinePlotConfigurator),
-        (SCATTER_PLOT_TYPE, ScatterPlotConfigurator),
-        (HEATMAP_PLOT_TYPE, HeatmapPlotConfigurator)
-    ])
+    #: Default plot type configurators
+    _default_configs = Instance(OrderedDict)
 
     def __init__(self, **traits):
         if "source_analyzer" in traits:
@@ -860,6 +853,17 @@ class DataFramePlotManager(DataElement):
 
     def _template_manager_default(self):
         return PlotTemplateManager(interactor=self.template_interactor)
+
+    def __default_configs_default(self):
+        return OrderedDict([
+            (HIST_PLOT_TYPE, HistogramPlotConfigurator),
+            (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
+            (BAR_PLOT_TYPE, BarPlotConfigurator),
+            (LINE_PLOT_TYPE, LinePlotConfigurator),
+            (MULTI_LINE_PLOT_TYPE, MultiLinePlotConfigurator),
+            (SCATTER_PLOT_TYPE, ScatterPlotConfigurator),
+            (HEATMAP_PLOT_TYPE, HeatmapPlotConfigurator)
+        ])
 
 
 def embed_plot_in_desc(plot):
