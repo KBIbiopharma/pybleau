@@ -231,8 +231,10 @@ class DataFramePlotManagerView(ModelView):
         plot_type = selector.plot_type
 
         if plot_type in self.model.custom_configs:
+            initial_creation = False
             configurator = self.create_config_for_custom_type(plot_type)
         else:
+            initial_creation = True
             next_plot_num = len(self.model.contained_plots) + 1
             if plot_type.startswith("Multi"):
                 new_plot_default_title = "Plot {i}"
@@ -251,7 +253,8 @@ class DataFramePlotManagerView(ModelView):
             selector.container_idx = -1
 
         self.model.add_new_plot(plot_type, configurator,
-                                container=selector.container_idx)
+                                container=selector.container_idx,
+                                initial_creation=initial_creation)
 
     def create_config_for_custom_type(self, plot_type):
         if self.model.template_interactor is None:

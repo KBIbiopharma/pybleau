@@ -276,7 +276,8 @@ class DataFramePlotManager(DataElement):
 
                 if desc.plot_config.plot_type in self.plot_factories.keys():
                     self._add_new_plot(desc.plot_config, position=i,
-                                       list_op="replace", **desc_attrs)
+                                       list_op="replace",
+                                       initial_creation=False, **desc_attrs)
                 else:
                     self._add_raw_plot(desc, position=i, list_op="replace")
             except Exception as e:
@@ -366,6 +367,12 @@ class DataFramePlotManager(DataElement):
         container : ConstraintsPlotContainerManager or None, optional
             Container to add the plot to. If left as None, it's up to the
             canvas' to select the container based on its configuration.
+
+        initial_creation : bool
+            Set to True during initial creation of a plot. Set to False when
+            loading a plot from disk (either from a save file or from a
+            custom template file)
+
         """
         if position is None:
             position = self.next_plot_id
