@@ -1,5 +1,5 @@
 [
-  "app_common==0.12.7",
+  "app_common==0.13.0",
   "apptools",
   "chaco",
   "dash",
