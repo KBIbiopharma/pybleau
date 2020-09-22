@@ -31,28 +31,34 @@ class TestRoundTripDataFramePlotManager(TestCase):
         # Ignore the content of the canvas manager, the data source and the
         # next_plot_id because the plots cannot be rebuilt since the data
         # source isn't rebuilt:
-        self.ignore = ("source_analyzer", "data_source", "canvas_manager",
+        self.ignore = ["source_analyzer", "data_source", "canvas_manager",
                        "plot", "plot_factory", "contained_plot_map",
-                       "inspectors", "next_plot_id")
+                       "inspectors", "next_plot_id"]
 
-    def test_round_trip_df_plotter_basic_types(self):
+    def test_round_trip_df_plotter_with_hist(self):
         config = HistogramPlotConfigurator(data_source=TEST_DF)
         config.x_col_name = "Col_4"
         desc = PlotDescriptor(x_col_name="Col_4", plot_config=config,
                               plot_title="Plot 1")
+        self.assert_df_plotter_roundtrip(desc)
 
+    def test_round_trip_df_plotter_with_bar(self):
         config2 = BarPlotConfigurator(data_source=TEST_DF)
         config2.x_col_name = "Col_1"
         config2.y_col_name = "Col_2"
         desc2 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                                plot_config=config2, plot_title="Plot 2")
+        self.assert_df_plotter_roundtrip(desc2)
 
+    def test_round_trip_df_plotter_with_scatter(self):
         config3 = ScatterPlotConfigurator(data_source=TEST_DF)
         config3.x_col_name = "Col_1"
         config3.y_col_name = "Col_2"
         desc3 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                                plot_config=config3, plot_title="Plot 3")
+        self.assert_df_plotter_roundtrip(desc3)
 
+    def test_round_trip_df_plotter_with_colored_scatter(self):
         config4 = ScatterPlotConfigurator(data_source=TEST_DF)
         config4.x_col_name = "Col_1"
         config4.y_col_name = "Col_2"
@@ -60,26 +66,23 @@ class TestRoundTripDataFramePlotManager(TestCase):
         desc4 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                                z_col_name="Col_3",
                                plot_config=config4, plot_title="Plot 4")
+        self.assert_df_plotter_roundtrip(desc4)
 
+    def test_round_trip_df_plotter_with_line_plot(self):
         config5 = LinePlotConfigurator(data_source=TEST_DF)
         config5.x_col_name = "Col_1"
         config5.y_col_name = "Col_2"
         desc5 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                                plot_config=config5, plot_title="Plot 5")
+        self.assert_df_plotter_roundtrip(desc5)
 
+    def test_round_trip_df_plotter_bar(self):
         config6 = BarPlotConfigurator(data_source=TEST_DF)
         config6.x_col_name = "Col_3"
         config6.y_col_name = "Col_1"
         desc6 = PlotDescriptor(x_col_name="Col_3", y_col_name="Col_1",
                                plot_config=config6, plot_title="Plot 6")
-
-        analyzer = DataFrameAnalyzer(source_df=TEST_DF)
-
-        plot_manager = DataFramePlotManager(
-            contained_plots=[desc, desc2, desc3, desc4, desc5, desc6],
-            data_source=TEST_DF, source_analyzer=analyzer
-        )
-        self.assert_roundtrip_identical(plot_manager, ignore=self.ignore)
+        self.assert_df_plotter_roundtrip(desc6)
 
     def test_round_trip_df_plotter_cmap_scatter_type(self):
         config = ScatterPlotConfigurator(data_source=TEST_DF)
@@ -88,16 +91,11 @@ class TestRoundTripDataFramePlotManager(TestCase):
         config.z_col_name = "Col_4"
         desc = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                               z_col_name="Col_4",
-                              plot_config=config, plot_title="Plot 6")
+                              plot_config=config, plot_title="Plot 7")
 
-        analyzer = DataFrameAnalyzer(source_df=TEST_DF)
-
-        plot_manager = DataFramePlotManager(
-            contained_plots=[desc],
-            data_source=TEST_DF, source_analyzer=analyzer
-        )
-
-        self.assert_roundtrip_identical(plot_manager, ignore=self.ignore)
+        # Skipping the color_ attribute since it behaves strangely and is a
+        # proxy for the renderer color attribute anyway:
+        self.assert_df_plotter_roundtrip(desc, adtl_ignore=["color_"])
 
     def test_round_trip_df_plotter_heatmap_types(self):
         config7 = HeatmapPlotConfigurator(data_source=TEST_DF2)
@@ -106,18 +104,27 @@ class TestRoundTripDataFramePlotManager(TestCase):
         config7.z_col_name = "Col_3"
         desc7 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
                                z_col_name="Col_3",
-                               plot_config=config7, plot_title="Plot 6")
+                               plot_config=config7, plot_title="Plot 8")
 
-        analyzer2 = DataFrameAnalyzer(source_df=TEST_DF2)
-
-        plot_manager2 = DataFramePlotManager(
-            contained_plots=[desc7],
-            data_source=TEST_DF2, source_analyzer=analyzer2
-        )
-
-        self.assert_roundtrip_identical(plot_manager2, ignore=self.ignore)
+        self.assert_df_plotter_roundtrip(desc7)
 
     # Support methods ---------------------------------------------------------
+
+    def assert_df_plotter_roundtrip(self, desc, adtl_ignore=None):
+        if adtl_ignore is None:
+            adtl_ignore = []
+
+        source_df = desc.plot_config.data_source
+        analyzer = DataFrameAnalyzer(source_df=source_df)
+
+        options = [[desc, desc.plot_config]]
+        for contained_plots in options:
+            plot_manager = DataFramePlotManager(
+                contained_plots=contained_plots,
+                data_source=source_df, source_analyzer=analyzer
+            )
+            self.assert_roundtrip_identical(plot_manager,
+                                            ignore=self.ignore+adtl_ignore)
 
     def assert_roundtrip_identical(self, obj, **kwargs):
         assert_roundtrip_identical(obj, serial_func=serialize,

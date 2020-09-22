@@ -1,5 +1,10 @@
 # pybleau
 
+| Linux, OSX  | [![Build Status](https://travis-ci.org/KBIbiopharma/pybleau.svg?branch=master)](https://travis-ci.org/KBIbiopharma/pybleau)|
+| ----------- | ----------- |
+| Windows     | [![Build status](https://ci.appveyor.com/api/projects/status/obwb8u205yn75pey/branch/master?svg=true)](https://ci.appveyor.com/project/jonathanrocher/pybleau/branch/master)|
+
+
 ## Project stage
 Though used in production by multiple projects, this project is still under
 active development, in pre-1.0 stage, and may therefore occasionally break
@@ -32,9 +37,9 @@ The project provides 2 entry-points for high-level tools it contains:
 ### Requirements
 
 For all components:
-  - Python 2.7 and 3.6+
-  - pandas (> 0.20 recommended)
-  - app_common 0.12+
+  - Python 3.6+
+  - pandas (> 0.24 recommended)
+  - app_common 0.12.7+
 
 For ETS app tools:
   - traitsUI 6.0+ (>7.0.1 recommended), traits, pyface
@@ -56,14 +61,13 @@ For development:
   - flake8
   
  
-For complete list of dependencies, please refer to `ci/requirements.json`.
+For complete list of dependencies, please refer to `ci/requirements.json` for 
+the content of the environment used to test pybleau in CI.
 
 ### Installation steps
 
-`pybleau` is tested under python version `3.6` but should work on `2.7`, `3.7` 
-and `3.8` too. To build the development environment, refer to the 
-"Requirements" section above. 
-Afterwards, end users should install `pybleau` itself using: 
+To install pybleau within an existing Python environment, end-users should 
+install `pybleau` itself using: 
 ```bash
 python setup.py install
 ```

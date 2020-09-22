@@ -6,18 +6,21 @@ from typing import Optional
 from uuid import UUID
 
 import pandas as pd
-from app_common.chaco.constraints_plot_container_manager import \
-    ConstraintsPlotContainerManager
-from app_common.model_tools.data_element import DataElement
-from app_common.std_lib.sys_utils import extract_traceback
 from chaco.api import BasePlotContainer, HPlotContainer, \
     OverlayPlotContainer, Plot
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
 
+from app_common.chaco.constraints_plot_container_manager import \
+    ConstraintsPlotContainerManager
+from app_common.model_tools.data_element import DataElement
+from app_common.std_lib.sys_utils import extract_traceback
+from app_common.std_lib.logging_utils import ACTION_LEVEL
+
 from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
 from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
     CUSTOM_PLOT_TYPE, PlotDescriptor
+from pybleau.app.model.plot_template_manager import PlotTemplateManager
 from pybleau.app.plotting.i_plot_template_interactor import \
     IPlotTemplateInteractor
 from pybleau.app.plotting.multi_plot_config import \
@@ -58,6 +61,11 @@ class DataFramePlotManager(DataElement):
     specified by the user, refer to the MultiCanvasManager. In addition, for
     each plot a PlotDescriptor is created to summarize the plot, and store it
     in contained_plots.
+
+    To enable plot template creation and usage, a template_interactor
+    attribute must be passed at creation. The template_interactormust provide
+    the IPlotTemplateInteractor interface, implementing how to save, load and
+    delete Configurator objects/files.
 
     TODO: Add support for adding new plots (renderers) to an existing Plot.
      That will require to add a legend.
@@ -102,6 +110,9 @@ class DataFramePlotManager(DataElement):
     containers_in_use = Property(Set,
                                  depends_on="contained_plots:container_idx")
 
+    #: Plot template manager
+    template_manager = Instance(PlotTemplateManager)
+
     #: Plot template interactor
     template_interactor = Instance(IPlotTemplateInteractor)
 
@@ -116,15 +127,8 @@ class DataFramePlotManager(DataElement):
     #: List of all plot types
     plot_types = Property(Instance(List), depends_on="custom_configs")
 
-    _default_configs = OrderedDict([
-        (HIST_PLOT_TYPE, HistogramPlotConfigurator),
-        (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
-        (BAR_PLOT_TYPE, BarPlotConfigurator),
-        (LINE_PLOT_TYPE, LinePlotConfigurator),
-        (MULTI_LINE_PLOT_TYPE, MultiLinePlotConfigurator),
-        (SCATTER_PLOT_TYPE, ScatterPlotConfigurator),
-        (HEATMAP_PLOT_TYPE, HeatmapPlotConfigurator)
-    ])
+    #: Default plot type configurators
+    _default_configs = Instance(OrderedDict)
 
     def __init__(self, **traits):
         if "source_analyzer" in traits:
@@ -270,7 +274,8 @@ class DataFramePlotManager(DataElement):
 
                 if desc.plot_config.plot_type in self.plot_factories.keys():
                     self._add_new_plot(desc.plot_config, position=i,
-                                       list_op="replace", **desc_attrs)
+                                       list_op="replace",
+                                       initial_creation=False, **desc_attrs)
                 else:
                     self._add_raw_plot(desc, position=i, list_op="replace")
             except Exception as e:
@@ -309,6 +314,8 @@ class DataFramePlotManager(DataElement):
             Container to add the plot to. If left as None, it's up to the
             canvas' to select the container based on its configuration.
         """
+        logger.log(ACTION_LEVEL, "Embedding raw plot...")
+
         if position is None:
             position = self.next_plot_id
 
@@ -358,9 +365,18 @@ class DataFramePlotManager(DataElement):
         container : ConstraintsPlotContainerManager or None, optional
             Container to add the plot to. If left as None, it's up to the
             canvas' to select the container based on its configuration.
+
+        initial_creation : bool
+            Set to True during initial creation of a plot. Set to False when
+            loading a plot from disk (either from a save file or from a
+            custom template file)
+
         """
         if position is None:
             position = self.next_plot_id
+
+        msg = f"Generating {config.plot_type} plot..."
+        logger.log(ACTION_LEVEL, msg)
 
         factory = self._factory_from_config(config)
         desc = factory.generate_plot()
@@ -800,16 +816,23 @@ class DataFramePlotManager(DataElement):
             name or makes a new one, returns that name as a str.
         """
         options = list(self.custom_configs.keys())
+        template_name = desc.plot_title
+        select = TemplatePlotNameSelector(
+            new_name=template_name,
+            plot_types=options,
+            model=self.template_manager,
+        )
+
         basis = desc.plot_config.source_template
-        if basis is not None and basis in options:
-            select = TemplatePlotNameSelector(new_name="",
-                                              string_options=options,
-                                              selected_string=basis,
-                                              replace_old_template=True)
-        else:
-            template_name = desc.plot_title
-            select = TemplatePlotNameSelector(new_name=template_name,
-                                              string_options=options)
+        if basis != "":
+            if basis not in options:
+                logger.warning(f'"{basis}" is a template, but does '
+                               f'not exist in the current template set')
+                select.new_name = basis
+            else:
+                select.new_name = ""
+                select.selected_string = basis
+                select.replace_old_template = True
 
         make_template = select.edit_traits(kind="livemodal")
 
@@ -830,6 +853,20 @@ class DataFramePlotManager(DataElement):
 
     def _name_default(self):
         return "Data plotter"
+
+    def _template_manager_default(self):
+        return PlotTemplateManager(interactor=self.template_interactor)
+
+    def __default_configs_default(self):
+        return OrderedDict([
+            (HIST_PLOT_TYPE, HistogramPlotConfigurator),
+            (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
+            (BAR_PLOT_TYPE, BarPlotConfigurator),
+            (LINE_PLOT_TYPE, LinePlotConfigurator),
+            (MULTI_LINE_PLOT_TYPE, MultiLinePlotConfigurator),
+            (SCATTER_PLOT_TYPE, ScatterPlotConfigurator),
+            (HEATMAP_PLOT_TYPE, HeatmapPlotConfigurator)
+        ])
 
 
 def embed_plot_in_desc(plot):

@@ -147,12 +147,13 @@ def cli():
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
 @click.option('--environment', default=None)
+@click.option('--edm-dir', default="")
 @click.option(
     "--editable/--not-editable",
     default=False,
     help="Install main package in 'editable' mode?  [default: --not-editable]",
 )
-def install(runtime, toolkit, environment, editable):
+def install(runtime, toolkit, environment, edm_dir, editable):
     """ Install project and dependencies into a clean EDM environment.
 
     """
@@ -163,42 +164,38 @@ def install(runtime, toolkit, environment, editable):
         | runtime_dependencies.get(runtime, set())
         | test_dependencies
     )
-
-    # install_pkg = "edm run -e {environment} -- pip install "
-    # if editable:
-    #     install_pkg += "--editable "
-    # install_pkg += "."
-    install_pkg = "edm run -e {environment} -- python setup.py install"
+    parameters["edm_dir"] = edm_dir
 
     # edm commands to setup the development environment
     commands = [
-        "edm environments create {environment} --force --version={runtime}",
-        "edm install -y -e {environment} " + packages,
-        "edm run -e {environment} -- python setup.py clean --all",
-        install_pkg,
+        "{edm_dir}edm environments create {environment} --force "
+        "--version={runtime}",
+        "{edm_dir}edm install -y -e {environment} " + packages,
+        "{edm_dir}edm run -e {environment} -- python setup.py clean --all",
+        "{edm_dir}edm run -e {environment} -- python setup.py install",
     ]
 
     # pip install pyqt5 and pyside2, because we don't have them in EDM yet
     if toolkit == 'pyside2':
         commands.append(
-            "edm run -e {environment} -- pip install pyside2==5.11"
+            "{edm_dir}edm run -e {environment} -- pip install pyside2==5.11"
         )
     elif toolkit == 'wx':
         if sys.platform != 'linux':
             commands.append(
-                "edm run -e {environment} -- pip install wxPython"
+                "{edm_dir}edm run -e {environment} -- pip install wxPython"
             )
         else:
             # XXX this is mainly for TravisCI workers; need a generic solution
             commands.append(
-                "edm run -e {environment} -- pip install -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython"
+                "{edm_dir}edm run -e {environment} -- pip install -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython"
             )
 
     click.echo("Creating environment '{environment}'".format(**parameters))
     execute(commands, parameters)
 
     if source_dependencies:
-        cmd_fmt = "edm plumbing remove-package --environment {environment} " \
+        cmd_fmt = "{edm_dir}edm plumbing remove-package --environment {environment} " \
                   "--force "
         commands = [cmd_fmt+dependency
                     for dependency in source_dependencies.keys()]
@@ -208,7 +205,7 @@ def install(runtime, toolkit, environment, editable):
             "python -m pip install {pkg} --no-deps".format(pkg=pkg)
             for pkg in source_pkgs
         ]
-        commands = ["edm run -e {environment} -- " + command
+        commands = ["{edm_dir}edm run -e {environment} -- " + command
                     for command in commands]
         execute(commands, parameters)
 
@@ -218,12 +215,15 @@ def install(runtime, toolkit, environment, editable):
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-def test(runtime, toolkit, environment):
+def test(runtime, toolkit, edm_dir, environment):
     """ Run the test suite in a given environment with the specified toolkit.
 
     """
     parameters = get_parameters(runtime, toolkit, environment)
+    parameters["edm_dir"] = edm_dir
+
     environ = environment_vars.get(toolkit, {}).copy()
     environ['PYTHONUNBUFFERED'] = "1"
 
@@ -234,10 +234,9 @@ def test(runtime, toolkit, environment):
     else:
         environ["EXCLUDE_TESTS"] = "(wx|qt)"
 
-    parameters["integrationtests"] = os.path.abspath("integrationtests")
     commands = [
-        "edm run -e {environment} -- coverage run -p -m unittest discover -v "
-        + PKG_NAME,
+        "{edm_dir}edm run -e {environment} -- coverage run -p -m unittest "
+        "discover -v " + PKG_NAME,
     ]
 
     # We run in a tempdir to avoid accidentally picking up wrong package
@@ -249,6 +248,25 @@ def test(runtime, toolkit, environment):
         os.environ.update(environ)
         execute(commands, parameters)
     click.echo('Done test')
+
+
+@cli.command()
+@click.option('--runtime', default=DEFAULT_RUNTIME)
+@click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--edm-dir', default="")
+@click.option('--environment', default=None)
+def flake8(runtime, toolkit, edm_dir, environment):
+    """ Run flake8 on the source code.
+    """
+    parameters = get_parameters(runtime, toolkit, environment)
+    parameters["edm_dir"] = edm_dir
+
+    commands = [
+        "{edm_dir}edm run -e {environment} flake8 setup.py " + PKG_NAME,
+    ]
+
+    execute(commands, parameters)
+    click.echo('Done flake8')
 
 
 @cli.command()
@@ -400,7 +418,12 @@ def do_in_tempdir(files=(), capture_files=()):
         rmtree(path)
 
 
-def execute(commands, parameters):
+def execute(commands, parameters=None):
+    """ Execute command line commands.
+    """
+    if parameters is None:
+        parameters = {}
+
     for command in commands:
         click.echo("[EXECUTING] {}".format(command.format(**parameters)))
         try:
