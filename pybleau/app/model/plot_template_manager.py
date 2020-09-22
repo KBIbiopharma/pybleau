@@ -60,4 +60,3 @@ class PlotTemplateManager(HasStrictTraits):
             if filename.endswith(ext):
                 result.append(Path(filename).stem)
         return result
-
