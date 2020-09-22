@@ -33,6 +33,7 @@ class PlotTemplateManagerView(HasStrictTraits):
     interactive = Bool(True)
 
     def traits_view(self):
+        self.model.rescan_template_dir()
         plot_template_edit = ListStrEditor(selected="selected_plot_templates",
                                            multi_select=True,
                                            drag_move=False)

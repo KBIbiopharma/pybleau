@@ -62,6 +62,11 @@ class DataFramePlotManager(DataElement):
     each plot a PlotDescriptor is created to summarize the plot, and store it
     in contained_plots.
 
+    To enable plot template creation and usage, a template_interactor
+    attribute must be passed at creation. The template_interactormust provide
+    the IPlotTemplateInteractor interface, implementing how to save, load and
+    delete Configurator objects/files.
+
     TODO: Add support for adding new plots (renderers) to an existing Plot.
      That will require to add a legend.
     """
@@ -811,25 +816,23 @@ class DataFramePlotManager(DataElement):
             name or makes a new one, returns that name as a str.
         """
         options = list(self.custom_configs.keys())
+        template_name = desc.plot_title
+        select = TemplatePlotNameSelector(
+            new_name=template_name,
+            plot_types=options,
+            model=self.template_manager,
+        )
+
         basis = desc.plot_config.source_template
-        if basis is not None and basis in options:
-            select = TemplatePlotNameSelector(
-                new_name="",
-                plot_types=options,
-                selected_string=basis,
-                model=self.template_manager,
-                replace_old_template=True
-            )
-        else:
-            if basis is not None and basis not in options:
-                logger.warning(f'"{desc.plot_title}" is a template, but does '
+        if basis != "":
+            if basis not in options:
+                logger.warning(f'"{basis}" is a template, but does '
                                f'not exist in the current template set')
-            template_name = desc.plot_title
-            select = TemplatePlotNameSelector(
-                new_name=template_name,
-                plot_types=options,
-                model=self.template_manager,
-            )
+                select.new_name = basis
+            else:
+                select.new_name = ""
+                select.selected_string = basis
+                select.replace_old_template = True
 
         make_template = select.edit_traits(kind="livemodal")
 
