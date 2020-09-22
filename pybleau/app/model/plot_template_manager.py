@@ -36,7 +36,20 @@ class PlotTemplateManager(HasStrictTraits):
 
     # Traits property getters/setters -----------------------------------------
 
-    def _get_names_from_directory(self):
+    def _get_plot_template_directory(self):
+        return self.interactor.get_template_dir()
+
+    # Traits initialization methods -------------------------------------------
+
+    def _names_default(self):
+        return self._template_names_from_dir()
+
+    # Private Interface -------------------------------------------------------
+
+    def _update_names(self):
+        self.names = self._template_names_from_dir()
+
+    def _template_names_from_dir(self):
         result = []
         if self.interactor is None:
             logger.warning("No interactor found; returning []")
@@ -48,16 +61,3 @@ class PlotTemplateManager(HasStrictTraits):
                 result.append(Path(filename).stem)
         return result
 
-    def _get_plot_template_directory(self):
-        return self.interactor.get_template_dir()
-
-    # Traits initialization methods -------------------------------------------
-
-    def _names_default(self):
-        return self._get_names_from_directory()
-
-    # Private Interface -------------------------------------------------------
-
-    def _update_names(self):
-        result = self._get_names_from_directory()
-        self.names = result
