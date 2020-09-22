@@ -15,6 +15,7 @@ from traitsui.ui_editors.data_frame_editor import DataFrameEditor
 from app_common.traitsui.common_traitsui_groups import make_window_title_group
 from app_common.pyface.ui.extra_file_dialogs import request_csv_file
 from app_common.std_lib.filepath_utils import open_file
+from app_common.std_lib.logging_utils import ACTION_LEVEL
 
 from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
 try:
@@ -512,12 +513,18 @@ class DataFrameAnalyzerView(ModelView):
         self.model.shuffle_filtered_df()
 
     def _apply_filter_button_fired(self):
+        flt = self.model.filer_exp
+        msg = f"Applying filter {flt}."
+        logger.log(ACTION_LEVEL, msg)
+
         self.model.recompute_filtered_df()
 
     def _manage_filter_button_fired(self):
-        """ TODO: review if replaceing the copy by a deepcopy or removing the
+        """ TODO: review if replacing the copy by a deepcopy or removing the
              copy altogether would help traits trigger listeners correctly
         """
+        msg = "Opening filter manager."
+        logger.log(ACTION_LEVEL, msg)
 
         # Make a copy of the list of filters so the model can listen to changes
         # even if only a field of an existing filter is modified:
