@@ -89,5 +89,5 @@ class TestPlotTemplateManager(TestCase, UnittestTools):
         names = ["temp1", "temp2"]
         self.assertCountEqual(names, self.manager.names)
         self.manager.interactor = None
-        names = self.manager._get_names_from_directory()
+        names = self.manager._template_names_from_dir()
         self.assertCountEqual(names, [])

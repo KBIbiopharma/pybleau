@@ -470,8 +470,11 @@ class StdXYPlotFactory(BasePlotFactory):
         This method is used to keep renderers aligned with the displayed axes
         once their ranges have been set.
         """
-        styles = self.plot_style.renderer_styles
         all_renderers = self.renderers.values()
+        if len(all_renderers) <= 1:
+            return
+
+        styles = self.plot_style.renderer_styles
         align_renderers(all_renderers, plot.x_axis, dim="index")
         if hasattr(plot, "second_y_axis"):
             l_renderers = [rend for rend, style in zip(all_renderers, styles)
