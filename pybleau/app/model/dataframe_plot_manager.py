@@ -128,7 +128,7 @@ class DataFramePlotManager(DataElement):
     plot_types = Property(Instance(List), depends_on="custom_configs")
 
     #: Default plot type configurators
-    _default_configs = Instance(OrderedDict)
+    default_configs = Instance(OrderedDict)
 
     def __init__(self, **traits):
         if "source_analyzer" in traits:
@@ -512,7 +512,7 @@ class DataFramePlotManager(DataElement):
         return result
 
     def _get_plot_configs(self):
-        return OrderedDict(**self._default_configs, **self.custom_configs)
+        return OrderedDict(**self.default_configs, **self.custom_configs)
 
     def _get_plot_types(self):
         return list(self.plot_configs.keys())
@@ -857,7 +857,7 @@ class DataFramePlotManager(DataElement):
     def _template_manager_default(self):
         return PlotTemplateManager(interactor=self.template_interactor)
 
-    def __default_configs_default(self):
+    def _default_configs_default(self):
         return OrderedDict([
             (HIST_PLOT_TYPE, HistogramPlotConfigurator),
             (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
