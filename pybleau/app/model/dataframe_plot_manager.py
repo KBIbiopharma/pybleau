@@ -6,16 +6,15 @@ from typing import Optional
 from uuid import UUID
 
 import pandas as pd
+from app_common.chaco.constraints_plot_container_manager import \
+    ConstraintsPlotContainerManager
+from app_common.model_tools.data_element import DataElement
+from app_common.std_lib.logging_utils import ACTION_LEVEL
+from app_common.std_lib.sys_utils import extract_traceback
 from chaco.api import BasePlotContainer, HPlotContainer, \
     OverlayPlotContainer, Plot
 from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
     Property, Set, Str
-
-from app_common.chaco.constraints_plot_container_manager import \
-    ConstraintsPlotContainerManager
-from app_common.model_tools.data_element import DataElement
-from app_common.std_lib.sys_utils import extract_traceback
-from app_common.std_lib.logging_utils import ACTION_LEVEL
 
 from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
 from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
@@ -128,7 +127,7 @@ class DataFramePlotManager(DataElement):
     plot_types = Property(Instance(List), depends_on="custom_configs")
 
     #: Default plot type configurators
-    default_configs = Instance(OrderedDict)
+    default_configs = Dict
 
     def __init__(self, **traits):
         if "source_analyzer" in traits:
@@ -858,7 +857,7 @@ class DataFramePlotManager(DataElement):
         return PlotTemplateManager(interactor=self.template_interactor)
 
     def _default_configs_default(self):
-        return OrderedDict([
+        return dict([
             (HIST_PLOT_TYPE, HistogramPlotConfigurator),
             (MULTI_HIST_PLOT_TYPE, MultiHistogramPlotConfigurator),
             (BAR_PLOT_TYPE, BarPlotConfigurator),
