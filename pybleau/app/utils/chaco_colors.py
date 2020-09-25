@@ -35,6 +35,20 @@ DARK_GRAY = color_table["darkgray"]
 
 LIGHT_GRAY = color_table["lightgray"]
 
+TAN = color_table["tan"]
+
+LIGHT_BLUE = color_table["lightblue"]
+
+LIGHT_GREEN = color_table["lightgreen"]
+
+LIGHT_YELLOW = color_table["lightyellow"]
+
+DARK_RED = color_table["darkred"]
+
+VIOLET = color_table["violet"]
+
+WHITE = color_table["white"]
+
 # Color palettes supported in Matplotlib:
 # Remove jet since seaborn doesn't support it:
 ALL_MPL_PALETTES = sorted(mpl_cm.cmap_d.keys())
@@ -46,7 +60,8 @@ ALL_CHACO_PALETTES = sorted(color_map_name_dict.keys())
 ALL_CHACO_COLORS = sorted(color_table.keys())
 
 BASIC_COLORS = [BLUE, RED, BLACK, GREEN, PURPLE, ORANGE, YELLOW, MAGENTA, AQUA,
-                PINK, BROWN, LIGHT_GRAY, DARK_GRAY]
+                PINK, BROWN, LIGHT_GRAY, DARK_GRAY, TAN, LIGHT_BLUE,
+                LIGHT_GREEN, LIGHT_YELLOW, DARK_RED, WHITE]
 
 
 def generate_chaco_colors(n_colors, palette="hsv"):
