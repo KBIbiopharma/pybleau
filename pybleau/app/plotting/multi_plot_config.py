@@ -12,16 +12,16 @@ from traits.api import Bool, Constant, Enum, List, Str
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, Item, Spring, \
     VGroup
 
-from pybleau.app.plotting.plot_config import BaseSingleXYPlotConfigurator, \
-    col_name_to_title
-from pybleau.app.utils.chaco_colors import generate_chaco_colors
-from pybleau.app.utils.string_definitions import MULTI_HIST_PLOT_TYPE, \
-    MULTI_LINE_PLOT_TYPE
 from pybleau.app.plotting.plot_config import BasePlotConfigurator, \
     HistogramPlotConfigurator, HistogramPlotStyle, LinePlotConfigurator, \
     SingleLinePlotStyle, X_COL_NAME_LABEL
+from pybleau.app.plotting.plot_config import BaseSingleXYPlotConfigurator, \
+    col_name_to_title
 from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
     LineRendererStyle
+from pybleau.app.utils.chaco_colors import generate_chaco_colors
+from pybleau.app.utils.string_definitions import MULTI_HIST_PLOT_TYPE, \
+    MULTI_LINE_PLOT_TYPE
 
 logger = logging.getLogger(__name__)
 
