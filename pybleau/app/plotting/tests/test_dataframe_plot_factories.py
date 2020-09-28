@@ -380,7 +380,8 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         self.assert_renderers_have_distinct_colors(plot)
 
     def test_multi_line_2_curve_plot(self):
-        renderer_styles = [LineRendererStyle(), LineRendererStyle()]
+        renderer_styles = [LineRendererStyle(color="blue"),
+                           LineRendererStyle(color="red")]
         self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
             renderer_styles=renderer_styles,
             colorize_by_float=False
@@ -396,8 +397,9 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         self.assert_renderers_have_distinct_colors(plot)
 
     def test_multi_line_3_curve_plot(self):
-        renderer_styles = [LineRendererStyle(), LineRendererStyle(),
-                           LineRendererStyle()]
+        renderer_styles = [LineRendererStyle(color="blue"),
+                           LineRendererStyle(color="red"),
+                           LineRendererStyle(color="green")]
         self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
             renderer_styles=renderer_styles,
             colorize_by_float=False
