@@ -4,18 +4,19 @@
 import logging
 
 from traits.api import Any, Bool, Callable, DelegatesTo, Dict, Enum, Float, \
-    HasStrictTraits, HasTraits, Instance, List, on_trait_change, Property
+    HasStrictTraits, HasTraits, Instance, List, Property, \
+    observe
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
 
-from ..utils.chaco_colors import ALL_MPL_PALETTES
-from .axis_style import AxisStyle
-from .title_style import TitleStyle
-from .renderer_style import BaseRendererStyle, LineRendererStyle, \
-    ScatterRendererStyle, STYLE_R_ORIENT
-from ..utils.chaco_colors import generate_chaco_colors
-from ..utils.string_definitions import DEFAULT_DIVERG_PALETTE
-from .plot_container_style import PlotContainerStyle
+from pybleau.app.plotting.axis_style import AxisStyle
+from pybleau.app.plotting.plot_container_style import PlotContainerStyle
+from pybleau.app.plotting.renderer_style import BaseRendererStyle, \
+    LineRendererStyle, ScatterRendererStyle, STYLE_R_ORIENT
+from pybleau.app.plotting.title_style import TitleStyle
+from pybleau.app.utils.chaco_colors import ALL_MPL_PALETTES, \
+    generate_chaco_colors
+from pybleau.app.utils.string_definitions import DEFAULT_DIVERG_PALETTE
 
 SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
 
@@ -114,16 +115,13 @@ class BaseXYPlotStyle(HasStrictTraits):
     range_transform = Callable
 
     def __init__(self, **traits):
+        super(BaseXYPlotStyle, self).__init__(**traits)
+        self.renderer_style_manager.view_klass = self.view_klass
+
         # Support passing the renderer_styles directly since the
         # renderer_style_manager is there just for UI layout:
-        renderer_styles = None
         if "renderer_styles" in traits:
             renderer_styles = traits.pop("renderer_styles")
-
-        super(BaseXYPlotStyle, self).__init__(**traits)
-
-        self.renderer_style_manager.view_klass = self.view_klass
-        if renderer_styles:
             self.renderer_style_manager.renderer_styles = renderer_styles
 
     def initialize_axis_ranges(self, plot, x_mapper=None, y_mapper=None,
@@ -390,8 +388,8 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
 
     # Traits listener methods -------------------------------------------------
 
-    @on_trait_change("color_palette, renderer_styles[]")
-    def update_renderer_colors(self):
+    @observe("color_palette", post_init=True)
+    def update_renderer_colors(self, event):
         """ Based on number of renderers & palette, initialize renderer colors.
 
         For color-mapped renderers, pass the palette straight.

@@ -12,13 +12,15 @@ from traits.api import Bool, Constant, Enum, List, Str
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, Item, Spring, \
     VGroup
 
+from pybleau.app.plotting.plot_config import BaseSingleXYPlotConfigurator, \
+    col_name_to_title
+from pybleau.app.utils.chaco_colors import generate_chaco_colors
+from pybleau.app.utils.string_definitions import MULTI_HIST_PLOT_TYPE, \
+    MULTI_LINE_PLOT_TYPE
 from .plot_config import BasePlotConfigurator, HistogramPlotConfigurator, \
     HistogramPlotStyle, LinePlotConfigurator, SingleLinePlotStyle, \
     X_COL_NAME_LABEL
 from .plot_style import BaseColorXYPlotStyle, LineRendererStyle
-from ..utils.string_definitions import MULTI_HIST_PLOT_TYPE, \
-    MULTI_LINE_PLOT_TYPE
-from .plot_config import BaseSingleXYPlotConfigurator, col_name_to_title
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +116,11 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
                 config_list.append(single_plot_config)
         else:
             renderer_styles = [LineRendererStyle() for _ in self.y_col_names]
+            num_renderer = len(renderer_styles)
+            if num_renderer > 1:
+                colors = generate_chaco_colors(num_renderer)
+                for curr, renderer in enumerate(renderer_styles):
+                    renderer.color = colors[curr]
             self.plot_style = BaseColorXYPlotStyle(
                 renderer_styles=renderer_styles,
                 colorize_by_float=False
