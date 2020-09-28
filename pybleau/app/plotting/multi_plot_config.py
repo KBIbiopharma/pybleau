@@ -17,10 +17,11 @@ from pybleau.app.plotting.plot_config import BaseSingleXYPlotConfigurator, \
 from pybleau.app.utils.chaco_colors import generate_chaco_colors
 from pybleau.app.utils.string_definitions import MULTI_HIST_PLOT_TYPE, \
     MULTI_LINE_PLOT_TYPE
-from .plot_config import BasePlotConfigurator, HistogramPlotConfigurator, \
-    HistogramPlotStyle, LinePlotConfigurator, SingleLinePlotStyle, \
-    X_COL_NAME_LABEL
-from .plot_style import BaseColorXYPlotStyle, LineRendererStyle
+from pybleau.app.plotting.plot_config import BasePlotConfigurator, \
+    HistogramPlotConfigurator, HistogramPlotStyle, LinePlotConfigurator, \
+    SingleLinePlotStyle, X_COL_NAME_LABEL
+from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
+    LineRendererStyle
 
 logger = logging.getLogger(__name__)
 
