@@ -391,7 +391,7 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
 
     # Traits listener methods -------------------------------------------------
 
-    @observe("color_palette", post_init=True)
+    @observe("color_palette")
     def update_renderer_colors(self, event):
         """ Based on number of renderers & palette, initialize renderer colors.
 
