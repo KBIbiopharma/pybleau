@@ -51,7 +51,7 @@ class RendererStyleManager(HasTraits):
 
         Parameters
         ----------
-        trait_name : str
+        style_idx : str
             Name of the renderer style trait to be displayed.
 
         renderer_name : str
@@ -111,17 +111,20 @@ class BaseXYPlotStyle(HasStrictTraits):
     #: Keywords passed to create the view
     view_kw = Dict
 
-    #: Range value transformation function for eg. to avoid non-sensical digits
+    #: Range value transformation function for eg. to avoid nonsensical digits
     range_transform = Callable
 
     def __init__(self, **traits):
-        super(BaseXYPlotStyle, self).__init__(**traits)
-        self.renderer_style_manager.view_klass = self.view_klass
-
         # Support passing the renderer_styles directly since the
         # renderer_style_manager is there just for UI layout:
+        renderer_styles = None
         if "renderer_styles" in traits:
             renderer_styles = traits.pop("renderer_styles")
+
+        super(BaseXYPlotStyle, self).__init__(**traits)
+
+        self.renderer_style_manager.view_klass = self.view_klass
+        if renderer_styles:
             self.renderer_style_manager.renderer_styles = renderer_styles
 
     def initialize_axis_ranges(self, plot, x_mapper=None, y_mapper=None,

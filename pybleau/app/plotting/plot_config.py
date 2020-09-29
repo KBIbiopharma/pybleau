@@ -625,7 +625,7 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         if change_needed:
             self.plot_style = new_style
 
-    # Traits intialization methods --------------------------------------------
+    # Traits initialization methods -------------------------------------------
 
     def _plot_style_default(self):
         if not self.z_col_name or self.plot_type == CMAP_SCATTER_PLOT_TYPE:
