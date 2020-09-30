@@ -42,7 +42,7 @@ class BaseSerialDataTest(object):
             self.assert_roundtrip_identical(obj)
 
     def test_non_default_renderer_plot_style(self):
-        for kw in self.non_default_axis_kw:
+        for kw in self.non_default_renderer_kw:
             obj = self.plot_style(**kw)
             self.assert_roundtrip_identical(obj)
 
@@ -69,8 +69,7 @@ class TestRoundtripScatterPlotStyle(BaseSerialDataTest, TestCase):
             {"renderer_styles": [ScatterRendererStyle(color="red",
                                                       marker_size=10)]},
             {"renderer_styles": [ScatterRendererStyle(alpha=0.5,
-                                                      marker="square")]},
-            {"renderer_styles": [CmapScatterRendererStyle(color_palette="bone")]},  # noqa
+                                                      marker="square")]}
         ]
 
 
