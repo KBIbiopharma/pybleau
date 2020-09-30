@@ -4,18 +4,19 @@
 import logging
 
 from traits.api import Any, Bool, Callable, DelegatesTo, Dict, Enum, Float, \
-    HasStrictTraits, HasTraits, Instance, List, on_trait_change, Property
+    HasStrictTraits, HasTraits, Instance, List, Property, \
+    observe
 from traitsui.api import HGroup, InstanceEditor, Item, \
     OKCancelButtons, Tabbed, VGroup, View
 
-from ..utils.chaco_colors import ALL_MPL_PALETTES
-from .axis_style import AxisStyle
-from .title_style import TitleStyle
-from .renderer_style import BaseRendererStyle, LineRendererStyle, \
-    ScatterRendererStyle, STYLE_R_ORIENT
-from ..utils.chaco_colors import generate_chaco_colors
-from ..utils.string_definitions import DEFAULT_DIVERG_PALETTE
-from .plot_container_style import PlotContainerStyle
+from pybleau.app.plotting.axis_style import AxisStyle
+from pybleau.app.plotting.plot_container_style import PlotContainerStyle
+from pybleau.app.plotting.renderer_style import BaseRendererStyle, \
+    LineRendererStyle, ScatterRendererStyle, STYLE_R_ORIENT
+from pybleau.app.plotting.title_style import TitleStyle
+from pybleau.app.utils.chaco_colors import ALL_MPL_PALETTES, \
+    assign_renderer_colors
+from pybleau.app.utils.string_definitions import DEFAULT_DIVERG_PALETTE
 
 SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
 
@@ -50,7 +51,7 @@ class RendererStyleManager(HasTraits):
 
         Parameters
         ----------
-        trait_name : str
+        style_idx : str
             Name of the renderer style trait to be displayed.
 
         renderer_name : str
@@ -110,7 +111,7 @@ class BaseXYPlotStyle(HasStrictTraits):
     #: Keywords passed to create the view
     view_kw = Dict
 
-    #: Range value transformation function for eg. to avoid non-sensical digits
+    #: Range value transformation function for eg. to avoid nonsensical digits
     range_transform = Callable
 
     def __init__(self, **traits):
@@ -390,20 +391,17 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
 
     # Traits listener methods -------------------------------------------------
 
-    @on_trait_change("color_palette, renderer_styles[]")
-    def update_renderer_colors(self):
+    @observe("color_palette")
+    def update_renderer_colors(self, event):
         """ Based on number of renderers & palette, initialize renderer colors.
 
         For color-mapped renderers, pass the palette straight.
         """
-        num_renderer = len(self.renderer_styles)
+        styles = self.renderer_styles
+        num_renderer = len(styles)
         if num_renderer > 1 and not self.colorize_by_float:
             color_palette = self.color_palette
-            colors = generate_chaco_colors(num_renderer, palette=color_palette)
-            for i, color in enumerate(colors):
-                renderer = self.renderer_styles[i]
-                renderer.color = color
-
+            assign_renderer_colors(styles, color_palette)
 
 # Single renderer implementations ---------------------------------------------
 

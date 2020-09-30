@@ -3,16 +3,16 @@ from unittest import TestCase
 
 from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
-from pybleau.app.io.serializer import serialize
 from pybleau.app.io.deserializer import deserialize
-from pybleau.app.plotting.renderer_style import BarRendererStyle, \
-    HeatmapRendererStyle, CmapScatterRendererStyle, LineRendererStyle, \
-    ScatterRendererStyle
+from pybleau.app.io.serializer import serialize
+from pybleau.app.plotting.bar_plot_style import BarPlotStyle
+from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
+from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
 from pybleau.app.plotting.plot_style import SingleLinePlotStyle, \
     SingleScatterPlotStyle, TitleStyle, AxisStyle
-from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
-from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
-from pybleau.app.plotting.bar_plot_style import BarPlotStyle
+from pybleau.app.plotting.renderer_style import BarRendererStyle, \
+    HeatmapRendererStyle, LineRendererStyle, \
+    ScatterRendererStyle
 
 
 class BaseSerialDataTest(object):
@@ -42,7 +42,7 @@ class BaseSerialDataTest(object):
             self.assert_roundtrip_identical(obj)
 
     def test_non_default_renderer_plot_style(self):
-        for kw in self.non_default_axis_kw:
+        for kw in self.non_default_renderer_kw:
             obj = self.plot_style(**kw)
             self.assert_roundtrip_identical(obj)
 
@@ -69,8 +69,7 @@ class TestRoundtripScatterPlotStyle(BaseSerialDataTest, TestCase):
             {"renderer_styles": [ScatterRendererStyle(color="red",
                                                       marker_size=10)]},
             {"renderer_styles": [ScatterRendererStyle(alpha=0.5,
-                                                      marker="square")]},
-            {"renderer_styles": [CmapScatterRendererStyle(color_palette="bone")]},  # noqa
+                                                      marker="square")]}
         ]
 
 

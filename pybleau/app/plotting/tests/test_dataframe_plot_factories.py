@@ -1,10 +1,11 @@
 from __future__ import print_function, division
+
 import os
 from unittest import TestCase, skipIf
-from pandas import DataFrame
+
 from numpy import arange, array, nan, random
 from numpy.testing import assert_array_almost_equal
-
+from pandas import DataFrame
 from traits.testing.unittest_tools import UnittestTools
 
 try:
@@ -380,7 +381,8 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         self.assert_renderers_have_distinct_colors(plot)
 
     def test_multi_line_2_curve_plot(self):
-        renderer_styles = [LineRendererStyle(), LineRendererStyle()]
+        renderer_styles = [LineRendererStyle(color="blue"),
+                           LineRendererStyle(color="red")]
         self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
             renderer_styles=renderer_styles,
             colorize_by_float=False
@@ -393,11 +395,11 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         desc = factory.generate_plot()
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
-        self.assert_renderers_have_distinct_colors(plot)
 
     def test_multi_line_3_curve_plot(self):
-        renderer_styles = [LineRendererStyle(), LineRendererStyle(),
-                           LineRendererStyle()]
+        renderer_styles = [LineRendererStyle(color="blue"),
+                           LineRendererStyle(color="red"),
+                           LineRendererStyle(color="green")]
         self.plot_kw["plot_style"] = BaseColorXYPlotStyle(
             renderer_styles=renderer_styles,
             colorize_by_float=False
@@ -410,7 +412,6 @@ class TestMakeLinePlot(BaseTestMakeXYPlot, TestCase):
         desc = factory.generate_plot()
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc, num_renderers=len(renderer_styles))
-        self.assert_renderers_have_distinct_colors(plot)
 
     def test_multi_line_bad_num_renderer_style_plot(self):
         renderer_styles = [LineRendererStyle()]
