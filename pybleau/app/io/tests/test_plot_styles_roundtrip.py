@@ -3,16 +3,16 @@ from unittest import TestCase
 
 from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
-from pybleau.app.io.serializer import serialize
 from pybleau.app.io.deserializer import deserialize
-from pybleau.app.plotting.renderer_style import BarRendererStyle, \
-    HeatmapRendererStyle, CmapScatterRendererStyle, LineRendererStyle, \
-    ScatterRendererStyle
+from pybleau.app.io.serializer import serialize
+from pybleau.app.plotting.bar_plot_style import BarPlotStyle
+from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
+from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
 from pybleau.app.plotting.plot_style import SingleLinePlotStyle, \
     SingleScatterPlotStyle, TitleStyle, AxisStyle
-from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
-from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
-from pybleau.app.plotting.bar_plot_style import BarPlotStyle
+from pybleau.app.plotting.renderer_style import BarRendererStyle, \
+    HeatmapRendererStyle, LineRendererStyle, \
+    ScatterRendererStyle
 
 
 class BaseSerialDataTest(object):
