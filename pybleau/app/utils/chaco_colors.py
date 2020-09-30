@@ -1,14 +1,16 @@
 """ Define some basic colors for plotly, and create a function to interpolate
 color palettes to generate any number of colors to be used in Chaco.
 """
+from typing import Sequence
+
 import numpy as np
 import seaborn as sns
-from matplotlib import cm as mpl_cm
-
 from chaco.default_colormaps import color_map_name_dict
 from enable.colors import color_table
+from matplotlib import cm as mpl_cm
 
 # Translations of standard matplotlib colors:
+
 BLACK = color_table["black"]  # We could also use "black"
 
 BLUE = color_table["blue"]  # We could also use "blue"
@@ -82,3 +84,27 @@ def generate_chaco_colors(n_colors, palette="hsv"):
     # Chaco needs RGB tuples in the 0-1 range:
     return [tuple(x) for x in
             np.array(sns.color_palette(palette, n_colors=n_colors))]
+
+
+def assign_renderer_colors(renderer_styles, palette="hsv"):
+    """ Assign colors to the specified renderer styles given the input palette.
+
+    Parameters
+    ----------
+    renderer_styles : Union[BaseXYRendererStyle, Sequence(BaseXYRendererStyle)]
+        A single or `Sequence` of `BaseXYRendererStyle` objects that have a
+        `color` attribute that can be set.
+
+    palette : str
+        Name of a color scale available in matplotlib. Diverging palettes are
+        recommended to distinguish values. Options are 'hsv', 'Spectral',
+        'RdYlBu', ... See https://matplotlib.org/users/colormaps.html for
+        complete list. Note that "jet" isn't supported because seaborn raises
+        an exception on it! See matplotlib.cm.cmap_d for complete list.
+    """
+    if not isinstance(renderer_styles, Sequence):
+        renderer_styles = [renderer_styles]
+    num_renderer = len(renderer_styles)
+    colors = generate_chaco_colors(num_renderer, palette=palette)
+    for curr, renderer in enumerate(renderer_styles):
+        renderer.color = colors[curr]

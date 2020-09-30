@@ -20,7 +20,7 @@ from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
     BaseXYPlotStyle, SingleLinePlotStyle, SingleScatterPlotStyle
 from pybleau.app.plotting.renderer_style import BarRendererStyle, \
     CmapScatterRendererStyle, LineRendererStyle, ScatterRendererStyle
-from pybleau.app.utils.chaco_colors import generate_chaco_colors
+from pybleau.app.utils.chaco_colors import assign_renderer_colors
 from pybleau.app.utils.string_definitions import BAR_PLOT_TYPE, \
     CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE, HIST_PLOT_TYPE, \
     LINE_PLOT_TYPE, SCATTER_PLOT_TYPE
@@ -548,9 +548,7 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
         renderer_styles = [self.renderer_style_klass()
                            for _ in range(num_renderer)]
         if num_renderer > 1:
-            colors = generate_chaco_colors(num_renderer)
-            for curr, renderer in enumerate(renderer_styles):
-                renderer.color = colors[curr]
+            assign_renderer_colors(renderer_styles)
 
         return BarPlotStyle(renderer_styles=renderer_styles)
 
@@ -637,9 +635,7 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         renderer_styles = [self.renderer_style_klass()
                            for _ in range(num_renderer)]
         if num_renderer > 1:
-            colors = generate_chaco_colors(num_renderer)
-            for curr, renderer in enumerate(renderer_styles):
-                renderer.color = colors[curr]
+            assign_renderer_colors(renderer_styles)
 
         style = BaseColorXYPlotStyle(
             colorize_by_float=self.colorize_by_float,

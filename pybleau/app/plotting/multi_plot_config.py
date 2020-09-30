@@ -19,7 +19,7 @@ from pybleau.app.plotting.plot_config import BaseSingleXYPlotConfigurator, \
     col_name_to_title
 from pybleau.app.plotting.plot_style import BaseColorXYPlotStyle, \
     LineRendererStyle
-from pybleau.app.utils.chaco_colors import generate_chaco_colors
+from pybleau.app.utils.chaco_colors import assign_renderer_colors
 from pybleau.app.utils.string_definitions import MULTI_HIST_PLOT_TYPE, \
     MULTI_LINE_PLOT_TYPE
 
@@ -119,9 +119,8 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
             renderer_styles = [LineRendererStyle() for _ in self.y_col_names]
             num_renderer = len(renderer_styles)
             if num_renderer > 1:
-                colors = generate_chaco_colors(num_renderer)
-                for curr, renderer in enumerate(renderer_styles):
-                    renderer.color = colors[curr]
+                assign_renderer_colors(renderer_styles)
+
             self.plot_style = BaseColorXYPlotStyle(
                 renderer_styles=renderer_styles,
                 colorize_by_float=False

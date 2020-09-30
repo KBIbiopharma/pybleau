@@ -15,7 +15,7 @@ from pybleau.app.plotting.renderer_style import BaseRendererStyle, \
     LineRendererStyle, ScatterRendererStyle, STYLE_R_ORIENT
 from pybleau.app.plotting.title_style import TitleStyle
 from pybleau.app.utils.chaco_colors import ALL_MPL_PALETTES, \
-    generate_chaco_colors
+    assign_renderer_colors
 from pybleau.app.utils.string_definitions import DEFAULT_DIVERG_PALETTE
 
 SPECIFIC_CONFIG_CONTROL_LABEL = "Specific controls"
@@ -397,14 +397,11 @@ class BaseColorXYPlotStyle(BaseXYPlotStyle):
 
         For color-mapped renderers, pass the palette straight.
         """
-        num_renderer = len(self.renderer_styles)
+        styles = self.renderer_styles
+        num_renderer = len(styles)
         if num_renderer > 1 and not self.colorize_by_float:
             color_palette = self.color_palette
-            colors = generate_chaco_colors(num_renderer, palette=color_palette)
-            for i, color in enumerate(colors):
-                renderer = self.renderer_styles[i]
-                renderer.color = color
-
+            assign_renderer_colors(styles, color_palette)
 
 # Single renderer implementations ---------------------------------------------
 
