@@ -1,5 +1,5 @@
 from app_common.traitsui.common_modal_dialogs import BaseDlg
-from traits.api import Bool, Instance, Property, List, Str, observe
+from traits.api import Instance, List, Str, observe
 from traitsui.api import Handler, Action
 
 from pybleau.app.model.plot_template_manager import PlotTemplateManager
