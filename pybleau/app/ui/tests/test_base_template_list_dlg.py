@@ -12,12 +12,6 @@ class TestBaseTemplateListDlg(TestCase):
         model.names = MagicMock(list)
         self.accessor = BaseTemplateListDlg(model=model)
 
-    def test_templates_exist_returns_correct(self):
-        self.accessor.model.names = list('abc')
-        self.assertTrue(self.accessor.templates_exist)
-        self.accessor.model.names = []
-        self.assertFalse(self.accessor.templates_exist)
-
     def test_reconcile_plot_types_list(self):
         current_list = list('abc')
         self.accessor.plot_types = current_list
