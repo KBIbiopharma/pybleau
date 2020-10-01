@@ -1,5 +1,5 @@
 from app_common.traitsui.common_modal_dialogs import BaseDlg
-from traits.api import Bool, Instance, Property, List, Str, observe
+from traits.api import Instance, List, Str, observe
 from traitsui.api import Handler, Action
 
 from pybleau.app.model.plot_template_manager import PlotTemplateManager
@@ -27,17 +27,10 @@ class BaseTemplateListDlg(BaseDlg):
     #: Button to bring up the plot templates manager view
     man_temp_button = Instance(Action)
 
-    #: Boolean flag for whether templates exist
-    templates_exist = Property(Bool)
-
     # Traits initialization methods -------------------------------------------
-
-    def _get_templates_exist(self) -> bool:
-        return len(self.model.names) > 0
 
     def _man_temp_button_default(self):
         return Action(name='Manage templates...',
-                      enabled_when='templates_exist',
                       action='do_manage')
 
     # Traits listeners --------------------------------------------------------
