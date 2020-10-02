@@ -184,9 +184,17 @@ class TestDataFrameAnalyzerView(TestCase):
         self.analyzer.filter_auto_apply = False
         view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True)
         view.model.filter_exp = "a != 3"
-        view.apply_filter_button = True
         expected_df = DataFrame({"a": [1, 2, 4, 5], "b": [10, 15, 15, 10]},
                                 index=[0, 1, 3, 4])
+        try:
+            assert_frame_equal(view.model.filtered_df, expected_df)
+        except AssertionError:
+            pass
+        else:
+            msg = "The two dataframes should not be equal yet if " \
+                  "`filter_auto_apply` is False."
+            raise AssertionError(msg)
+        view.apply_filter_button = True
         assert_frame_equal(view.model.filtered_df, expected_df)
 
 
