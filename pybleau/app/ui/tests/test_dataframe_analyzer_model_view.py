@@ -1,9 +1,10 @@
-from unittest import TestCase, skipIf
-from unittest.mock import patch
-from pandas import DataFrame
-from pandas.testing import assert_frame_equal
 import os
 from sys import platform
+from unittest import TestCase, skipIf
+from unittest.mock import patch
+
+from pandas import DataFrame
+from pandas.testing import assert_frame_equal
 
 try:
     import kiwisolver  # noqa
@@ -178,6 +179,23 @@ class TestDataFrameAnalyzerView(TestCase):
 
         view.plotter.model.index_selected.append(3)
         self.assertEqual(view.model.selected_idx, [0, 2, 1, 3])
+
+    def test_apply_filter_button_recomputes_filtered_df_correctly(self):
+        self.analyzer.filter_auto_apply = False
+        view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True)
+        view.model.filter_exp = "a != 3"
+        expected_df = DataFrame({"a": [1, 2, 4, 5], "b": [10, 15, 15, 10]},
+                                index=[0, 1, 3, 4])
+        try:
+            assert_frame_equal(view.model.filtered_df, expected_df)
+        except AssertionError:
+            pass
+        else:
+            msg = "The two dataframes should not be equal yet if " \
+                  "`filter_auto_apply` is False."
+            raise AssertionError(msg)
+        view.apply_filter_button = True
+        assert_frame_equal(view.model.filtered_df, expected_df)
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
