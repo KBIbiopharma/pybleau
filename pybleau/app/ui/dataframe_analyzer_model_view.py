@@ -513,7 +513,7 @@ class DataFrameAnalyzerView(ModelView):
         self.model.shuffle_filtered_df()
 
     def _apply_filter_button_fired(self):
-        flt = self.model.filer_exp
+        flt = self.model.filter_exp
         msg = f"Applying filter {flt}."
         logger.log(ACTION_LEVEL, msg)
 
