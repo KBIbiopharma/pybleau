@@ -32,6 +32,7 @@ TEST_DF2 = pd.DataFrame({"Col_1": [1, 2, 1, 2],
                          "Col_2": [1, 1, 2, 2],
                          "Col_3": np.random.randn(4)})
 
+
 class BaseAnalysisRoundTrip(object):
 
     # Utility methods ---------------------------------------------------------
