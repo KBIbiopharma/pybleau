@@ -115,6 +115,13 @@ class TestRoundTripMultiDfAnalyzer(TestCase, BaseAnalysisRoundTrip):
     def test_roundtrip_bare_analysis(self):
         self.assert_roundtrip_identical(self.analysis)
 
+    def test_part_analysis_and_plotter_scatter_plot(self):
+        config_kw = dict(x_col_name="Col_1",
+                         y_col_name="Col_2")
+        self.base_round_trip_analysis_and_plotter_with_plot(
+            SCATTER_PLOT_TYPE, ScatterPlotConfigurator, **config_kw
+        )
+
 
 class TestRoundTripAnalyzerWithPlots(TestCase, BaseAnalysisRoundTrip):
     """ Serialize an analyzer containing plots.
