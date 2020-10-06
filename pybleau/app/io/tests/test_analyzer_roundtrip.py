@@ -5,6 +5,8 @@ import pandas as pd
 from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
 from pybleau.app.api import DataFrameAnalyzer
+from pybleau.app.model.multi_dfs_dataframe_analyzer import \
+    MultiDataFrameAnalyzer
 from pybleau.app.io.deserializer import deserialize
 from pybleau.app.io.serializer import serialize
 from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
@@ -31,7 +33,98 @@ TEST_DF2 = pd.DataFrame({"Col_1": [1, 2, 1, 2],
                          "Col_3": np.random.randn(4)})
 
 
-class TestRoundTripAnalyzerWithPlots(TestCase):
+class BaseAnalysisRoundTrip(object):
+
+    # Utility methods ---------------------------------------------------------
+
+    def base_round_trip_analysis_and_plotter_with_plot(self, style, config_klass, analysis=None,  # noqa
+                                                       frozen=False, change_title="", **config_kw):  # noqa
+        """ Build an analysis with plots and check serialize/deserialize.
+        """
+        if analysis is None:
+            analysis = DataFrameAnalyzer(source_df=TEST_DF)
+
+        data_len = len(analysis.filtered_df)
+        orig_filter = analysis.filter_exp
+
+        plot_manager = DataFramePlotManager(source_analyzer=analysis,
+                                            data_source=analysis.filtered_df)
+        configurator = config_klass(
+            data_source=analysis.filtered_df, **config_kw
+        )
+        plot_manager.add_new_plot(style, configurator)
+        if frozen:
+            # Setting the descriptor as frozen was requested: freeze it and
+            # decouple the analysis:
+            desc = plot_manager.contained_plots[0]
+            desc.frozen = True
+            # Change the analysis filter to test that the frozen plot is made
+            # with the original threshold
+            analysis.filter_exp = "Col_1 > 22"
+            analysis.recompute_filtered_df()
+            self.assertEqual(desc.data_filter, orig_filter)
+
+        if change_title:
+            desc = plot_manager.contained_plots[0]
+            desc.plot_title = change_title
+
+        new_analysis = self.assert_roundtrip_identical(analysis)
+
+        # A few manual checks:
+        new_desc = new_analysis.plot_manager_list[0].contained_plots[0]
+        self.assertEqual(len(new_desc.plot_config.data_source), data_len)
+        if frozen:
+            self.assertIsNot(new_desc.plot_config.data_source,
+                             new_analysis.filtered_df)
+        else:
+            self.assertIs(new_desc.plot_config.data_source,
+                          new_analysis.filtered_df)
+
+        if change_title:
+            self.assertEqual(new_desc.plot.title.text, change_title)
+            self.assertEqual(new_desc.plot_title, change_title)
+            self.assertEqual(new_desc.plot_config.plot_title, change_title)
+
+        plot_managers = new_analysis.plot_manager_list
+        self.assertEqual(len(plot_managers), 1)
+        self.assertEqual(len(plot_managers[0].contained_plots), 1)
+        plot_desc = plot_managers[0].contained_plots
+        container_manager = plot_managers[0].canvas_manager.container_managers[0]  # noqa
+        plot_container_map = container_manager.plot_map
+        plot_container = container_manager.container
+        self.assertEqual(len(plot_container_map), 1)
+        self.assertIn(plot_desc[0].plot,
+                      [plot for plot, position in plot_container_map.values()])
+        self.assertEqual(len(plot_container.components), 1)
+        self.assertIs(plot_desc[0].plot, plot_container.components[0])
+        return new_analysis
+
+    def assert_roundtrip_identical(self, obj, **kwargs):
+        SKIPS = {"source_analyzer", "canvas_manager", "uuid", "plot",
+                 "inspectors", "plot_factory"}
+        return assert_roundtrip_identical(obj, serial_func=serialize,
+                                          deserial_func=deserialize,
+                                          ignore=SKIPS, **kwargs)
+
+
+class TestRoundTripMultiDfAnalyzer(TestCase, BaseAnalysisRoundTrip):
+    """ Serialize an analyzer containing plots.
+    """
+    def setUp(self):
+        self.analysis = MultiDataFrameAnalyzer(source_df=TEST_DF)
+
+    def test_roundtrip_bare_analysis(self):
+        self.assert_roundtrip_identical(self.analysis)
+
+    def test_part_analysis_and_plotter_scatter_plot(self):
+        config_kw = dict(x_col_name="Col_1",
+                         y_col_name="Col_2")
+        self.base_round_trip_analysis_and_plotter_with_plot(
+            SCATTER_PLOT_TYPE, ScatterPlotConfigurator, **config_kw
+        )
+
+
+class TestRoundTripAnalyzerWithPlots(TestCase, BaseAnalysisRoundTrip):
     """ Serialize an analyzer containing plots.
     """
     def test_part_analysis_and_plotter_scatter_plot(self):
@@ -175,80 +268,3 @@ class TestRoundTripAnalyzerWithPlots(TestCase):
         plot_desc = new_analysis.plot_manager_list[0].contained_plots[0]
         self.assertEqual(plot_desc.plot_config.plot_style.interpolation,
                          "bilinear")
-
-    # Utility methods ---------------------------------------------------------
-
-    def base_round_trip_analysis_and_plotter_with_plot(self, style, config_klass, analysis=None,  # noqa
-                                                       frozen=False, change_title="", **config_kw):  # noqa
-        """ Build a task with analysis with plots and check serializability of
-        resulting task.
-        """
-        if analysis is None:
-            analysis = make_sample_analysis()
-
-        data_len = len(analysis.filtered_df)
-        orig_filter = analysis.filter_exp
-
-        plot_manager = DataFramePlotManager(source_analyzer=analysis,
-                                            data_source=analysis.filtered_df)
-        configurator = config_klass(
-            data_source=analysis.filtered_df, **config_kw
-        )
-        plot_manager.add_new_plot(style, configurator)
-        if frozen:
-            # Setting the descriptor as frozen was requested: freeze it and
-            # decouple the analysis:
-            desc = plot_manager.contained_plots[0]
-            desc.frozen = True
-            # Change the analysis filter to test that the frozen plot is made
-            # with the original threshold
-            analysis.filter_exp = "Col_1 > 22"
-            analysis.recompute_filtered_df()
-            self.assertEqual(desc.data_filter, orig_filter)
-
-        if change_title:
-            desc = plot_manager.contained_plots[0]
-            desc.plot_title = change_title
-
-        new_analysis = self.assert_roundtrip_identical(analysis)
-
-        # A few manual checks:
-        new_desc = new_analysis.plot_manager_list[0].contained_plots[0]
-        self.assertEqual(len(new_desc.plot_config.data_source), data_len)
-        if frozen:
-            self.assertIsNot(new_desc.plot_config.data_source,
-                             new_analysis.filtered_df)
-        else:
-            self.assertIs(new_desc.plot_config.data_source,
-                          new_analysis.filtered_df)
-
-        if change_title:
-            self.assertEqual(new_desc.plot.title.text, change_title)
-            self.assertEqual(new_desc.plot_title, change_title)
-            self.assertEqual(new_desc.plot_config.plot_title, change_title)
-
-        plot_managers = new_analysis.plot_manager_list
-        self.assertEqual(len(plot_managers), 1)
-        self.assertEqual(len(plot_managers[0].contained_plots), 1)
-        plot_desc = plot_managers[0].contained_plots
-        container_manager = plot_managers[0].canvas_manager.container_managers[0]  # noqa
-        plot_container_map = container_manager.plot_map
-        plot_container = container_manager.container
-        self.assertEqual(len(plot_container_map), 1)
-        self.assertIn(plot_desc[0].plot,
-                      [plot for plot, position in plot_container_map.values()])
-        self.assertEqual(len(plot_container.components), 1)
-        self.assertIs(plot_desc[0].plot, plot_container.components[0])
-        return new_analysis
-
-    def assert_roundtrip_identical(self, obj, **kwargs):
-        SKIPS = {"source_analyzer", "canvas_manager", "uuid", "plot",
-                 "inspectors", "plot_factory"}
-        return assert_roundtrip_identical(obj, serial_func=serialize,
-                                          deserial_func=deserialize,
-                                          ignore=SKIPS, **kwargs)
-
-
-def make_sample_analysis():
-    from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-    return DataFrameAnalyzer(source_df=TEST_DF)

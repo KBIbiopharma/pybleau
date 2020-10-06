@@ -43,6 +43,15 @@ class dataFrameAnalyzerDeSerializer(dataElementDeSerializer):
         return DataFrameAnalyzer
 
 
+class multiDataFrameAnalyzerDeSerializer(dataFrameAnalyzerDeSerializer):
+    protocol_version = 0
+
+    def _klass_default(self):
+        from pybleau.app.model.multi_dfs_dataframe_analyzer import \
+            MultiDataFrameAnalyzer
+        return MultiDataFrameAnalyzer
+
+
 class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
 
     protocol_version = 1

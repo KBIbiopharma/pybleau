@@ -46,6 +46,17 @@ class DataFrameAnalyzer_Serializer(DataElement_Serializer):
                 "plot_manager_list"]
 
 
+class MultiDataFrameAnalyzer_Serializer(DataFrameAnalyzer_Serializer):
+
+    protocol_version = 0
+
+    def attr_names_to_serialize(self, obj):
+        names = super(MultiDataFrameAnalyzer_Serializer, self).attr_names_to_serialize(obj)  # noqa
+        names.remove("source_df")
+        names.append("_source_dfs")
+        return names
+
+
 class DataFramePlotManager_Serializer(DataElement_Serializer):
 
     protocol_version = 1
