@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = traitsui
+source = pybleau
 omit = */tests/*
 
 [report]
