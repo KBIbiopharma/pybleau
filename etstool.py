@@ -243,10 +243,8 @@ def test(runtime, toolkit, edm_dir, environment, test_pattern, num_slowest,
          target, cov):
     """ Run the test suite in a given environment with the specified toolkit.
     """
-    cov_file = "test_coverage.xml"
-
     parameters = get_parameters(
-        runtime, toolkit, environment, edm_dir=edm_dir, cov_file=cov_file,
+        runtime, toolkit, environment, edm_dir=edm_dir,
         test_pattern=test_pattern, num_slowest=num_slowest, target=target
     )
     environ = environment_vars.get(toolkit, {}).copy()
@@ -256,8 +254,8 @@ def test(runtime, toolkit, edm_dir, environment, test_pattern, num_slowest,
         commands = [
             "{edm_dir}edm run -e {environment} -- pytest "
             "--cov-config=.coveragerc --durations={num_slowest} "
-            "--cov={PKG_NAME} --cov-report=xml:{cov_file} "
-            "--cov-report term {target}",
+            "--cov={PKG_NAME} --cov-report=xml:test_coverage.xml "
+            "--cov-report=html:test_coverage.html --cov-report term {target}",
         ]
     else:
         commands = [
