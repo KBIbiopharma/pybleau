@@ -201,6 +201,23 @@ def install(runtime, toolkit, environment, edm_dir, editable):
     click.echo("Creating environment '{environment}'".format(**parameters))
     execute(commands, parameters)
 
+    if source_dependencies:
+        # Force remove if it was installed via EDM:
+        cmd_fmt = "{edm_dir}edm plumbing remove-package --environment " \
+                  "{environment} --force "
+        commands = [cmd_fmt+dependency
+                    for dependency in source_dependencies.keys()]
+        execute(commands, parameters)
+
+        source_pkgs = source_dependencies.values()
+        commands = [
+            "python -m pip install {pkg} --no-deps".format(pkg=pkg)
+            for pkg in source_pkgs
+        ]
+        commands = ["{edm_dir}edm run -e {environment} -- " + command
+                    for command in commands]
+        execute(commands, parameters)
+
     if pip_dependencies:
         commands = [
             "python -m pip install {pkg}".format(pkg=pkg)
