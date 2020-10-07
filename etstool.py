@@ -112,6 +112,10 @@ for dep in dependencies:
         dependencies = dependencies - {dep}
         break
 
+source_dependencies = {
+    "app_common": "git+https://github.com/KBIbiopharma/app_common#egg=app_common",
+}
+
 if os.path.isfile(PIP_DEPENDENCIES):
     pip_dependencies = json.load(open(PIP_DEPENDENCIES))
 else:
