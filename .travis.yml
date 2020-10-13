@@ -36,9 +36,6 @@ install:
   - if [[ ${TRAVIS_EVENT_TYPE} == 'cron' ]]; then for toolkit in ${TOOLKITS}; do edm run -- python etstool.py install --runtime=${RUNTIME} --toolkit=${toolkit} --source || exit; done; fi
 script:
   - for toolkit in ${TOOLKITS}; do edm run -- python etstool.py test --runtime=${RUNTIME} --toolkit=${toolkit} || exit; done
-  - edm run -- python etstool.py flake8
-
 after_success:
-  - edm run -- coverage combine
-  - edm run -- pip install codecov
-  - edm run -- codecov
+  - edm run -- python etstool.py flake8
+  # Add upload of coverage file to coverage service

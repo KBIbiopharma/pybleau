@@ -32,8 +32,6 @@ install:
   - appveyor-run.cmd install %runtime% %toolkits%
 test_script:
   - appveyor-run.cmd test %runtime% %toolkits%
-on_success:
   - appveyor-run.cmd flake8 %runtime% %toolkits%
-  - edm run -- coverage combine
-  - edm run -- pip install codecov
-  - edm run -- codecov
+on_success:
+  # Add upload of coverage file to coverage service

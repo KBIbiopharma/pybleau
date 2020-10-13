@@ -101,6 +101,7 @@ DEFAULT_TOOLKIT = 'pyqt5'
 
 DEPENDENCIES = "ci/requirements.json"
 DEV_DEPENDENCIES = "ci/dev_requirements.json"
+PIP_DEPENDENCIES = "ci/pip_requirements.json"
 
 dependencies = set(json.load(open(DEPENDENCIES)) +
                    json.load(open(DEV_DEPENDENCIES)))
@@ -115,14 +116,20 @@ source_dependencies = {
     "app_common": "git+https://github.com/KBIbiopharma/app_common#egg=app_common",
 }
 
-# Additional toolkit-independent dependencies for demo testing
+if os.path.isfile(PIP_DEPENDENCIES):
+    pip_dependencies = json.load(open(PIP_DEPENDENCIES))
+else:
+    pip_dependencies = []
+
+# Additional toolkit-independent dependencies
 test_dependencies = set()
 
+# Additional toolkit-dependent dependencies
 extra_dependencies = {
     # XXX once pyside2 is available in EDM, we will want it here
     'pyside2': set(),
     'pyqt5': {'pyqt5'},
-    'wx': set(),
+    'wx': {"wx"},
 }
 
 runtime_dependencies = {}
@@ -156,6 +163,21 @@ def cli():
 def install(runtime, toolkit, environment, edm_dir, editable):
     """ Install project and dependencies into a clean EDM environment.
 
+    Parameters
+    ----------
+    runtime : str, optional
+        Version of Python runtime, e.g. '3.6'.
+
+    toolkit : str, optional
+        Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
+
+    edm_dir : str, optional
+        Path to the edm executable. Useful if the edm executable is not on the
+        PATH environment variable.
+
+    environment : str, optional
+        Name of the environment to use to execute the command. Leave as None to
+        build from the requested runtime and toolkit.
     """
     parameters = get_parameters(runtime, toolkit, environment)
     packages = ' '.join(
@@ -172,7 +194,7 @@ def install(runtime, toolkit, environment, edm_dir, editable):
         "--version={runtime}",
         "{edm_dir}edm install -y -e {environment} " + packages,
         "{edm_dir}edm run -e {environment} -- python setup.py clean --all",
-        "{edm_dir}edm run -e {environment} -- python setup.py install",
+        "{edm_dir}edm run -e {environment} -- pip install -e .",
     ]
 
     # pip install pyqt5 and pyside2, because we don't have them in EDM yet
@@ -195,15 +217,26 @@ def install(runtime, toolkit, environment, edm_dir, editable):
     execute(commands, parameters)
 
     if source_dependencies:
-        cmd_fmt = "{edm_dir}edm plumbing remove-package --environment {environment} " \
-                  "--force "
+        # Force remove if it was installed via EDM:
+        cmd_fmt = "{edm_dir}edm plumbing remove-package --environment " \
+                  "{environment} --force "
         commands = [cmd_fmt+dependency
                     for dependency in source_dependencies.keys()]
         execute(commands, parameters)
+
         source_pkgs = source_dependencies.values()
         commands = [
             "python -m pip install {pkg} --no-deps".format(pkg=pkg)
             for pkg in source_pkgs
+        ]
+        commands = ["{edm_dir}edm run -e {environment} -- " + command
+                    for command in commands]
+        execute(commands, parameters)
+
+    if pip_dependencies:
+        commands = [
+            "python -m pip install {pkg}".format(pkg=pkg)
+            for pkg in pip_dependencies
         ]
         commands = ["{edm_dir}edm run -e {environment} -- " + command
                     for command in commands]
@@ -217,36 +250,77 @@ def install(runtime, toolkit, environment, edm_dir, editable):
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
 @click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-def test(runtime, toolkit, edm_dir, environment):
-    """ Run the test suite in a given environment with the specified toolkit.
+@click.option('--cov', default=True, type=bool)
+@click.option('--test-pattern', default="")
+@click.option('--num-slowest', default="0")
+@click.option('--target', default=PKG_NAME)
+def test(runtime, toolkit, edm_dir, environment, test_pattern, num_slowest,
+         target, cov):
+    """ Run test suite (& coverage) in test environment for specified toolkit.
 
+    Parameters
+    ----------
+    runtime : str, optional
+        Version of Python runtime, e.g. '3.6'.
+
+    toolkit : str, optional
+        Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
+
+    edm_dir : str, optional
+        Path to the edm executable. Useful if the edm executable is not on the
+        PATH environment variable.
+
+    environment : str, optional
+        Name of the environment to use to execute the command. Leave as None to
+        build from the requested runtime and toolkit.
+
+    cov : bool, optional
+        Whether to compute the test coverage. Defaults to True.
+
+    test_pattern : str, optional
+        Pattern of the tests to run. Passed as is to pytest's -m option.
+
+    num_slowest : str, optional
+        Number of slowest tests we want to see times for. Defaults to seeing
+        all test speeds.
+
+    target : str, optional
+        Target package, subpackage, test module, test class or test method to
+        run.
+
+    TODO: figure out how to make the test suite run in parallel (with
+     '-n auto' option). Currently, parallel execution leads to failures.
     """
-    parameters = get_parameters(runtime, toolkit, environment)
-    parameters["edm_dir"] = edm_dir
+    cov_file = ""
 
+    parameters = get_parameters(
+        runtime, toolkit, environment, edm_dir=edm_dir, cov_file=cov_file,
+        test_pattern=test_pattern, num_slowest=num_slowest, target=target
+    )
     environ = environment_vars.get(toolkit, {}).copy()
     environ['PYTHONUNBUFFERED'] = "1"
 
-    if toolkit == "wx":
-        environ["EXCLUDE_TESTS"] = "qt"
-    elif toolkit in {"pyqt", "pyqt5", "pyside", "pyside2"}:
-        environ["EXCLUDE_TESTS"] = "wx"
+    if cov:
+        commands = [
+            "{edm_dir}edm run -e {environment} -- pytest "
+            "--cov-config=.coveragerc --durations={num_slowest} "
+            "--cov={PKG_NAME} --cov-report=xml:test_coverage.xml "
+            "--cov-report=html:test_coverage.html --cov-report term "
+            "-m {test_pattern} {target}",
+        ]
     else:
-        environ["EXCLUDE_TESTS"] = "(wx|qt)"
-
-    commands = [
-        "{edm_dir}edm run -e {environment} -- coverage run -p -m unittest "
-        "discover -v " + PKG_NAME,
-    ]
+        commands = [
+            "{edm_dir}edm run -e {environment} -- pytest "
+            "--durations={num_slowest} -m {test_pattern} {target}",
+        ]
 
     # We run in a tempdir to avoid accidentally picking up wrong package
     # code from a local dir. We need to ensure a good .coveragerc is in
     # that directory, plus coverage has a bug that means a non-local coverage
     # file doesn't get populated correctly.
     click.echo("Running tests in '{environment}'".format(**parameters))
-    with do_in_tempdir(files=['.coveragerc'], capture_files=['./.coverage*']):
-        os.environ.update(environ)
-        execute(commands, parameters)
+    os.environ.update(environ)
+    execute(commands, parameters)
     click.echo('Done test')
 
 
@@ -257,12 +331,27 @@ def test(runtime, toolkit, edm_dir, environment):
 @click.option('--environment', default=None)
 def flake8(runtime, toolkit, edm_dir, environment):
     """ Run flake8 on the source code.
+
+    Parameters
+    ----------
+    runtime : str, optional
+        Version of Python runtime, e.g. '3.6'.
+
+    toolkit : str, optional
+        Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
+
+    edm_dir : str, optional
+        Path to the edm executable. Useful if the edm executable is not on the
+        PATH environment variable.
+
+    environment : str, optional
+        Name of the environment to use to execute the command. Leave as None to
+        build from the requested runtime and toolkit.
     """
-    parameters = get_parameters(runtime, toolkit, environment)
-    parameters["edm_dir"] = edm_dir
+    parameters = get_parameters(runtime, toolkit, environment, edm_dir=edm_dir)
 
     commands = [
-        "{edm_dir}edm run -e {environment} flake8 setup.py " + PKG_NAME,
+        "{edm_dir}edm run -e {environment} flake8 setup.py {PKG_NAME}",
     ]
 
     execute(commands, parameters)
@@ -272,15 +361,31 @@ def flake8(runtime, toolkit, edm_dir, environment):
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-def cleanup(runtime, toolkit, environment):
+def cleanup(runtime, toolkit, edm_dir, environment):
     """ Remove a development environment.
 
+    Parameters
+    ----------
+    runtime : str, optional
+        Version of Python runtime, e.g. '3.6'.
+
+    toolkit : str, optional
+        Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
+
+    edm_dir : str, optional
+        Path to the edm executable. Useful if the edm executable is not on the
+        PATH environment variable.
+
+    environment : str, optional
+        Name of the environment to use to execute the command. Leave as None to
+        build from the requested runtime and toolkit.
     """
-    parameters = get_parameters(runtime, toolkit, environment)
+    parameters = get_parameters(runtime, toolkit, environment, edm_dir=edm_dir)
     commands = [
-        "edm run -e {environment} -- python setup.py clean",
-        "edm environments remove {environment} --purge -y"]
+        "{edm_dir}edm run -e {environment} -- python setup.py clean",
+        "{edm_dir}edm environments remove {environment} --purge -y"]
     click.echo("Cleaning up environment '{environment}'".format(**parameters))
     execute(commands, parameters)
     click.echo('Done cleanup')
@@ -290,8 +395,15 @@ def cleanup(runtime, toolkit, environment):
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
 def test_clean(runtime, toolkit):
-    """ Run tests in a clean environment, cleaning up afterwards
+    """ Run tests in a clean environment, cleaning up afterwards.
 
+    Parameters
+    ----------
+    runtime : str, optional
+        Version of Python runtime, e.g. '3.6'.
+
+    toolkit : str, optional
+        Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
     """
     args = ['--toolkit={}'.format(toolkit), '--runtime={}'.format(runtime)]
     try:
@@ -304,14 +416,30 @@ def test_clean(runtime, toolkit):
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-def update(runtime, toolkit, environment):
-    """ Update/Reinstall package into environment.
+def update(runtime, toolkit, edm_dir, environment):
+    """ Update/re-install package into environment.
 
+    Parameters
+    ----------
+    runtime : str, optional
+        Version of Python runtime, e.g. '3.6'.
+
+    toolkit : str, optional
+        Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
+
+    edm_dir : str, optional
+        Path to the edm executable. Useful if the edm executable is not on the
+        PATH environment variable.
+
+    environment : str, optional
+        Name of the environment to use to execute the command. Leave as None to
+        build from the requested runtime and toolkit.
     """
-    parameters = get_parameters(runtime, toolkit, environment)
+    parameters = get_parameters(runtime, toolkit, environment, edm_dir=edm_dir)
     commands = [
-        "edm run -e {environment} -- python setup.py install"]
+        "{edm_dir}edm run -e {environment} -- python setup.py install"]
     click.echo("Re-installing in  '{environment}'".format(**parameters))
     execute(commands, parameters)
     click.echo('Done update')
@@ -320,15 +448,31 @@ def update(runtime, toolkit, environment):
 @cli.command()
 @click.option('--runtime', default=DEFAULT_RUNTIME)
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
+@click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-def docs(runtime, toolkit, environment):
-    """ Autogenerate documentation
+def docs(runtime, toolkit, edm_dir, environment):
+    """ Auto-generate documentation.
 
+    Parameters
+    ----------
+    runtime : str, optional
+        Version of Python runtime, e.g. '3.6'.
+
+    toolkit : str, optional
+        Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
+
+    edm_dir : str, optional
+        Path to the edm executable. Useful if the edm executable is not on the
+        PATH environment variable.
+
+    environment : str, optional
+        Name of the environment to use to execute the command. Leave as None to
+        build from the requested runtime and toolkit.
     """
-    parameters = get_parameters(runtime, toolkit, environment)
+    parameters = get_parameters(runtime, toolkit, environment, edm_dir=edm_dir)
     packages = ' '.join(doc_dependencies)
     commands = [
-        "edm install -y -e {environment} " + packages,
+        "{edm_dir}edm install -y -e {environment} " + packages,
     ]
     click.echo("Installing documentation tools in  '{environment}'".format(
         **parameters))
@@ -337,7 +481,7 @@ def docs(runtime, toolkit, environment):
 
     os.chdir('docs')
     commands = [
-        "edm run -e {environment} -- make html",
+        "{edm_dir}edm run -e {environment} -- make html",
     ]
     click.echo("Building documentation in  '{environment}'".format(**parameters))
     try:
@@ -350,7 +494,6 @@ def docs(runtime, toolkit, environment):
 @cli.command()
 def test_all():
     """ Run test_clean across all supported environment combinations.
-
     """
     failed_command = False
     for runtime, toolkits in supported_combinations.items():
@@ -371,15 +514,22 @@ def test_all():
 # Utility routines
 # ----------------------------------------------------------------------------
 
-def get_parameters(runtime, toolkit, environment):
-    """ Set up parameters dictionary for format() substitution """
-    parameters = {'runtime': runtime, 'toolkit': toolkit, 'environment': environment}
+def get_parameters(runtime, toolkit, environment, **adtl_params):
+    """ Set up parameters dictionary for format() substitution.
+    """
+    parameters = {'runtime': runtime, 'toolkit': toolkit,
+                  'environment': environment, "PKG_NAME": PKG_NAME}
+    parameters.update(adtl_params)
+
     if toolkit not in supported_combinations[runtime]:
         msg = ("Python {runtime} and toolkit {toolkit} not supported by " +
                "test environments")
         raise RuntimeError(msg.format(**parameters))
+
     if environment is None:
-        parameters['environment'] = PKG_NAME + '-test-{runtime}-{toolkit}'.format(**parameters)
+        env_pattern = PKG_NAME + '-test-{toolkit}-py{runtime}'
+        parameters['environment'] = env_pattern.format(**parameters)
+        parameters['environment'] = parameters['environment'].replace(".", "")
     return parameters
 
 
