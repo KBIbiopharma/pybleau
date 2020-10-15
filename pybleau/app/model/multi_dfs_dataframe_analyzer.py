@@ -24,7 +24,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
     _source_df_columns = Dict
 
     #: Maps a column name to the dataframe it is located in
-    column_loc = Dict
+    _column_loc = Dict
 
     def __init__(self, convert_source_dtypes=False, data_sorted=True,
                  **traits):
@@ -106,8 +106,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         target_df : str
             Name of the dataframe to add the column to.
         """
-        if col in self.column_loc:
-            target_df = self.column_loc[col]
+        if col in self._column_loc:
+            target_df = self._column_loc[col]
         else:
             if target_df is None:
                 msg = "Column {} not found, yet no target df was provided."
@@ -135,7 +135,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         value: object
             The value the column should be set to.
         """
-        self.column_loc[col].loc[index, col] = value
+        self._column_loc[col].loc[index, col] = value
 
     # Property getters/setters ------------------------------------------------
 
@@ -172,7 +172,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
     # Traits initiatlizers ----------------------------------------------------
 
-    def _column_loc_default(self):
+    def __column_loc_default(self):
         column_loc = {}
         for name, df in self._source_dfs.items():
             for col in df.columns:
