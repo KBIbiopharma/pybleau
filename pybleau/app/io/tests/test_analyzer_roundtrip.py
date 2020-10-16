@@ -32,6 +32,12 @@ TEST_DF2 = pd.DataFrame({"Col_1": [1, 2, 1, 2],
                          "Col_2": [1, 1, 2, 2],
                          "Col_3": np.random.randn(4)})
 
+# Skip redundant attributes in MultiDFsAnalyzer
+ANALYSIS_SKIPS = {"uuid", "_source_dfs", "_column_loc"}
+
+PLOTTER_SKIPS = {"source_analyzer", "canvas_manager", "plot",
+                 "inspectors", "plot_factory"}
+
 
 class BaseAnalysisRoundTrip(object):
 
@@ -70,7 +76,7 @@ class BaseAnalysisRoundTrip(object):
 
         new_analysis = self.assert_roundtrip_identical(analysis)
 
-        # A few manual checks:
+        # Manual Plotter checks:
         new_desc = new_analysis.plot_manager_list[0].contained_plots[0]
         self.assertEqual(len(new_desc.plot_config.data_source), data_len)
         if frozen:
@@ -100,21 +106,21 @@ class BaseAnalysisRoundTrip(object):
         return new_analysis
 
     def assert_roundtrip_identical(self, obj, **kwargs):
-        SKIPS = {"source_analyzer", "canvas_manager", "uuid", "plot",
-                 "inspectors", "plot_factory"}
+        skips = ANALYSIS_SKIPS | PLOTTER_SKIPS
         return assert_roundtrip_identical(obj, serial_func=serialize,
                                           deserial_func=deserialize,
-                                          ignore=SKIPS, **kwargs)
+                                          ignore=skips, **kwargs)
 
 
-class TestRoundTripMultiDfAnalyzer(TestCase, BaseAnalysisRoundTrip):
+class TestRoundTripBareAnalyzer(TestCase, BaseAnalysisRoundTrip):
     """ Serialize an analyzer containing plots.
     """
     def setUp(self):
         self.analysis = MultiDataFrameAnalyzer(source_df=TEST_DF)
 
     def test_roundtrip_bare_analysis(self):
-        self.assert_roundtrip_identical(self.analysis)
+        new_analysis = self.assert_roundtrip_identical(self.analysis)
+        self.assertEqual(new_analysis.uuid, self.analysis.uuid)
 
     def test_part_analysis_and_plotter_scatter_plot(self):
         config_kw = dict(x_col_name="Col_1",
@@ -127,6 +133,17 @@ class TestRoundTripMultiDfAnalyzer(TestCase, BaseAnalysisRoundTrip):
 class TestRoundTripAnalyzerWithPlots(TestCase, BaseAnalysisRoundTrip):
     """ Serialize an analyzer containing plots.
     """
+    def test_roundtrip_bare_analysis(self):
+        analysis = DataFrameAnalyzer(source_df=TEST_DF)
+        new_analysis = self.assert_roundtrip_identical(analysis)
+        # UUIDs for analyzers are serialized:
+        self.assertEqual(new_analysis.uuid, analysis.uuid)
+
+    def test_roundtrip_bare_analysis_with_col_descr(self):
+        analysis = DataFrameAnalyzer(source_df=TEST_DF)
+        analysis.column_descr["Col_1"] = "Nice description of column 1!"
+        self.assert_roundtrip_identical(analysis)
+
     def test_part_analysis_and_plotter_scatter_plot(self):
         config_kw = dict(x_col_name="Col_1",
                          y_col_name="Col_2")

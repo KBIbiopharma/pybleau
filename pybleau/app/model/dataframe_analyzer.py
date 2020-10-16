@@ -3,8 +3,8 @@ from pandas import concat, DataFrame
 import numpy as np
 from functools import partial
 
-from traits.api import Bool, cached_property, Callable, Enum, Event, Instance,\
-    Int, List, on_trait_change, Property, Str
+from traits.api import Bool, cached_property, Callable, Dict, Enum, Event, \
+    Instance, Int, List, on_trait_change, Property, Str
 
 from app_common.std_lib.str_utils import add_suffix_if_exists, sanitize_string
 from app_common.model_tools.data_element import DataElement
@@ -50,6 +50,9 @@ class DataFrameAnalyzer(DataElement):
 
     #: **Copy** of the data to analyze, where column names have been sanitized
     source_df = Instance(DataFrame)
+
+    #: Custom notes describing the columns of the source_df
+    column_descr = Dict
 
     #: Result of filtering the source_df with the filter_exp expression
     filtered_df = Instance(DataFrame)
