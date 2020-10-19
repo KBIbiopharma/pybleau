@@ -19,6 +19,15 @@ class TestAnalyzer(Analyzer, TestCase):
     def setUpClass(cls):
         cls.analyzer_klass = DataFrameAnalyzer
 
+    def test_remove_column_description_when_remove_source_df_col(self):
+        analyzer = self.analyzer_klass(source_df=self.df)
+        self.assertEqual(analyzer.column_descr, {})
+        analyzer.column_descr["a"] = "Cool column!"
+        analyzer.column_descr["b"] = "Another cool column!"
+        # Remove a column from the source df:
+        analyzer.source_df = self.df[["a", "c"]]
+        self.assertNotIn("b", set(analyzer.column_descr.keys()))
+
 
 @skipIf(not BACKEND_AVAILABLE, msg)
 class TestFilterDataFrameAnalyzer(FilterDataFrameAnalyzer, TestCase):
