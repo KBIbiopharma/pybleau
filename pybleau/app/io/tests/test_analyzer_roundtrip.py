@@ -112,7 +112,7 @@ class BaseAnalysisRoundTrip(object):
                                           ignore=skips, **kwargs)
 
 
-class TestRoundTripBareAnalyzer(TestCase, BaseAnalysisRoundTrip):
+class TestRoundTripMultiDfAnalyzer(TestCase, BaseAnalysisRoundTrip):
     """ Serialize an analyzer containing plots.
     """
     def setUp(self):

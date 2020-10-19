@@ -369,6 +369,8 @@ class DataFrameAnalyzer(DataElement):
         else:
             self.sort_by_col = self.index_name
 
+        self.update_column_descriptions()
+
     def _sort_by_col_changed(self, new):
         self.filtered_df = self._sort_df_by(self.filtered_df, new)
         # Remap the selections
@@ -407,6 +409,15 @@ class DataFrameAnalyzer(DataElement):
         return df
 
     # Private interface -------------------------------------------------------
+
+    def _update_column_descriptions(self):
+        """ Remove column descriptions if a column has been removed.
+        """
+        descriptions = list(self.column_descr.keys())
+        columns_present = set(self.source_df.columns)
+        for col_name in descriptions:
+            if col_name not in columns_present:
+                self.column_descr.pop(col_name)
 
     @staticmethod
     def _clean_filter_exp(expr):
