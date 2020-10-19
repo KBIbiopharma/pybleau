@@ -43,7 +43,7 @@ class DataFrameAnalyzer_Serializer(DataElement_Serializer):
     def attr_names_to_serialize(self, obj):
         return ['name', 'uuid', 'source_df', 'filter_exp', 'summary_index',
                 'sort_by_col', 'data_selected', 'num_displayed_rows',
-                "plot_manager_list", "column_descr"]
+                "plot_manager_list", "column_metadata"]
 
 
 class MultiDataFrameAnalyzer_Serializer(DataFrameAnalyzer_Serializer):
