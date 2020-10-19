@@ -357,6 +357,24 @@ class Analyzer(UnittestTools):
         self.assertNotIn("index", analyzer.sort_by_col_list)
         self.assertIn("new index", analyzer.sort_by_col_list)
 
+    def test_add_column_descriptions(self):
+        analyzer = self.analyzer_klass(source_df=self.df)
+        self.assertEqual(analyzer.column_descr, {})
+        analyzer.column_descr["a"] = "Cool column!"
+        self.assertEqual(set(analyzer.column_descr.keys()), {"a"})
+        analyzer.column_descr["b"] = "Another cool column!"
+        self.assertEqual(set(analyzer.column_descr.keys()), {"a", "b"})
+        analyzer.column_descr["a"] = "Actually, not so much"
+        self.assertEqual(set(analyzer.column_descr.keys()), {"a", "b"})
+        self.assertEqual(analyzer.column_descr["a"], "Actually, not so much")
+
+    def test_add_column_descriptions_bad_col_name(self):
+        analyzer = self.analyzer_klass(source_df=self.df)
+        analyzer.column_descr["NON-EXISTENT"] = "Cool column!"
+        self.assertEqual(analyzer.column_descr, {})
+        analyzer.column_descr["a"] = "Cool column!"
+        self.assertEqual(set(analyzer.column_descr.keys()), {"a"})
+
 
 class SortingDataFrameAnalyzer(UnittestTools):
     """ Tests around sorting a DFAnalyzer.

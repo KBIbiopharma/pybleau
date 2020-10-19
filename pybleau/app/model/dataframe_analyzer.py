@@ -3,8 +3,8 @@ from pandas import concat, DataFrame
 import numpy as np
 from functools import partial
 
-from traits.api import Bool, cached_property, Callable, Enum, Event, Instance,\
-    Int, List, on_trait_change, Property, Str
+from traits.api import Bool, cached_property, Callable, Dict, Enum, Event, \
+    Instance, Int, List, observe, on_trait_change, Property, Str
 
 from app_common.std_lib.str_utils import add_suffix_if_exists, sanitize_string
 from app_common.model_tools.data_element import DataElement
@@ -50,6 +50,9 @@ class DataFrameAnalyzer(DataElement):
 
     #: **Copy** of the data to analyze, where column names have been sanitized
     source_df = Instance(DataFrame)
+
+    #: Custom notes describing the columns of the source_df
+    column_descr = Dict
 
     #: Result of filtering the source_df with the filter_exp expression
     filtered_df = Instance(DataFrame)
@@ -198,6 +201,15 @@ class DataFrameAnalyzer(DataElement):
         self.filtered_df = self.filtered_df.sample(frac=1)
 
     # Traits Listeners --------------------------------------------------------
+
+    @observe("column_descr:items")
+    def check_col_descr_change(self, event):
+        for key, value in event.added.items():
+            if key not in self.source_df.columns:
+                msg = f"Note added for invalid column {key}. Removing it... " \
+                    f"(Note was: {value})"
+                logger.error(msg)
+                self.column_descr.pop(key)
 
     @on_trait_change("plot_manager_list.index_selected[]", post_init=True)
     def update_selected_idx(self, object, name, old, new):
@@ -357,6 +369,8 @@ class DataFrameAnalyzer(DataElement):
         else:
             self.sort_by_col = self.index_name
 
+        self._update_column_descriptions()
+
     def _sort_by_col_changed(self, new):
         self.filtered_df = self._sort_df_by(self.filtered_df, new)
         # Remap the selections
@@ -395,6 +409,15 @@ class DataFrameAnalyzer(DataElement):
         return df
 
     # Private interface -------------------------------------------------------
+
+    def _update_column_descriptions(self):
+        """ Remove column descriptions if a column has been removed.
+        """
+        descriptions = list(self.column_descr.keys())
+        columns_present = set(self.source_df.columns)
+        for col_name in descriptions:
+            if col_name not in columns_present:
+                self.column_descr.pop(col_name)
 
     @staticmethod
     def _clean_filter_exp(expr):
