@@ -22,8 +22,8 @@ class TestAnalyzer(Analyzer, TestCase):
     def test_remove_column_description_when_remove_source_df_col(self):
         analyzer = self.analyzer_klass(source_df=self.df)
         self.assertEqual(analyzer.column_metadata, {})
-        analyzer.column_metadata["a"] = "Cool column!"
-        analyzer.column_metadata["b"] = "Another cool column!"
+        analyzer.column_metadata["a"] = {"Notes": "Cool column!"}
+        analyzer.column_metadata["b"] = {"Notes": "Another cool column!"}
         # Remove a column from the source df:
         analyzer.source_df = self.df[["a", "c"]]
         self.assertNotIn("b", set(analyzer.column_metadata.keys()))
