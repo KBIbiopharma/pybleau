@@ -381,7 +381,7 @@ class Analyzer(UnittestTools):
         analyzer.column_descr["a"] = "Cool column!"
         analyzer.column_descr["b"] = "Another cool column!"
         # Remove a column from the source df:
-        analyzer.source_df = self.df["a", "c"]
+        analyzer.source_df = self.df[["a", "c"]]
         self.assertNotIn("b", set(analyzer.column_descr.keys()))
 
 

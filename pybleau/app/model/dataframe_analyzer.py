@@ -369,7 +369,7 @@ class DataFrameAnalyzer(DataElement):
         else:
             self.sort_by_col = self.index_name
 
-        self.update_column_descriptions()
+        self._update_column_descriptions()
 
     def _sort_by_col_changed(self, new):
         self.filtered_df = self._sort_df_by(self.filtered_df, new)
