@@ -64,18 +64,20 @@ For development:
 For complete list of dependencies, please refer to `ci/requirements.json` for 
 the content of the environment used to test pybleau in CI.
 
+
 ### Installation steps
 
-To install pybleau within an existing Python environment, end-users should 
-install `pybleau` itself using: 
+To automatically create a development environment with all depenencies, 
 ```bash
-python setup.py install
+python etstool.py install
 ```
 
-Developers should clone this repository and run
+Alternatively, to install pybleau within an existing Python environment, 
+developers should clone this repository and run
 ```bash
 python setup.py develop
 ```
+
 
 ## Package content and design
 
@@ -188,7 +190,7 @@ issue on this repository.
 Before contributing a PR, it is necessary to run the test suite to make sure it 
 passes. For that, execute:
 ```bash
-python -m unittest discover pybleau/
+python etstool.py test
 ```
 Please make sure to contribute new tests to make sure the test coverage doesn't 
 get reduced by your contribution and that your contribution can't be broken 
@@ -196,5 +198,5 @@ inadvertently in the future.
 
 Before contributing new code, one should finally test `flake8` code compliance:
 ```bash
-flake8 pybleau setup.py
+python etstool.py flake8
 ```
