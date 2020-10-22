@@ -51,8 +51,8 @@ class DataFrameAnalyzer(DataElement):
     #: **Copy** of the data to analyze, where column names have been sanitized
     source_df = Instance(DataFrame)
 
-    #: Custom notes describing the columns of the source_df
-    column_descr = Dict
+    #: Custom metadata describing the columns of the source_df
+    column_metadata = Dict
 
     #: Result of filtering the source_df with the filter_exp expression
     filtered_df = Instance(DataFrame)
@@ -202,14 +202,14 @@ class DataFrameAnalyzer(DataElement):
 
     # Traits Listeners --------------------------------------------------------
 
-    @observe("column_descr:items")
+    @observe("column_metadata:items")
     def check_col_descr_change(self, event):
         for key, value in event.added.items():
             if key not in self.source_df.columns:
                 msg = f"Note added for invalid column {key}. Removing it... " \
                     f"(Note was: {value})"
                 logger.error(msg)
-                self.column_descr.pop(key)
+                self.column_metadata.pop(key)
 
     @on_trait_change("plot_manager_list.index_selected[]", post_init=True)
     def update_selected_idx(self, object, name, old, new):
@@ -413,11 +413,11 @@ class DataFrameAnalyzer(DataElement):
     def _update_column_descriptions(self):
         """ Remove column descriptions if a column has been removed.
         """
-        descriptions = list(self.column_descr.keys())
+        descriptions = list(self.column_metadata.keys())
         columns_present = set(self.source_df.columns)
         for col_name in descriptions:
             if col_name not in columns_present:
-                self.column_descr.pop(col_name)
+                self.column_metadata.pop(col_name)
 
     @staticmethod
     def _clean_filter_exp(expr):

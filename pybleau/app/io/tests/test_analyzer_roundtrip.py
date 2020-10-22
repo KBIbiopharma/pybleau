@@ -141,7 +141,7 @@ class TestRoundTripAnalyzerWithPlots(TestCase, BaseAnalysisRoundTrip):
 
     def test_roundtrip_bare_analysis_with_col_descr(self):
         analysis = DataFrameAnalyzer(source_df=TEST_DF)
-        analysis.column_descr["Col_1"] = "Nice description of column 1!"
+        analysis.column_metadata["Col_1"] = "Nice description of column 1!"
         self.assert_roundtrip_identical(analysis)
 
     def test_part_analysis_and_plotter_scatter_plot(self):
