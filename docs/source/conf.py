@@ -14,13 +14,21 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import pybleau
 
 # -- Project information -----------------------------------------------------
 
 project = 'pybleau'
-copyright = '2020, Jonathan Rocher, Jason Chambless'
-author = 'Jonathan Rocher, Jason Chambless'
+copyright = '2020, KBI Biopharma Inc.'
+author = 'Jonathan Rocher'
 
+
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+#
+# The short X.Y version.
+version = pybleau.__version__
 
 # -- General configuration ---------------------------------------------------
 
