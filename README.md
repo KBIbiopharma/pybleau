@@ -188,7 +188,7 @@ issue on this repository.
 Before contributing a PR, it is necessary to run the test suite to make sure it 
 passes. For that, execute:
 ```bash
-python -m unittest discover pybleau/
+python etstool.py test
 ```
 Please make sure to contribute new tests to make sure the test coverage doesn't 
 get reduced by your contribution and that your contribution can't be broken 
@@ -196,5 +196,5 @@ inadvertently in the future.
 
 Before contributing new code, one should finally test `flake8` code compliance:
 ```bash
-flake8 pybleau setup.py
+python etstool.py flake8
 ```
