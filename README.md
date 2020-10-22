@@ -64,18 +64,20 @@ For development:
 For complete list of dependencies, please refer to `ci/requirements.json` for 
 the content of the environment used to test pybleau in CI.
 
+
 ### Installation steps
 
-To install pybleau within an existing Python environment, end-users should 
-install `pybleau` itself using: 
+To automatically create a development environment with all depenencies, 
 ```bash
-python setup.py install
+python etstool.py install
 ```
 
-Developers should clone this repository and run
+Alternatively, to install pybleau within an existing Python environment, 
+developers should clone this repository and run
 ```bash
 python setup.py develop
 ```
+
 
 ## Package content and design
 
