@@ -537,6 +537,12 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
                     zip(new_style.renderer_styles, style.renderer_styles))
         )
         if change_needed:
+            new_style.x_axis_style.range_low = style.x_axis_style.range_low
+            new_style.x_axis_style.range_high = style.x_axis_style.range_high
+            new_style.y_axis_style.range_low = style.y_axis_style.range_low
+            new_style.y_axis_style.range_high = style.y_axis_style.range_high
+            new_style.title_style.font_name = style.title_style.font_name
+            new_style.title_style.font_size = style.title_style.font_size
             self.plot_style = new_style
 
     def _plot_style_default(self):
@@ -621,6 +627,12 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
                     zip(new_style.renderer_styles, style.renderer_styles))
         )
         if change_needed:
+            new_style.x_axis_style.range_low = style.x_axis_style.range_low
+            new_style.x_axis_style.range_high = style.x_axis_style.range_high
+            new_style.y_axis_style.range_low = style.y_axis_style.range_low
+            new_style.y_axis_style.range_high = style.y_axis_style.range_high
+            new_style.title_style.font_name = style.title_style.font_name
+            new_style.title_style.font_size = style.title_style.font_size
             self.plot_style = new_style
 
     # Traits initialization methods -------------------------------------------

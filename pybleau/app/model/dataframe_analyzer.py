@@ -476,7 +476,7 @@ class DataFrameAnalyzer(DataElement):
         df.loc[df[df.columns[0]], :]).
         """
         # In this list, '=' used to identify '==' or '>=' or '<=' more quickly:
-        operators = ["=", ">", "<", "~", "not "]
+        operators = ["=", ">", "<", "~", "not ", "in", "is"]
         for op in operators:
             if op in query:
                 return True
