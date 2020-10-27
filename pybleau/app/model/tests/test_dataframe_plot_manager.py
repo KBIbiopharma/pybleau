@@ -997,43 +997,6 @@ class TestPlotManagerFromDFAnalyzer(TestCase, UnittestTools):
         self.assertEqual(self.model.contained_plots, [])
         self.assertIs(self.model.source_analyzer, self.source_analyzer)
 
-    def assert_ranges_are_initialized(self, config):
-        style = config.plot_style.x_axis_style
-        self.assertNotEqual(style.range_low, -1)
-        self.assertNotEqual(style.range_high, -1)
-        style = config.plot_style.y_axis_style
-        self.assertNotEqual(style.range_low, -1)
-        self.assertNotEqual(style.range_high, -1)
-
-    def test_ranges_are_set_when_change_color_column_filtered_df(self):
-        config = ScatterPlotConfigurator(
-            data_source=self.source_analyzer.filtered_df,
-            plot_title="Scatter Plot")
-        config.x_col_name = "a"
-        config.y_col_name = "b"
-        config.z_col_name = "d"
-        self.model._add_new_plot(config)
-
-        self.source_analyzer.filter_exp = "d == 'c'"
-        self.assert_ranges_are_initialized(config)
-        self.model.contained_plots[0].style_edited = True
-        self.assert_ranges_are_initialized(config)
-
-        self.source_analyzer.filter_exp = "d == 'a' or d == 'e'"
-        self.assert_ranges_are_initialized(config)
-        self.model.contained_plots[0].style_edited = True
-        self.assert_ranges_are_initialized(config)
-
-        self.source_analyzer.filter_exp = "d in ['b','a']"
-        self.assert_ranges_are_initialized(config)
-        self.model.contained_plots[0].style_edited = True
-        self.assert_ranges_are_initialized(config)
-
-        self.source_analyzer.filter_exp = "d in ['c', 'e', 'b']"
-        self.assert_ranges_are_initialized(config)
-        self.model.contained_plots[0].style_edited = True
-        self.assert_ranges_are_initialized(config)
-
     def test_update_source_analyzer(self):
         config = ScatterPlotConfigurator(data_source=TEST_DF,
                                          plot_title="Plot")
