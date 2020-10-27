@@ -62,7 +62,7 @@ class DataFramePlotManager(DataElement):
     in contained_plots.
 
     To enable plot template creation and usage, a template_interactor
-    attribute must be passed at creation. The template_interactormust provide
+    attribute must be passed at creation. The template_interactor must provide
     the IPlotTemplateInteractor interface, implementing how to save, load and
     delete Configurator objects/files.
 
