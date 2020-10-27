@@ -10,7 +10,6 @@ class DataFrameAnalyzer {
     DataFrame summary_df
     DataFrame summary_categorical_df
     [DataFramePlotManager] plot_manager_list
-
 }
 DataFrameAnalyzer o--> DataFrame
 DataFrameAnalyzer "0..*" o--> DataFramePlotManager
@@ -20,10 +19,9 @@ class DataFramePlotManager {
     [PlotDescriptor] contained_plots
     DataFrameAnalyzer source_analyzer
     IPlotTemplateInteractor template_interactor
-
-    --
-    Manager to create, update, reorder, hide, delete plots.
-    Provides a data model for a DataFrameAnalyzer.
+    ..Job Description..
+    * Manager to create, update, reorder, hide, delete plots.
+    * Provides a data model for a DataFrameAnalyzer.
 }
 DataFramePlotManager "0..*" o--> PlotDescriptor
 DataFramePlotManager o..> DataFrame
@@ -33,9 +31,9 @@ class BasePlotFactory {
     ArrayPlotData plot_data
     BaseXYPlotStyle plot_style
     PlotContextMenuManager context_menu_manager
-    --
-    Builds a chaco plot with generate_plot()
-    Manipulates titles and ticks/labels for a plot.
+    ..Job Description..
+    * Builds a chaco plot with generate_plot()
+    * Manipulates titles and ticks/labels for a plot.
 }
 BasePlotFactory o--> BaseXYPlotStyle
 BasePlotFactory o--> PlotContextMenuManager
@@ -43,16 +41,17 @@ BasePlotFactory o--> PlotContextMenuManager
 class StdXYPlotFactory {
     OverlayPlotContainer plot
     {BaseXYPlot} renderers
-    --
-    Creates a dict of properties for a \n\t2D plot with 1+ renderers and a legend.
-    Initializes plot data from arrays.
-    Adds tools (legend/context menu/zoom/pan) to a plot.
-    Builds and adds/appends/removes/updates renderers
+    ..Job Description..
+    * Creates a dict of properties for a 2D plot
+    with one or more renderers and a legend.
+    * Initializes plot data from arrays.
+    * Adds tools (legend/context menu/zoom/pan) to a plot.
+    * Builds and adds/appends/removes/updates renderers
 }
 BasePlotContainer <|-- OverlayPlotContainer
 BasePlotFactory <|-- StdXYPlotFactory
 StdXYPlotFactory o--> OverlayPlotContainer
-OverlayPlotContainer : Chaco Plot container that stretches all its components
+OverlayPlotContainer : * Chaco Plot container that stretches all its components
 
 class BaseXYPlotStyle {
     RendererStyleManager renderer_style_manager
@@ -61,9 +60,9 @@ class BaseXYPlotStyle {
     AxisStyle x_axis_style
     AxisStyle y_axis_style
     AxisStyle second_y_axis_style
-    --
-    Used to control and view styling for entire chaco plots.
-    Provides the views for manipulating the plot style.
+    ..Job Description..
+    * Used to control and view styling for entire chaco plots.
+    * Provides the views for manipulating the plot style.
 }
 BaseXYPlotStyle o--> RendererStyleManager
 BaseXYPlotStyle o--> AxisStyle
@@ -71,21 +70,21 @@ BaseXYPlotStyle o--> TitleStyle
 BaseXYPlotStyle <|-- BaseColorXYPlotStyle
 BaseColorXYPlotStyle <|-- BarPlotStyle
 
-TitleStyle : Styling tool for a plot title.
-AxisStyle : Styling tool for an axis title.
+TitleStyle : * Styling tool for a plot title.
+AxisStyle : * Styling tool for an axis title.
 
 class RendererStyleManager {
     [BaseRendererStyle] renderer_styles
-    --
-    Provides a scrollable view of the renderer style list.
+    ..Job Description..
+    * Provides a scrollable view of the renderer style list.
 }
 RendererStyleManager "0..*" o--> BaseRendererStyle
 
 class BaseRendererStyle {
     Str renderer_name
-    --
-    Provides view for customizing individual renderers.
-    Controls marker size, line color, bar width, etc.
+    ..Job Description..
+    * Provides view for customizing individual renderers.
+    * Controls marker size, line color, bar width, etc.
 }
 BaseRendererStyle <|-- BaseXYRendererStyle
 BaseXYRendererStyle <|-- ScatterRendererStyle
@@ -98,10 +97,10 @@ class PlotDescriptor {
     BasePlotContainer plot
     BasePlotConfigurator plot_config
     BasePlotFactory plot_factory
-    --
-    Exposes properties from the plot_config for a TableEditor.
-    Allows user to set frozen/visible status of a plot.
-    Controls events that signify users intent to edit styles.
+    ..Job Description..
+    * Exposes properties from the plot_config for a TableEditor.
+    * Allows user to set frozen/visible status of a plot.
+    * Controls events that signify users intent to edit styles.
 }
 PlotDescriptor o--> BasePlotContainer
 PlotDescriptor o--> BasePlotConfigurator
@@ -112,11 +111,11 @@ class BasePlotConfigurator {
     DataFrame data_source
     DataFrame transformed_data
     BaseXYPlotStyle plot_style
-    --
-    Contains and provides all the data required to serialize a plot.
-    Provides the views used to specify plot options and data.
-    Updates the styles when data or options change.
-    Provides default plot styles.
+    ..Job Description..
+    * Contains and provides all the data required to serialize a plot.
+    * Provides the views used to specify plot options and data.
+    * Updates the styles when data or options change.
+    * Provides default plot styles.
 }
 BasePlotConfigurator o..> DataFrame
 BasePlotConfigurator o--> BaseXYPlotStyle
