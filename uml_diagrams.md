@@ -1,4 +1,3 @@
 Plotting class diagram
 ----------------------
-![system overview](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/anoff/plantbuddy/master/assets/overview.iuml)
-![system overview](http://www.plantuml.com/plantuml/proxy?cache=no&src=)
+![Plotting](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/KBIbiopharma/pybleau/pybleau_plotting_uml/pybleau_plotting.puml)
