@@ -1,8 +1,8 @@
 @startuml
 
-class DataElement
-DataElement <|-- DataFramePlotManager
-DataElement <|-- DataFrameAnalyzer
+'class DataElement
+'DataElement <|-- DataFramePlotManager
+'DataElement <|-- DataFrameAnalyzer
 class DataFrameAnalyzer {
     DataFrame source_df
     DataFrame filtered_df
@@ -21,7 +21,7 @@ class DataFramePlotManager {
     DataFrameAnalyzer source_analyzer
 }
 DataFramePlotManager "0..*" o--> PlotDescriptor
-DataFramePlotManager o--> DataFrame
+DataFramePlotManager o..> DataFrame
 DataFramePlotManager o--> DataFrameAnalyzer
 
 class BasePlotFactory {
@@ -78,7 +78,7 @@ class BasePlotConfigurator {
     DataFrame transformed_data
     BaseXYPlotStyle plot_style
 }
-BasePlotConfigurator o--> DataFrame
+BasePlotConfigurator o..> DataFrame
 BasePlotConfigurator o--> BaseXYPlotStyle
 
 class BaseSingleXYPlotConfigurator {
@@ -90,13 +90,16 @@ class BarPlotConfigurator {
     BarPlotStyle plot_style
     DataFrame transformed_data
 }
-BarPlotConfigurator o--> DataFrame
+BarPlotConfigurator o..> DataFrame
 BarPlotConfigurator o--> BarPlotStyle
 BaseColorXYPlotStyle <|-- BarPlotStyle
 BaseXYPlotStyle <|-- BaseColorXYPlotStyle
 
 class ScatterPlotConfigurator
 BasePlotConfigurator <|-- BaseSinglePlotConfigurator
+'BasePlotConfigurator <|-- BaseMultiPlotConfigurator
+'BaseSingleXYPlotConfigurator <|-- MultiLinePlotConfigurator
+'BaseMultiPlotConfigurator <|-- MultiLinePlotConfigurator
 BaseSinglePlotConfigurator <|-- BaseSingleXYPlotConfigurator
 BaseSingleXYPlotConfigurator <|-- BarPlotConfigurator
 BaseSingleXYPlotConfigurator <|-- ScatterPlotConfigurator
