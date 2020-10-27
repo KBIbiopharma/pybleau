@@ -602,6 +602,10 @@ class DataFramePlotManager(DataElement):
             factory.append_new_renderers(desc_list=new_descs,
                                          styles=new_styles)
 
+            factory.align_all_renderers(plot_desc.plot)
+
+            config.plot_style = factory.plot_style
+
     @on_trait_change("contained_plots:plot_factory:context_menu_manager:"
                      "style_edit_requested", post_init=True)
     def action_edit_style_requested(self, manager, attr_name, new):
