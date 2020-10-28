@@ -85,7 +85,7 @@ class MultiCanvasManager(DataElement):
 
         Parameters
         ----------
-        desc : PlotManager
+        desc : PlotDescriptor
             Descriptor of the plot to add.
 
         position : int or None
@@ -112,7 +112,7 @@ class MultiCanvasManager(DataElement):
 
         Parameters
         ----------
-        desc : PlotManager
+        desc : PlotDescriptor
             Descriptor of the plot to add.
 
         container : None or ConstraintsPlotContainerManager

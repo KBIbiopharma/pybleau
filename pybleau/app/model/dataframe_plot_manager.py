@@ -18,7 +18,7 @@ from traits.api import Dict, Enum, Instance, Int, List, on_trait_change, \
 
 from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
 from pybleau.app.model.plot_descriptor import CONTAINER_IDX_REMOVAL, \
-    CUSTOM_PLOT_TYPE, PlotManager
+    CUSTOM_PLOT_TYPE, PlotDescriptor
 from pybleau.app.model.plot_template_manager import PlotTemplateManager
 from pybleau.app.plotting.i_plot_template_interactor import \
     IPlotTemplateInteractor
@@ -45,7 +45,7 @@ DATA_COLUMN_TYPES = ["Input", "Output", "Index"]
 CMAP_PLOT_TYPES = [CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE]
 
 
-class DataFrameCanvasManager(DataElement):
+class DataFramePlotManager(DataElement):
     """ Manager to create, update, reorder, hide, delete plots from DataFrame.
 
     It uses its :meth:`add_new_plot` method to create a Plot instance from a
@@ -58,7 +58,7 @@ class DataFrameCanvasManager(DataElement):
     containers is a constraints based enable canvas to display any number of
     plots. For the logic to which container a given plot is stored in if not
     specified by the user, refer to the MultiCanvasManager. In addition, for
-    each plot a PlotManager is created to summarize the plot, and store it
+    each plot a PlotDescriptor is created to summarize the plot, and store it
     in contained_plots.
 
     To enable plot template creation and usage, a template_interactor
@@ -92,7 +92,7 @@ class DataFrameCanvasManager(DataElement):
     canvas_manager = Instance(MultiCanvasManager, ())
 
     #: List of active plots (may be hidden)
-    contained_plots = List(PlotManager)
+    contained_plots = List(PlotDescriptor)
 
     #: List of plots that failed to get (re)built (for error reporting)
     failed_plots = List
@@ -140,7 +140,7 @@ class DataFrameCanvasManager(DataElement):
             traits["contained_plots"] = self.preprocess_plot_list(
                 traits["contained_plots"])
 
-        super(DataFrameCanvasManager, self).__init__(**traits)
+        super(DataFramePlotManager, self).__init__(**traits)
 
         if self.contained_plots and self.data_source is not None:
             self._create_initial_plots_from_descriptions()
@@ -172,20 +172,20 @@ class DataFrameCanvasManager(DataElement):
                 contained_plots.append(new_desc)
             elif isinstance(desc, BaseMultiPlotConfigurator):
                 config_list = desc.to_config_list()
-                contained_plots += [PlotManager.from_config(x)
+                contained_plots += [PlotDescriptor.from_config(x)
                                     for x in config_list]
-            elif isinstance(desc, PlotManager) and \
+            elif isinstance(desc, PlotDescriptor) and \
                     isinstance(desc.plot_config, BaseMultiPlotConfigurator):
                 config_list = desc.plot_config.to_config_list()
-                contained_plots += [PlotManager.from_config(x)
+                contained_plots += [PlotDescriptor.from_config(x)
                                     for x in config_list]
             elif isinstance(desc, BaseSinglePlotConfigurator):
-                contained_plots.append(PlotManager.from_config(desc))
-            elif isinstance(desc, PlotManager):
+                contained_plots.append(PlotDescriptor.from_config(desc))
+            elif isinstance(desc, PlotDescriptor):
                 contained_plots.append(desc)
             else:
                 msg = "Unsupported object type to provided a plot in a " \
-                      "DFPlotManager. Supported types are PlotManager " \
+                      "DFPlotManager. Supported types are PlotDescriptor " \
                       "instances or PlotConfigurator instances but a {} was " \
                       "provided for item {}. Skipping...".format(type(desc), i)
                 logger.error(msg)
@@ -200,7 +200,7 @@ class DataFrameCanvasManager(DataElement):
         If a configurator is provided, the plot is generated from it, and added
         to the canvas. If a CUSTOM_PLOT_TYPE type is provided, a Chaco
         container is provided as the config_or_plot instead and it is wrapped
-        in a PlotManager and included in the canvas directly.
+        in a PlotDescriptor and included in the canvas directly.
 
         Parameters
         ----------
@@ -216,13 +216,13 @@ class DataFrameCanvasManager(DataElement):
         if plot_type.startswith("Multi"):
             self._add_new_plots(config_or_plot, position=position, **kwargs)
         elif plot_type == CUSTOM_PLOT_TYPE:
-            if isinstance(config_or_plot, PlotManager):
+            if isinstance(config_or_plot, PlotDescriptor):
                 desc = config_or_plot
             elif isinstance(config_or_plot, BasePlotContainer):
                 desc = embed_plot_in_desc(config_or_plot)
             else:
                 msg = "The config_or_plot argument for the 'custom' type can" \
-                      " be a Chaco container or a PlotManager, but a {} " \
+                      " be a Chaco container or a PlotDescriptor, but a {} " \
                       "was provided.".format(type(config_or_plot))
                 logger.exception(msg)
                 raise ValueError(msg)
@@ -234,7 +234,7 @@ class DataFrameCanvasManager(DataElement):
     def delete_plots(self, plot_descriptions, container=None):
         """ Remove a (list of) plot(s). Clean up resources.
         """
-        if isinstance(plot_descriptions, PlotManager):
+        if isinstance(plot_descriptions, PlotDescriptor):
             plot_descriptions = [plot_descriptions]
 
         for plot_desc in plot_descriptions:
@@ -297,7 +297,7 @@ class DataFrameCanvasManager(DataElement):
 
         Parameters
         ----------
-        desc : PlotManager
+        desc : PlotDescriptor
             Plot descriptor holding the (already made) plot to insert.
 
         position : int or None, optional
@@ -402,7 +402,7 @@ class DataFrameCanvasManager(DataElement):
             desc["container_idx"] = containers.index(container)
 
         desc.update(desc_traits)
-        desc = PlotManager(**desc)
+        desc = PlotDescriptor(**desc)
 
         # Store the description into a list for display in UI
         if list_op == "insert":
@@ -773,7 +773,7 @@ class DataFrameCanvasManager(DataElement):
 
     # Private interface methods -----------------------------------------------
 
-    def _get_desc_for_menu_manager(self, manager) -> PlotManager:
+    def _get_desc_for_menu_manager(self, manager) -> PlotDescriptor:
         desc = None
         for desc in self.contained_plots:
             if desc.plot_factory is None:
@@ -799,14 +799,14 @@ class DataFrameCanvasManager(DataElement):
         else:
             return plot_desc.plot
 
-    def _request_template_name_with_desc(self, desc: PlotManager) -> \
+    def _request_template_name_with_desc(self, desc: PlotDescriptor) -> \
             Optional[str]:
         """ Request the template name from the user.
 
         Parameters
         ----------
-        desc : PlotManager
-            A PlotManager that contains a `plot_config`
+        desc : PlotDescriptor
+            A PlotDescriptor that contains a `plot_config`
 
         Returns
         -------
@@ -869,7 +869,7 @@ class DataFrameCanvasManager(DataElement):
 
 
 def embed_plot_in_desc(plot):
-    """ Embed chaco plot in PlotManager so it can be displayed in DFPlotter.
+    """ Embed chaco plot in PlotDescriptor so it can be displayed in DFPlotter.
 
     Parameters
     ----------
@@ -877,7 +877,7 @@ def embed_plot_in_desc(plot):
         Chaco plot to be embedded.
     """
     if isinstance(plot, Plot):
-        desc = PlotManager(
+        desc = PlotDescriptor(
             plot_type=CUSTOM_PLOT_TYPE,
             plot=plot,
             plot_config=BaseSinglePlotConfigurator(),

@@ -1,4 +1,4 @@
-""" View for a DataFrameCanvasManager.
+""" View for a DataFramePlotManager.
 """
 import logging
 import os
@@ -13,7 +13,7 @@ from traitsui.extras.checkbox_column import CheckboxColumn
 from traitsui.menu import CancelButton, OKButton
 
 from pybleau.app.model.dataframe_plot_manager import CONTAINER_IDX_REMOVAL, \
-    DataFrameCanvasManager
+    DataFramePlotManager
 from pybleau.app.model.multi_canvas_manager import CONTAINER_TRAIT_NAME
 from pybleau.app.model.tests.test_plot_template_manager import \
     FakePlotTemplateInteractor
@@ -31,8 +31,8 @@ DEFAULT_PLOT_CONTROL_SIZE = 170
 AUTO_TARGET_CONTAINER = "auto"
 
 
-class DataFrameCanvasManagerView(ModelView):
-    """ View for a DataFrameCanvasManager.
+class DataFramePlotManagerView(ModelView):
+    """ View for a DataFramePlotManager.
 
     This UI allows to manipulate the manager, add new plots to it, export them,
     and expose its contained_plots list for user interaction.
@@ -40,7 +40,7 @@ class DataFrameCanvasManagerView(ModelView):
     TODO: Allow to change the layout of the container after creation.
     """
     #: Plot manager being visualized
-    model = Instance(DataFrameCanvasManager)
+    model = Instance(DataFramePlotManager)
 
     #: View class to use. Modify to customize.
     view_klass = Any(View)
@@ -105,7 +105,7 @@ class DataFrameCanvasManagerView(ModelView):
         return view
 
     def build_plot_list_editor(self):
-        """ Build a table editor for the model's list of PlotManagers.
+        """ Build a table editor for the model's list of PlotDescriptors.
         """
         num_containers = self.model.canvas_manager.num_container_managers
         container_idx_vals = list(range(num_containers)) + [
@@ -273,9 +273,9 @@ class DataFrameCanvasManagerView(ModelView):
 
     def _export_plots_button_fired(self):
         from pybleau.app.io.dataframe_plot_manager_exporter import \
-            DataFrameCanvasManagerExporter
+            DataFramePlotManagerExporter
 
-        exporter = DataFrameCanvasManagerExporter(df_plotter=self.model,
+        exporter = DataFramePlotManagerExporter(df_plotter=self.model,
                                                 view_klass=self.view_klass)
         exporter.export()
 
@@ -329,7 +329,7 @@ class PlotTypeSelector(BaseTemplateListDlg):
 
 
 if __name__ == "__main__":
-    plot_manager = DataFrameCanvasManager(
+    plot_manager = DataFramePlotManager(
         template_interactor=FakePlotTemplateInteractor()
     )
     selector = PlotTypeSelector(

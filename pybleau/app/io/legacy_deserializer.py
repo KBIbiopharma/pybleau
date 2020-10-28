@@ -6,8 +6,8 @@ implementation, and added to the LEGACY dictionary.
 from traits.api import HasStrictTraits, Set
 
 from .deserializer import singleLinePlotStyleDeSerializer, \
-    singleScatterPlotStyleDeSerializer, plotManagerDeSerializer, \
-    dataFrameCanvasManagerDeSerializer, histogramPlotStyleDeSerializer, \
+    singleScatterPlotStyleDeSerializer, plotDescriptorDeSerializer, \
+    dataFramePlotManagerDeSerializer, histogramPlotStyleDeSerializer, \
     scatterPlotConfiguratorDeSerializer, dataFrameAnalyzerDeSerializer, \
     axisStyleDeSerializer
 from ..plotting.plot_config import DEFAULT_CONFIGS, DEFAULT_STYLES
@@ -37,7 +37,7 @@ class dataFrameAnalyzerDeSerializer_v0(dataFrameAnalyzerDeSerializer):
             constructor_data)
 
 
-class dataFrameCanvasManagerDeSerializer_v0(dataFrameCanvasManagerDeSerializer):
+class dataFramePlotManagerDeSerializer_v0(dataFramePlotManagerDeSerializer):
     """ Legacy deserializer for objects stored by pybleau before 0.5.0.
     """
     protocol_version = 0
@@ -45,12 +45,12 @@ class dataFrameCanvasManagerDeSerializer_v0(dataFrameCanvasManagerDeSerializer):
     def get_instance(self, constructor_data):
         kwargs = constructor_data['kwargs']
         kwargs.pop("next_plot_id", None)
-        return super(dataFrameCanvasManagerDeSerializer_v0, self).get_instance(
+        return super(dataFramePlotManagerDeSerializer_v0, self).get_instance(
             constructor_data
         )
 
 
-class plotManagerDeSerializer_v0(plotManagerDeSerializer):
+class plotDescriptorDeSerializer_v0(plotDescriptorDeSerializer):
     """ Legacy deserializer for objects stored by pybleau before 0.5.0.
     """
     protocol_version = 0
@@ -71,7 +71,7 @@ class plotManagerDeSerializer_v0(plotManagerDeSerializer):
             factory_kw['plot_style'] = style_klass(**style_kw)
             kwargs["plot_config"] = config_klass(**factory_kw)
 
-        instance = super(plotManagerDeSerializer_v0, self).get_instance(
+        instance = super(plotDescriptorDeSerializer_v0, self).get_instance(
             constructor_data
         )
         return instance
@@ -158,10 +158,10 @@ class scatterPlotConfiguratorDeSerializer_v0(scatterPlotConfiguratorDeSerializer
 
 
 LEGACY_DESERIALIZER_MAP = {
-    "plotManager": {0: plotManagerDeSerializer_v0},
+    "plotDescriptor": {0: plotDescriptorDeSerializer_v0},
     "scatterPlotStyle": {0: scatterPlotStyleDeSerializer},
     "linePlotStyle": {0: linePlotStyleDeSerializer},
-    "dataFrameCanvasManager": {0: dataFrameCanvasManagerDeSerializer_v0},
+    "dataFramePlotManager": {0: dataFramePlotManagerDeSerializer_v0},
     "histogramPlotStyle": {0: histogramPlotStyleDeSerializer_v0},
     "scatterPlotConfigurator": {0: scatterPlotConfiguratorDeSerializer_v0},
     "dataFrameAnalyzer": {0: dataFrameAnalyzerDeSerializer_v0},

@@ -131,7 +131,7 @@ all existing plots. Additionally, the plotted data is the filtered data. Changin
 filter will therefore trigger an update of all plots that haven't been set as "frozen".
 
 Additionally developers familiar with ETS can reuse lower level components as they 
-see fit, such as the `DataFrameCanvasManager`, its view class, or the configurators and 
+see fit, such as the `DataFramePlotManager`, its view class, or the configurators and 
 factories for each type of plot supported.
 
 ### A functional API to build interactive Plotly plots

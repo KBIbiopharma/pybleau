@@ -3,7 +3,7 @@ from unittest import skipIf, TestCase
 try:
     from chaco.api import Plot
 
-    from pybleau.app.model.plot_descriptor import PlotManager
+    from pybleau.app.model.plot_descriptor import PlotDescriptor
     from pybleau.app.model.multi_canvas_manager import \
         ConstraintsPlotContainerManager, DEFAULT_NUM_CONTAINERS, \
         MultiCanvasManager
@@ -38,21 +38,21 @@ class TestMultiCanvasManager(TestCase):
     def test_add_plot(self):
         canvas = MultiCanvasManager()
         plot = Plot()
-        desc = PlotManager(plot=plot)
+        desc = PlotDescriptor(plot=plot)
         canvas.add_plot_to_container(desc)
         self.assert_valid_canvas(canvas, num_plots=1)
 
     def test_add_plot_to_custom_container(self):
         canvas = MultiCanvasManager()
         plot = Plot()
-        desc = PlotManager(plot=plot)
+        desc = PlotDescriptor(plot=plot)
         canvas.add_plot_to_container(desc, container=1)
         self.assert_valid_canvas(canvas, cont_idx=1, num_plots=1)
 
     def test_add_plot_to_custom_container2(self):
         canvas = MultiCanvasManager()
         plot = Plot()
-        desc = PlotManager(plot=plot)
+        desc = PlotDescriptor(plot=plot)
         canvas.add_plot_to_container(desc,
                                      container=canvas.container_managers[2])
         self.assert_valid_canvas(canvas, cont_idx=2, num_plots=1)
@@ -60,7 +60,7 @@ class TestMultiCanvasManager(TestCase):
     def test_add_remove_plot(self):
         canvas = MultiCanvasManager()
         plot = Plot()
-        desc = PlotManager(plot=plot)
+        desc = PlotDescriptor(plot=plot)
         canvas.add_plot_to_container(desc)
         self.assert_valid_canvas(canvas, num_plots=1)
         canvas.remove_plot_from_container(desc)

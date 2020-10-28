@@ -9,7 +9,7 @@ from pybleau.app.model.multi_dfs_dataframe_analyzer import \
     MultiDataFrameAnalyzer
 from pybleau.app.io.deserializer import deserialize
 from pybleau.app.io.serializer import serialize
-from pybleau.app.model.dataframe_plot_manager import DataFrameCanvasManager
+from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
 from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
 from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
@@ -53,8 +53,8 @@ class BaseAnalysisRoundTrip(object):
         data_len = len(analysis.filtered_df)
         orig_filter = analysis.filter_exp
 
-        plot_manager = DataFrameCanvasManager(source_analyzer=analysis,
-                                              data_source=analysis.filtered_df)
+        plot_manager = DataFramePlotManager(source_analyzer=analysis,
+                                            data_source=analysis.filtered_df)
         configurator = config_klass(
             data_source=analysis.filtered_df, **config_kw
         )

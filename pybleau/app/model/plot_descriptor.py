@@ -11,7 +11,7 @@ CONTAINER_IDX_REMOVAL = "delete"
 CUSTOM_PLOT_TYPE = "Custom Plot"
 
 
-class PlotManager(HasStrictTraits):
+class PlotDescriptor(HasStrictTraits):
     """ Plot description class to support TableEditor display of list of plots.
     """
     #: Id that's unique for a given plot among all created plots

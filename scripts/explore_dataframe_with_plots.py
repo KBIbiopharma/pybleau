@@ -8,8 +8,8 @@ from chaco.api import Plot, ArrayPlotData
 from pandas import DataFrame
 
 from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView, \
-    DataFrameCanvasManager
-from pybleau.app.model.plot_descriptor import PlotManager
+    DataFramePlotManager
+from pybleau.app.model.plot_descriptor import PlotDescriptor
 from pybleau.app.plotting.multi_plot_config import MultiLinePlotConfigurator
 from pybleau.app.plotting.plot_config import HistogramPlotConfigurator, \
     BarPlotConfigurator, ScatterPlotConfigurator, LinePlotConfigurator
@@ -58,8 +58,8 @@ config6.y_col_name = "Col_1"
 config7 = MultiLinePlotConfigurator(data_source=TEST_DF)
 config7.x_col_name = "Col_1"
 config7.y_col_names = ["Col_1", "Col_2", "Col_4"]
-desc7 = PlotManager(plot_config=config7, plot_title="Plot 7",
-                    container_idx=1)
+desc7 = PlotDescriptor(plot_config=config7, plot_title="Plot 7",
+                       container_idx=1)
 
 config9 = BarPlotConfigurator(data_source=TEST_DF, plot_title="plot 9")
 config9.x_col_name = "Col_3"
@@ -69,12 +69,12 @@ config8 = ScatterPlotConfigurator(data_source=TEST_DF)
 config8.x_col_name = "Col_1"
 config8.y_col_name = "Col_2"
 config8.z_col_name = "Col_4"
-desc8 = PlotManager(plot_config=config8, plot_title="Plot 8",
-                    container_idx=1)
+desc8 = PlotDescriptor(plot_config=config8, plot_title="Plot 8",
+                       container_idx=1)
 
 analyzer = DataFrameAnalyzer(source_df=TEST_DF)
 
-plot_manager = DataFrameCanvasManager(
+plot_manager = DataFramePlotManager(
     contained_plots=[
         config,
         config2,

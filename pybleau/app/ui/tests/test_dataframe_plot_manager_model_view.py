@@ -22,7 +22,7 @@ BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
 if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from app_common.apptools.testing_utils import assert_obj_gui_works
-    from pybleau.app.api import DataFrameAnalyzer, DataFrameCanvasManager
+    from pybleau.app.api import DataFrameAnalyzer, DataFramePlotManager
     from pybleau.app.ui.dataframe_plot_manager_view import \
         DataFramePlotManagerView, PlotTypeSelector
     from pybleau.app.model.multi_canvas_manager import MultiCanvasManager
@@ -54,14 +54,14 @@ class TestDataFramePlotManagerView(TestCase):
     def setUp(self):
         self.df = DataFrame({"a": [1, 2, 3, 4, 5], "b": [10, 15, 20, 15, 10]})
         self.analyzer = DataFrameAnalyzer(source_df=self.df)
-        self.plotter = DataFrameCanvasManager(source_analyzer=self.analyzer)
+        self.plotter = DataFramePlotManager(source_analyzer=self.analyzer)
 
     def test_bring_up_plot_manager_view(self):
         view = DataFramePlotManagerView(model=self.plotter)
         assert_obj_gui_works(view)
 
     def test_bring_up_plot_manager_view_non_default_num_containers(self):
-        model = DataFrameCanvasManager(
+        model = DataFramePlotManager(
             source_analyzer=self.analyzer,
             canvas_manager=MultiCanvasManager(num_container_managers=5)
         )
