@@ -7,8 +7,8 @@ from app_common.apptools.io.assertion_utils import assert_roundtrip_identical
 
 from pybleau.app.io.serializer import serialize
 from pybleau.app.io.deserializer import deserialize
-from pybleau.app.api import DataFrameAnalyzer, DataFramePlotManager
-from pybleau.app.model.plot_descriptor import PlotDescriptor
+from pybleau.app.api import DataFrameAnalyzer, DataFrameCanvasManager
+from pybleau.app.model.plot_descriptor import PlotManager
 from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
     HeatmapPlotConfigurator, HistogramPlotConfigurator, LinePlotConfigurator, \
     ScatterPlotConfigurator
@@ -38,24 +38,24 @@ class TestRoundTripDataFramePlotManager(TestCase):
     def test_round_trip_df_plotter_with_hist(self):
         config = HistogramPlotConfigurator(data_source=TEST_DF)
         config.x_col_name = "Col_4"
-        desc = PlotDescriptor(x_col_name="Col_4", plot_config=config,
-                              plot_title="Plot 1")
+        desc = PlotManager(x_col_name="Col_4", plot_config=config,
+                           plot_title="Plot 1")
         self.assert_df_plotter_roundtrip(desc)
 
     def test_round_trip_df_plotter_with_bar(self):
         config2 = BarPlotConfigurator(data_source=TEST_DF)
         config2.x_col_name = "Col_1"
         config2.y_col_name = "Col_2"
-        desc2 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
-                               plot_config=config2, plot_title="Plot 2")
+        desc2 = PlotManager(x_col_name="Col_1", y_col_name="Col_2",
+                            plot_config=config2, plot_title="Plot 2")
         self.assert_df_plotter_roundtrip(desc2)
 
     def test_round_trip_df_plotter_with_scatter(self):
         config3 = ScatterPlotConfigurator(data_source=TEST_DF)
         config3.x_col_name = "Col_1"
         config3.y_col_name = "Col_2"
-        desc3 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
-                               plot_config=config3, plot_title="Plot 3")
+        desc3 = PlotManager(x_col_name="Col_1", y_col_name="Col_2",
+                            plot_config=config3, plot_title="Plot 3")
         self.assert_df_plotter_roundtrip(desc3)
 
     def test_round_trip_df_plotter_with_colored_scatter(self):
@@ -63,25 +63,25 @@ class TestRoundTripDataFramePlotManager(TestCase):
         config4.x_col_name = "Col_1"
         config4.y_col_name = "Col_2"
         config4.z_col_name = "Col_3"
-        desc4 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
-                               z_col_name="Col_3",
-                               plot_config=config4, plot_title="Plot 4")
+        desc4 = PlotManager(x_col_name="Col_1", y_col_name="Col_2",
+                            z_col_name="Col_3",
+                            plot_config=config4, plot_title="Plot 4")
         self.assert_df_plotter_roundtrip(desc4)
 
     def test_round_trip_df_plotter_with_line_plot(self):
         config5 = LinePlotConfigurator(data_source=TEST_DF)
         config5.x_col_name = "Col_1"
         config5.y_col_name = "Col_2"
-        desc5 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
-                               plot_config=config5, plot_title="Plot 5")
+        desc5 = PlotManager(x_col_name="Col_1", y_col_name="Col_2",
+                            plot_config=config5, plot_title="Plot 5")
         self.assert_df_plotter_roundtrip(desc5)
 
     def test_round_trip_df_plotter_bar(self):
         config6 = BarPlotConfigurator(data_source=TEST_DF)
         config6.x_col_name = "Col_3"
         config6.y_col_name = "Col_1"
-        desc6 = PlotDescriptor(x_col_name="Col_3", y_col_name="Col_1",
-                               plot_config=config6, plot_title="Plot 6")
+        desc6 = PlotManager(x_col_name="Col_3", y_col_name="Col_1",
+                            plot_config=config6, plot_title="Plot 6")
         self.assert_df_plotter_roundtrip(desc6)
 
     def test_round_trip_df_plotter_cmap_scatter_type(self):
@@ -89,9 +89,9 @@ class TestRoundTripDataFramePlotManager(TestCase):
         config.x_col_name = "Col_1"
         config.y_col_name = "Col_2"
         config.z_col_name = "Col_4"
-        desc = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
-                              z_col_name="Col_4",
-                              plot_config=config, plot_title="Plot 7")
+        desc = PlotManager(x_col_name="Col_1", y_col_name="Col_2",
+                           z_col_name="Col_4",
+                           plot_config=config, plot_title="Plot 7")
 
         # Skipping the color_ attribute since it behaves strangely and is a
         # proxy for the renderer color attribute anyway:
@@ -102,9 +102,9 @@ class TestRoundTripDataFramePlotManager(TestCase):
         config7.x_col_name = "Col_1"
         config7.y_col_name = "Col_2"
         config7.z_col_name = "Col_3"
-        desc7 = PlotDescriptor(x_col_name="Col_1", y_col_name="Col_2",
-                               z_col_name="Col_3",
-                               plot_config=config7, plot_title="Plot 8")
+        desc7 = PlotManager(x_col_name="Col_1", y_col_name="Col_2",
+                            z_col_name="Col_3",
+                            plot_config=config7, plot_title="Plot 8")
 
         self.assert_df_plotter_roundtrip(desc7)
 
@@ -119,7 +119,7 @@ class TestRoundTripDataFramePlotManager(TestCase):
 
         options = [[desc, desc.plot_config]]
         for contained_plots in options:
-            plot_manager = DataFramePlotManager(
+            plot_manager = DataFrameCanvasManager(
                 contained_plots=contained_plots,
                 data_source=source_df, source_analyzer=analyzer
             )

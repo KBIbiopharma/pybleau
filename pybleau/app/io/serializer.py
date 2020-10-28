@@ -57,7 +57,7 @@ class MultiDataFrameAnalyzer_Serializer(DataFrameAnalyzer_Serializer):
         return names
 
 
-class DataFramePlotManager_Serializer(DataElement_Serializer):
+class DataFrameCanvasManager_Serializer(DataElement_Serializer):
 
     protocol_version = 1
 
@@ -65,12 +65,12 @@ class DataFramePlotManager_Serializer(DataElement_Serializer):
         return ['name', 'uuid', "source_analyzer_id", "contained_plots"]
 
 
-class PlotDescriptor_Serializer(DataElement_Serializer):
+class PlotManager_Serializer(DataElement_Serializer):
 
     protocol_version = 1
 
     def get_instance_data(self, obj):
-        data = super(PlotDescriptor_Serializer, self).get_instance_data(obj)
+        data = super(PlotManager_Serializer, self).get_instance_data(obj)
         # If the plot is frozen, store also the config's data_source:
         if obj.frozen:
             data['plot_config']["data_source"] = self.serialize(

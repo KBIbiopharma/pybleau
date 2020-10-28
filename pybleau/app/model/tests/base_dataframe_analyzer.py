@@ -11,7 +11,7 @@ from app_common.apptools.testing_utils import \
 from pybleau.app.model.dataframe_analyzer import \
     DEFAULT_CATEG_SUMMARY_ELEMENTS, DEFAULT_SUMMARY_ELEMENTS, \
     REVERSED_SUFFIX, NO_SORTING_ENTRY
-from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
+from pybleau.app.model.dataframe_plot_manager import DataFrameCanvasManager
 from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
 
 
@@ -575,7 +575,7 @@ class SelectionPlotDataFrameAnalyzer(UnittestTools):
     def test_plotter_selection_connected(self):
         df = self.df
         model = self.analyzer_klass(source_df=df)
-        plot_manager = DataFramePlotManager(data_source=df)
+        plot_manager = DataFrameCanvasManager(data_source=df)
         # Connect the 2 managers:
         model.plot_manager_list.append(plot_manager)
 
@@ -598,8 +598,8 @@ class SelectionPlotDataFrameAnalyzer(UnittestTools):
     def test_multi_plotter_selection_connected(self):
         df = self.df
         model = self.analyzer_klass(source_df=df)
-        plot_manager = DataFramePlotManager(data_source=df)
-        plot_manager2 = DataFramePlotManager(data_source=df)
+        plot_manager = DataFrameCanvasManager(data_source=df)
+        plot_manager2 = DataFrameCanvasManager(data_source=df)
         # Connect the 3 managers:
         model.plot_manager_list.append(plot_manager)
         model.plot_manager_list.append(plot_manager2)
@@ -637,8 +637,8 @@ class SelectionPlotDataFrameAnalyzer(UnittestTools):
     def test_change_plotter_datasource_when_filter(self):
         df = self.df
         model = self.analyzer_klass(source_df=df)
-        plot_manager = DataFramePlotManager(data_source=df)
-        plot_manager2 = DataFramePlotManager(data_source=df)
+        plot_manager = DataFrameCanvasManager(data_source=df)
+        plot_manager2 = DataFrameCanvasManager(data_source=df)
         # Connect the 3 managers:
         model.plot_manager_list.append(plot_manager)
         model.plot_manager_list.append(plot_manager2)
@@ -650,8 +650,8 @@ class SelectionPlotDataFrameAnalyzer(UnittestTools):
     def test_change_plotter_datasource_when_sorting(self):
         df = self.df
         model = self.analyzer_klass(source_df=df)
-        plot_manager = DataFramePlotManager(data_source=df)
-        plot_manager2 = DataFramePlotManager(data_source=df)
+        plot_manager = DataFrameCanvasManager(data_source=df)
+        plot_manager2 = DataFrameCanvasManager(data_source=df)
         # Connect the 3 managers:
         model.plot_manager_list.append(plot_manager)
         model.plot_manager_list.append(plot_manager2)
@@ -722,7 +722,7 @@ class SelectionPlotDataFrameAnalyzer(UnittestTools):
         if df is None:
             df = self.df
 
-        plot_manager = DataFramePlotManager(data_source=df)
+        plot_manager = DataFrameCanvasManager(data_source=df)
         if n_plots > 0:
             config1 = ScatterPlotConfigurator(data_source=df,
                                               plot_title="Plot1")

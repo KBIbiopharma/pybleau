@@ -11,9 +11,9 @@ from app_common.model_tools.data_element import DataElement
 
 from ..tools.filter_expression_manager import FilterExpression
 try:
-    from .dataframe_plot_manager import DataFramePlotManager
+    from .dataframe_plot_manager import DataFrameCanvasManager
 except ImportError:
-    DataFramePlotManager = object
+    DataFrameCanvasManager = object
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ class DataFrameAnalyzer(DataElement):
     show_selected_only = Bool
 
     #: All plotting managers created, to sync selection and source_data
-    plot_manager_list = List(DataFramePlotManager)
+    plot_manager_list = List(DataFrameCanvasManager)
 
     #: Event triggered when all plotters are sync-ed with self.selected_idx
     selected_data_in_plotter_updated = Event

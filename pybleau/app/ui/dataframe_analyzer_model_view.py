@@ -20,10 +20,10 @@ from app_common.std_lib.logging_utils import ACTION_LEVEL
 from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
 try:
     from pybleau.app.ui.dataframe_plot_manager_view import \
-        DataFramePlotManager, DataFramePlotManagerView
+        DataFrameCanvasManager, DataFrameCanvasManagerView
 except ImportError:
-    DataFramePlotManager = object
-    DataFramePlotManagerView = object
+    DataFrameCanvasManager = object
+    DataFrameCanvasManagerView = object
 
 from pybleau.app.tools.filter_expression_manager import FilterExpression, \
     FilterExpressionManager
@@ -75,7 +75,7 @@ class DataFrameAnalyzerView(ModelView):
     include_plotter = Bool
 
     #: Plot manager view to display. Ignored if include_plotter is False.
-    plotter = Instance(DataFramePlotManagerView)
+    plotter = Instance(DataFrameCanvasManagerView)
 
     # Styling and branding attributes -----------------------------------------
 
@@ -679,13 +679,13 @@ class DataFrameAnalyzerView(ModelView):
 
                 plot_manager = self.model.plot_manager_list[0]
             else:
-                plot_manager = DataFramePlotManager(
+                plot_manager = DataFrameCanvasManager(
                     data_source=self.model.filtered_df,
                     source_analyzer=self.model,
                     **self.plotter_kw
                 )
 
-            view = DataFramePlotManagerView(model=plot_manager,
+            view = DataFrameCanvasManagerView(model=plot_manager,
                                             view_klass=self.view_klass)
             return view
 

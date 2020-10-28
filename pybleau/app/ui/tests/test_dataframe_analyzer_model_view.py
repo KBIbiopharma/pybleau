@@ -18,7 +18,7 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from app_common.std_lib.sys_utils import IS_LINUX, IS_OSX
     from app_common.apptools.testing_utils import temp_bringup_ui_for
     from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView, \
-        DataFramePlotManager, DataFramePlotManagerView
+        DataFrameCanvasManager, DataFramePlotManagerView
 
 FONT_DEFAULT_SIZE = {"darwin": 13,
                      "linux": 9,
@@ -52,7 +52,7 @@ class TestDataFrameAnalyzerView(TestCase):
     def test_analyzer_with_plotter_in_model(self):
         # Make sure that if a view is created with a model that has a plotter,
         # that's what is used to build the view rather than create a new one:
-        plot_manager = DataFramePlotManager(source_analyzer=self.analyzer)
+        plot_manager = DataFrameCanvasManager(source_analyzer=self.analyzer)
         self.analyzer.plot_manager_list.append(plot_manager)
         view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True)
         self.assertIs(view.plotter.model, plot_manager)

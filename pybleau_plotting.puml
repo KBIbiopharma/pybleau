@@ -1,7 +1,7 @@
 @startuml
 
 'class DataElement
-'DataElement <|-- DataFramePlotManager
+'DataElement <|-- DataFrameCanvasManager
 'DataElement <|-- DataFrameAnalyzer
 class DataFrameAnalyzer {
     DataFrame source_df
@@ -9,14 +9,14 @@ class DataFrameAnalyzer {
     DataFrame displayed_df
     DataFrame summary_df
     DataFrame summary_categorical_df
-    [DataFramePlotManager] plot_manager_list
+    [DataFrameCanvasManager] plot_manager_list
 }
 DataFrameAnalyzer o--> DataFrame
-DataFrameAnalyzer "0..*" o--> DataFramePlotManager
+DataFrameAnalyzer "0..*" o--> DataFrameCanvasManager
 
-class DataFramePlotManager {
+class DataFrameCanvasManager {
     DataFrame data_source
-    [PlotDescriptor] contained_plots
+    [PlotManager] contained_plots
     DataFrameAnalyzer source_analyzer
     IPlotTemplateInteractor template_interactor
     MultiCanvasManager canvas_manager
@@ -25,9 +25,9 @@ class DataFramePlotManager {
     * Owns plot canvases, which govern plot placement.
     * Interacts with a DataFrameAnalyzer to receive data for plotting.
 }
-DataFramePlotManager "0..*" o--> PlotDescriptor
-DataFramePlotManager o..> DataFrame
-DataFramePlotManager o--> DataFrameAnalyzer
+DataFrameCanvasManager "0..*" o--> PlotManager
+DataFrameCanvasManager o..> DataFrame
+DataFrameCanvasManager o--> DataFrameAnalyzer
 
 class BasePlotFactory {
     ArrayPlotData plot_data
@@ -93,8 +93,8 @@ BaseXYRendererStyle <|-- BarRendererStyle
 BaseXYRendererStyle <|-- HeatmapRendererStyle
 
 
-class PlotDescriptor {
-    OverlayPlotContainer plot
+class PlotManager {
+    BasePlotContainer plot
     BasePlotConfigurator plot_config
     BasePlotFactory plot_factory
     ..Job Description..
@@ -102,9 +102,9 @@ class PlotDescriptor {
     * Allows user to set frozen/visible status of a plot.
     * Handles events that signify users' intent to edit a single plot.
 }
-PlotDescriptor o--> OverlayPlotContainer
-PlotDescriptor o--> BasePlotConfigurator
-PlotDescriptor o--> BasePlotFactory
+PlotManager o--> BasePlotContainer
+PlotManager o--> BasePlotConfigurator
+PlotManager o--> BasePlotFactory
 
 
 class BasePlotConfigurator {

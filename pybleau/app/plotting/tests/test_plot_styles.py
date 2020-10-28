@@ -5,7 +5,7 @@ from app_common.apptools.testing_utils import assert_obj_gui_works
 
 from chaco.api import ArrayPlotData, Plot
 import pandas as pd
-from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager, \
+from pybleau.app.model.dataframe_plot_manager import DataFrameCanvasManager, \
     plot_from_config
 from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
@@ -104,8 +104,8 @@ class TestPlotStyleAsView(TestCase):
         config.x_col_name = "Col_1"
         config.y_col_name = "Col_2"
         config.z_col_name = "Col_3"
-        plot_manager = DataFramePlotManager(contained_plots=[config],
-                                            data_source=test_df)
+        plot_manager = DataFrameCanvasManager(contained_plots=[config],
+                                              data_source=test_df)
         desc = plot_manager.contained_plots[0]
         style = desc.plot_config.plot_style
         # Check view building works:

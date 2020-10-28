@@ -52,23 +52,23 @@ class multiDataFrameAnalyzerDeSerializer(dataFrameAnalyzerDeSerializer):
         return MultiDataFrameAnalyzer
 
 
-class dataFramePlotManagerDeSerializer(dataElementDeSerializer):
+class dataFrameCanvasManagerDeSerializer(dataElementDeSerializer):
 
     protocol_version = 1
 
     def _klass_default(self):
         from pybleau.app.model.dataframe_plot_manager import \
-            DataFramePlotManager
-        return DataFramePlotManager
+            DataFrameCanvasManager
+        return DataFrameCanvasManager
 
 
-class plotDescriptorDeSerializer(dataElementDeSerializer):
+class plotManagerDeSerializer(dataElementDeSerializer):
 
     protocol_version = 1
 
     def _klass_default(self):
-        from pybleau.app.model.plot_descriptor import PlotDescriptor
-        return PlotDescriptor
+        from pybleau.app.model.plot_descriptor import PlotManager
+        return PlotManager
 
 
 class scatterPlotConfiguratorDeSerializer(dataElementDeSerializer):

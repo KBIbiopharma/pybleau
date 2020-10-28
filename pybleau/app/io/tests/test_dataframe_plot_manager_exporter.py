@@ -28,10 +28,10 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
         DataFramePlotManagerExporter, DEFAULT_DATASET_NAME, EXPORT_IN_FILE, \
         EXPORT_INLINE, EXPORT_NO, EXPORT_YES, IMG_FORMAT, PPT_FORMAT, \
         VEGA_FORMAT, EXTERNAL_DATA_FNAME
-    from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
+    from pybleau.app.model.dataframe_plot_manager import DataFrameCanvasManager
     from pybleau.reporting.string_definitions import IDX_NAME_KEY, \
         CONTENT_KEY, DATASETS_KEY
-    from pybleau.app.model.plot_descriptor import PlotDescriptor
+    from pybleau.app.model.plot_descriptor import PlotManager
     from pybleau.app.plotting.multi_plot_config import \
         MultiHistogramPlotConfigurator
     from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
@@ -58,7 +58,7 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
 class TestPlotManagerExporterView(TestCase, UnittestTools):
     def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.model = DataFrameCanvasManager(data_source=TEST_DF)
 
         self.exporter = NonInteractiveExporter(
             df_plotter=self.model, target_dir=".",
@@ -84,33 +84,33 @@ class BasePlotManagerExportTester(object):
     def setUp(self):
         self.config = HistogramPlotConfigurator(data_source=TEST_DF)
         self.config.x_col_name = "a"
-        self.desc = PlotDescriptor(x_col_name="a", plot_config=self.config,
-                                   plot_title="Plot 0")
+        self.desc = PlotManager(x_col_name="a", plot_config=self.config,
+                                plot_title="Plot 0")
 
         self.config2 = BarPlotConfigurator(data_source=TEST_DF)
         self.config2.x_col_name = "a"
         self.config2.y_col_name = "b"
-        self.desc2 = PlotDescriptor(x_col_name="a", y_col_name="b",
-                                    plot_config=self.config2,
-                                    plot_title="Plot 1")
+        self.desc2 = PlotManager(x_col_name="a", y_col_name="b",
+                                 plot_config=self.config2,
+                                 plot_title="Plot 1")
 
         self.config3 = ScatterPlotConfigurator(data_source=TEST_DF)
         self.config3.x_col_name = "a"
         self.config3.y_col_name = "b"
-        self.desc3 = PlotDescriptor(x_col_name="a", y_col_name="b",
-                                    plot_config=self.config3,
-                                    plot_title="Plot 2")
+        self.desc3 = PlotManager(x_col_name="a", y_col_name="b",
+                                 plot_config=self.config3,
+                                 plot_title="Plot 2")
 
         self.config4 = ScatterPlotConfigurator(data_source=TEST_DF)
         self.config4.x_col_name = "a"
         self.config4.y_col_name = "b"
         self.config4.z_col_name = "d"
-        self.desc4 = PlotDescriptor(x_col_name="a", y_col_name="b",
-                                    z_col_name="d", plot_config=self.config4,
-                                    plot_title="Plot 3")
+        self.desc4 = PlotManager(x_col_name="a", y_col_name="b",
+                                 z_col_name="d", plot_config=self.config4,
+                                 plot_title="Plot 3")
 
-        self.model = DataFramePlotManager(contained_plots=[self.desc],
-                                          data_source=TEST_DF)
+        self.model = DataFrameCanvasManager(contained_plots=[self.desc],
+                                            data_source=TEST_DF)
         self.target_dir = join(HERE, "test_dir")
 
         if isdir(self.target_dir):
@@ -123,8 +123,8 @@ class BasePlotManagerExportTester(object):
     # Tests -------------------------------------------------------------------
 
     def test_overwrite_flag(self):
-        model = DataFramePlotManager(contained_plots=[self.desc],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc],
+                                       data_source=TEST_DF)
         exporter = NonInteractiveExporter(
             df_plotter=model, target_dir=self.target_dir,
             target_file=self.target_file
@@ -211,8 +211,8 @@ class TestPlotManagerExportImages(BasePlotManagerExportTester, TestCase):
 
     def test_export_1_plot_special_title(self):
         self.desc.plot_title = "blah!"
-        model = DataFramePlotManager(contained_plots=[self.desc],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc],
+                                       data_source=TEST_DF)
         exporter = NonInteractiveExporter(df_plotter=model,
                                           target_dir=self.target_dir)
         export_func = getattr(exporter, self.converter)
@@ -234,9 +234,9 @@ class TestPlotManagerExportImages(BasePlotManagerExportTester, TestCase):
         self.assertEqual(fname, "0_Plot_0.JPG")
 
     def test_export_3_plots_no_data(self):
-        model = DataFramePlotManager(contained_plots=[self.desc, self.desc2,
-                                                      self.desc3],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc, self.desc2,
+                                                        self.desc3],
+                                       data_source=TEST_DF)
         exporter = NonInteractiveExporter(df_plotter=model,
                                           target_dir=self.target_dir)
         export_func = getattr(exporter, self.converter)
@@ -266,9 +266,9 @@ class TestPlotManagerExportImages(BasePlotManagerExportTester, TestCase):
             self.tearDown()
 
     def test_export_3_plots_export_source_data(self):
-        model = DataFramePlotManager(contained_plots=[self.desc, self.desc2,
-                                                      self.desc3],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc, self.desc2,
+                                                        self.desc3],
+                                       data_source=TEST_DF)
 
         for fmt in [".h5", ".csv", ".xlsx"]:
             exporter = NonInteractiveExporter(df_plotter=model,
@@ -291,8 +291,8 @@ class TestPlotManagerExportImages(BasePlotManagerExportTester, TestCase):
             self.tearDown()
 
     def test_export_multi_renderer_plot_export_source_and_plot_data(self):
-        model = DataFramePlotManager(contained_plots=[self.desc4],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc4],
+                                       data_source=TEST_DF)
         for fmt in [".h5", ".csv", ".xlsx"]:
             exporter = NonInteractiveExporter(
                 df_plotter=model, target_dir=self.target_dir,
@@ -338,8 +338,8 @@ class TestPlotManagerExportPptx(BasePlotManagerExportTester, TestCase):
         self.target_file = join(self.target_dir, self.target_filename)
 
     def test_export_1_plot(self):
-        model = DataFramePlotManager(contained_plots=[self.desc],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc],
+                                       data_source=TEST_DF)
         exporter = NonInteractiveExporter(df_plotter=model,
                                           target_file=self.target_file)
         export_func = getattr(exporter, self.converter)
@@ -351,8 +351,8 @@ class TestPlotManagerExportPptx(BasePlotManagerExportTester, TestCase):
         self.assert_valid_pptx(exporter)
 
     def test_export_1_plot_export_source_data(self):
-        model = DataFramePlotManager(contained_plots=[self.desc],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc],
+                                       data_source=TEST_DF)
         for fmt in [".h5", ".csv", ".xlsx"]:
             exporter = NonInteractiveExporter(
                 df_plotter=model, target_file=self.target_file,
@@ -372,8 +372,8 @@ class TestPlotManagerExportPptx(BasePlotManagerExportTester, TestCase):
             self.tearDown()
 
     def test_export_1_plot_with_custom_title(self):
-        model = DataFramePlotManager(contained_plots=[self.desc],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc],
+                                       data_source=TEST_DF)
         exporter = NonInteractiveExporter(df_plotter=model,
                                           target_file=self.target_file,
                                           presentation_title="blah")
@@ -387,9 +387,9 @@ class TestPlotManagerExportPptx(BasePlotManagerExportTester, TestCase):
 
     def test_export_3_plots_no_data(self):
 
-        model = DataFramePlotManager(contained_plots=[self.desc, self.desc2,
-                                                      self.desc3],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc, self.desc2,
+                                                        self.desc3],
+                                       data_source=TEST_DF)
         exporter = NonInteractiveExporter(df_plotter=model,
                                           target_file=self.target_file)
         export_func = getattr(exporter, self.converter)
@@ -400,9 +400,9 @@ class TestPlotManagerExportPptx(BasePlotManagerExportTester, TestCase):
         self.assert_valid_pptx(exporter, num_images=3)
 
     def test_export_3_plots_export_source_data(self):
-        model = DataFramePlotManager(contained_plots=[self.desc, self.desc2,
-                                                      self.desc3],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc, self.desc2,
+                                                        self.desc3],
+                                       data_source=TEST_DF)
         for fmt in [".h5", ".csv", ".xlsx"]:
             exporter = NonInteractiveExporter(
                 df_plotter=model, target_file=self.target_file,
@@ -423,9 +423,9 @@ class TestPlotManagerExportPptx(BasePlotManagerExportTester, TestCase):
             self.tearDown()
 
     def test_export_3_plots_export_source_and_plot_data(self):
-        model = DataFramePlotManager(contained_plots=[self.desc, self.desc2,
-                                                      self.desc3],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc, self.desc2,
+                                                        self.desc3],
+                                       data_source=TEST_DF)
         for fmt in [".h5", ".csv", ".xlsx"]:
             exporter = NonInteractiveExporter(
                 df_plotter=model, target_file=self.target_file,
@@ -460,8 +460,8 @@ class TestPlotManagerExportPptx(BasePlotManagerExportTester, TestCase):
             self.tearDown()
 
     def test_export_multi_renderer_plot_export_source_and_plot_data(self):
-        model = DataFramePlotManager(contained_plots=[self.desc4],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[self.desc4],
+                                       data_source=TEST_DF)
         for fmt in [".h5", ".csv", ".xlsx"]:
             exporter = NonInteractiveExporter(
                 df_plotter=model, target_file=self.target_file,
@@ -528,7 +528,7 @@ class TestPlotManagerExportVega(BasePlotManagerExportTester, TestCase,
             rmtree(self.target_dir)
 
         self.converter = "to_vega"
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.model = DataFrameCanvasManager(data_source=TEST_DF)
         self.exporter = NonInteractiveExporter(
             df_plotter=self.model, target_dir=self.target_dir,
             export_format=VEGA_FORMAT, export_data=EXPORT_NO

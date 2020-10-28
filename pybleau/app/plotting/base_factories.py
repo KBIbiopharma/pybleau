@@ -357,7 +357,7 @@ class StdXYPlotFactory(BasePlotFactory):
 
         self.add_tools(plot)
 
-        # Build a description of the plot to build a PlotDescriptor
+        # Build a description of the plot to build a PlotManager
         desc = dict(plot_type=self.plot_type, plot=plot, visible=True,
                     plot_title=self.plot_title, x_col_name=self.x_col_name,
                     y_col_name=self.y_col_name, x_axis_title=self.x_axis_title,

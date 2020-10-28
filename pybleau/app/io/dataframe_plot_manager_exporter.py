@@ -54,10 +54,10 @@ EXPORT_IN_FILE = "In-file"
 EXPORT_SEPARATE = "Separate file"
 
 
-class DataFramePlotManagerExporter(HasStrictTraits):
-    """ Exporter of a DataFramePlotManager content to various formats.
+class DataFrameCanvasManagerExporter(HasStrictTraits):
+    """ Exporter of a DataFrameCanvasManager content to various formats.
     """
-    df_plotter = Instance("pybleau.app.api.DataFramePlotManager")
+    df_plotter = Instance("pybleau.app.api.DataFrameCanvasManager")
 
     export_format = Enum([IMG_FORMAT, PPT_FORMAT, VEGA_FORMAT])
 
@@ -423,7 +423,7 @@ class DataFramePlotManagerExporter(HasStrictTraits):
         Parameters
         ----------
         plot_list : list
-            List of PlotDescriptor instances, containing the plot whose data
+            List of PlotManager instances, containing the plot whose data
             need to be exported.
 
         data_path : str

@@ -34,10 +34,10 @@ if KIWI_AVAILABLE and BACKEND_AVAILABLE:
         ConstraintsPlotContainerManager
 
     from pybleau.app.model.dataframe_plot_manager import \
-        CONTAINER_IDX_REMOVAL, DataFramePlotManager
+        CONTAINER_IDX_REMOVAL, DataFrameCanvasManager
     from pybleau.app.model.multi_canvas_manager import DEFAULT_NUM_CONTAINERS
     from pybleau.app.model.plot_descriptor import CUSTOM_PLOT_TYPE, \
-        PlotDescriptor
+        PlotManager
     from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
     from pybleau.app.plotting.multi_plot_config import \
         MultiHistogramPlotConfigurator
@@ -71,7 +71,7 @@ CMAP_PLOT_TYPES = {CMAP_SCATTER_PLOT_TYPE, HEATMAP_PLOT_TYPE}
 class BasePlotManagerTools(UnittestTools):
 
     def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.model = DataFrameCanvasManager(data_source=TEST_DF)
         # Basic configurator for a histogram plot:
         self.config = HistogramPlotConfigurator(data_source=TEST_DF,
                                                 plot_title="Plot")
@@ -117,7 +117,7 @@ class BasePlotManagerTools(UnittestTools):
         self.assertEqual(len(container.plot_map), num_plot_in_container)
 
         for plot_desc in self.model.contained_plots:
-            self.assertIsInstance(plot_desc, PlotDescriptor)
+            self.assertIsInstance(plot_desc, PlotManager)
             self.assertIsInstance(plot_desc.id, string_types)
             self.assertIsInstance(plot_desc.plot, BasePlotContainer)
             if plot_desc.plot_type in CMAP_PLOT_TYPES:
@@ -147,14 +147,14 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
     def test_create_with_empty_plot_list(self):
         """ Create with empty list since may be serialized that way.
         """
-        model = DataFramePlotManager(data_source=TEST_DF, contained_plots=[])
+        model = DataFrameCanvasManager(data_source=TEST_DF, contained_plots=[])
         self.assert_empty_manager(model)
         config = self.config
         self.model._add_new_plot(config)
         self.assert_plot_created(renderer_type=BarPlot, container_idx=0)
 
-    @patch.object(DataFramePlotManager, "_initialize_config_plot_ranges")
-    @patch.object(DataFramePlotManager, "_apply_style_ranges")
+    @patch.object(DataFrameCanvasManager, "_initialize_config_plot_ranges")
+    @patch.object(DataFrameCanvasManager, "_apply_style_ranges")
     def test_add_pre_existing_plot(self, apply, initialize):
         config = LinePlotConfigurator(data_source=TEST_DF,
                                       plot_title="Plot")
@@ -254,10 +254,10 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
 
     def test_add_custom_plot_at_creation(self):
         cust_plot1 = self.create_custom_plot()
-        model = DataFramePlotManager(data_source=TEST_DF,
-                                     contained_plots=[cust_plot1])
+        model = DataFrameCanvasManager(data_source=TEST_DF,
+                                       contained_plots=[cust_plot1])
         self.assertEqual(len(model.contained_plots), 1)
-        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
+        self.assertIsInstance(model.contained_plots[0], PlotManager)
         desc = model.contained_plots[0]
         self.assertTrue(desc.frozen)
         self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
@@ -270,12 +270,12 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         self.assertIn(cust_plot1, container.components)
 
     def test_add_custom_plot_after_creation(self):
-        model = DataFramePlotManager(data_source=TEST_DF)
+        model = DataFrameCanvasManager(data_source=TEST_DF)
 
         cust_plot1 = self.create_custom_plot()
         model.add_new_plot(CUSTOM_PLOT_TYPE, cust_plot1)
         self.assertEqual(len(model.contained_plots), 1)
-        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
+        self.assertIsInstance(model.contained_plots[0], PlotManager)
         desc = model.contained_plots[0]
         self.assertTrue(desc.frozen)
         self.assertEqual(desc.plot_type, CUSTOM_PLOT_TYPE)
@@ -288,10 +288,10 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         self.assertIn(cust_plot1, container.components)
 
     def test_add_custom_plot_as_descriptor_after_creation(self):
-        model = DataFramePlotManager(data_source=TEST_DF)
+        model = DataFrameCanvasManager(data_source=TEST_DF)
 
         plot = self.create_custom_plot()
-        cust_plot_desc = PlotDescriptor(
+        cust_plot_desc = PlotManager(
             plot_type=CUSTOM_PLOT_TYPE, plot=plot,
             plot_config=BaseSinglePlotConfigurator(),
             plot_title=plot.title,
@@ -301,7 +301,7 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
 
         model.add_new_plot(CUSTOM_PLOT_TYPE, cust_plot_desc)
         self.assertEqual(len(model.contained_plots), 1)
-        self.assertIsInstance(model.contained_plots[0], PlotDescriptor)
+        self.assertIsInstance(model.contained_plots[0], PlotManager)
         desc = model.contained_plots[0]
         self.assertIs(desc, cust_plot_desc)
         self.assertTrue(desc.frozen)
@@ -320,7 +320,7 @@ class TestPlotManagerAddPlots(BasePlotManagerTools, TestCase):
         if model is None:
             model = self.model
 
-        self.assertIsInstance(model, DataFramePlotManager)
+        self.assertIsInstance(model, DataFrameCanvasManager)
         self.assertEqual(len(model.canvas_manager.container_managers),
                          DEFAULT_NUM_CONTAINERS)
         for container_manager in model.canvas_manager.container_managers:
@@ -813,8 +813,8 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config)
-        model = DataFramePlotManager(contained_plots=[desc])
+        desc = PlotManager(x_col_name="a", plot_config=config)
+        model = DataFrameCanvasManager(contained_plots=[desc])
         # No plot really reconstructed because no datasource:
         for container in model.canvas_manager.container_managers:
             self.assertEqual(container.plot_map, {})
@@ -823,9 +823,9 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config)
-        model = DataFramePlotManager(contained_plots=[desc],
-                                     data_source=TEST_DF)
+        desc = PlotManager(x_col_name="a", plot_config=config)
+        model = DataFrameCanvasManager(contained_plots=[desc],
+                                       data_source=TEST_DF)
         container = model.canvas_manager.container_managers[0]
         self.assertEqual(len(container.plot_map), 1)
 
@@ -833,9 +833,9 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config)
-        model = DataFramePlotManager(contained_plots=[desc],
-                                     data_source=TEST_DF)
+        desc = PlotManager(x_col_name="a", plot_config=config)
+        model = DataFrameCanvasManager(contained_plots=[desc],
+                                       data_source=TEST_DF)
 
         # Reconnect because the description object is (currently) replaced:
         desc = model.contained_plots[0]
@@ -859,9 +859,9 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
     def test_create_with_broken_contained_plot(self):
         config = HistogramPlotConfigurator(data_source=TEST_DF)
         config.x_col_name = "DOESNT_EXIST"
-        desc = PlotDescriptor(x_col_name="DOESNT_EXIST", plot_config=config)
-        model = DataFramePlotManager(contained_plots=[desc],
-                                     data_source=TEST_DF)
+        desc = PlotManager(x_col_name="DOESNT_EXIST", plot_config=config)
+        model = DataFrameCanvasManager(contained_plots=[desc],
+                                       data_source=TEST_DF)
         # Make sure it fails gracefully:
         container_manager = model.canvas_manager.container_managers[0]
         self.assertEqual(len(container_manager.plot_map), 0)
@@ -874,19 +874,19 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config)
+        desc = PlotManager(x_col_name="a", plot_config=config)
 
         config2 = HistogramPlotConfigurator(data_source=TEST_DF)
         config2.x_col_name = "DOESNT_EXIST"
-        desc2 = PlotDescriptor(x_col_name="DOESNT_EXIST", plot_config=config2)
+        desc2 = PlotManager(x_col_name="DOESNT_EXIST", plot_config=config2)
 
         config3 = HistogramPlotConfigurator(data_source=TEST_DF,
                                             plot_title="Plot 1")
         config3.x_col_name = "b"
-        desc3 = PlotDescriptor(x_col_name="b", plot_config=config3)
+        desc3 = PlotManager(x_col_name="b", plot_config=config3)
 
-        model = DataFramePlotManager(contained_plots=[desc, desc2, desc3],
-                                     data_source=TEST_DF)
+        model = DataFrameCanvasManager(contained_plots=[desc, desc2, desc3],
+                                       data_source=TEST_DF)
         # Make sure the one that fails does so gracefully:
         container_manager = model.canvas_manager.container_managers[0]
         self.assertEqual(len(container_manager.plot_map), 2)
@@ -900,10 +900,10 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config,
-                              plot_title="blah", x_axis_title="foobar")
-        model = DataFramePlotManager(contained_plots=[desc],
-                                     data_source=TEST_DF)
+        desc = PlotManager(x_col_name="a", plot_config=config,
+                           plot_title="blah", x_axis_title="foobar")
+        model = DataFrameCanvasManager(contained_plots=[desc],
+                                       data_source=TEST_DF)
 
         # Reconnect because the description object is (currently) replaced:
         desc = model.contained_plots[0]
@@ -915,11 +915,11 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=reduced_df,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config,
-                              plot_title="blah", x_axis_title="foobar",
-                              frozen=True)
-        model = DataFramePlotManager(contained_plots=[desc],
-                                     data_source=TEST_DF)
+        desc = PlotManager(x_col_name="a", plot_config=config,
+                           plot_title="blah", x_axis_title="foobar",
+                           frozen=True)
+        model = DataFrameCanvasManager(contained_plots=[desc],
+                                       data_source=TEST_DF)
 
         # Reconnect because the description object is (currently) replaced:
         desc = model.contained_plots[0]
@@ -929,15 +929,15 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config)
+        desc = PlotManager(x_col_name="a", plot_config=config)
 
         config2 = HistogramPlotConfigurator(data_source=TEST_DF,
                                             plot_title="Plot 2")
         config2.x_col_name = "b"
-        desc2 = PlotDescriptor(x_col_name="b", plot_config=config2,
-                               visible=False)
-        model = DataFramePlotManager(contained_plots=[desc, desc2],
-                                     data_source=TEST_DF)
+        desc2 = PlotManager(x_col_name="b", plot_config=config2,
+                            visible=False)
+        model = DataFrameCanvasManager(contained_plots=[desc, desc2],
+                                       data_source=TEST_DF)
 
         # Reconnect because the description object is (currently) replaced:
         desc = model.contained_plots[0]
@@ -967,10 +967,10 @@ class TestPlotManagerCreateWithPlots(BasePlotManagerTools, TestCase):
         config = HistogramPlotConfigurator(data_source=TEST_DF,
                                            plot_title="Plot 1")
         config.x_col_name = "a"
-        desc = PlotDescriptor(x_col_name="a", plot_config=config,
-                              container_idx=1)
-        model = DataFramePlotManager(contained_plots=[desc],
-                                     data_source=TEST_DF)
+        desc = PlotManager(x_col_name="a", plot_config=config,
+                           container_idx=1)
+        model = DataFrameCanvasManager(contained_plots=[desc],
+                                       data_source=TEST_DF)
         container = model.canvas_manager.container_managers[0]
         self.assertEqual(len(container.plot_map), 0)
 
@@ -983,10 +983,10 @@ class TestPlotManagerFromDFAnalyzer(TestCase, UnittestTools):
     def setUp(self):
         self.source_analyzer = DataFrameAnalyzer(source_df=TEST_DF)
         self.source_analyzer.filter_exp = ""
-        self.model = DataFramePlotManager(source_analyzer=self.source_analyzer)
+        self.model = DataFrameCanvasManager(source_analyzer=self.source_analyzer)
 
     def test_create_manager(self):
-        self.assertIsInstance(self.model, DataFramePlotManager)
+        self.assertIsInstance(self.model, DataFrameCanvasManager)
         self.assertEqual(len(self.model.canvas_manager.container_managers),
                          DEFAULT_NUM_CONTAINERS)
         for container_manager in self.model.canvas_manager.container_managers:
@@ -1049,7 +1049,7 @@ class TestPlotManagerFromDFAnalyzer(TestCase, UnittestTools):
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
 class TestPlotManagerDataUpdate(TestCase, UnittestTools):
     def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.model = DataFrameCanvasManager(data_source=TEST_DF)
 
     def test_update_hist_on_data_update(self):
         config = MultiHistogramPlotConfigurator(data_source=TEST_DF,
@@ -1132,7 +1132,7 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         """ Test data/renderer updates when adding new data to data source
         """
         reduced_df = TEST_DF.query("a > 2")
-        model = DataFramePlotManager(data_source=reduced_df)
+        model = DataFrameCanvasManager(data_source=reduced_df)
         config = ScatterPlotConfigurator(data_source=reduced_df,
                                          x_col_name="a", y_col_name="b",
                                          z_col_name="d")
@@ -1176,7 +1176,7 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
         self.assertEqual(len(self.model.contained_plots), num_plots)
         for i in range(num_plots):
             plot_desc = self.model.contained_plots[0]
-            self.assertIsInstance(plot_desc, PlotDescriptor)
+            self.assertIsInstance(plot_desc, PlotManager)
             self.assertIsInstance(plot_desc.id, str)
             self.assertIsInstance(plot_desc.plot, BasePlotContainer)
 
@@ -1184,7 +1184,7 @@ class TestPlotManagerDataUpdate(TestCase, UnittestTools):
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
 class TestPlotManagerInspectorTools(TestCase, UnittestTools):
     def setUp(self):
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.model = DataFrameCanvasManager(data_source=TEST_DF)
         config = ScatterPlotConfigurator(data_source=TEST_DF,
                                          plot_title="Plot")
         config.x_col_name = "a"
@@ -1295,18 +1295,18 @@ class FakeInteractor(HasTraits):
 class TestPlotManagerPlotTemplates(TestCase):
 
     def setUp(self) -> None:
-        self.model = DataFramePlotManager(data_source=TEST_DF)
+        self.model = DataFrameCanvasManager(data_source=TEST_DF)
         self.target_dir = dirname(__file__)
         self.model.template_interactor = FakeInteractor()
 
     def _get_fake_ordered_dict(self):
         return OrderedDict([("test_temp", ScatterPlotConfigurator)])
 
-    @patch.object(DataFramePlotManager, '_get_desc_for_menu_manager')
-    @patch.object(DataFramePlotManager, '_request_template_name_with_desc')
+    @patch.object(DataFrameCanvasManager, '_get_desc_for_menu_manager')
+    @patch.object(DataFrameCanvasManager, '_request_template_name_with_desc')
     def test_template_requested(self, get_name, get_desc):
         plot_config = BarPlotConfigurator()
-        get_desc.return_value = PlotDescriptor(plot_config=plot_config)
+        get_desc.return_value = PlotManager(plot_config=plot_config)
         get_name.return_value = "plot template test"
         self.assertEqual(len(self.model.custom_configs), 0)
 
