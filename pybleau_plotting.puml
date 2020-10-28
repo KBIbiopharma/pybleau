@@ -19,9 +19,11 @@ class DataFramePlotManager {
     [PlotDescriptor] contained_plots
     DataFrameAnalyzer source_analyzer
     IPlotTemplateInteractor template_interactor
+    MultiCanvasManager canvas_manager
     ..Job Description..
     * Manager to create, update, reorder, hide, delete plots.
-    * Provides a data model for a DataFrameAnalyzer.
+    * Owns plot canvases, which govern plot placement.
+    * Interacts with a DataFrameAnalyzer to receive data for plotting.
 }
 DataFramePlotManager "0..*" o--> PlotDescriptor
 DataFramePlotManager o..> DataFrame
@@ -32,7 +34,7 @@ class BasePlotFactory {
     BaseXYPlotStyle plot_style
     PlotContextMenuManager context_menu_manager
     ..Job Description..
-    * Builds a chaco plot with generate_plot()
+    * Derived classes build chaco plots with generate_plot()
     * Manipulates titles and ticks/labels for a plot.
 }
 BasePlotFactory o--> BaseXYPlotStyle
@@ -42,13 +44,10 @@ class StdXYPlotFactory {
     OverlayPlotContainer plot
     {BaseXYPlot} renderers
     ..Job Description..
-    * Creates a dict of properties for a 2D plot
-    with one or more renderers and a legend.
-    * Initializes plot data from arrays.
+    * Builds a chaco plot with generate_plot()
     * Adds tools (legend/context menu/zoom/pan) to a plot.
     * Builds and adds/appends/removes/updates renderers
 }
-BasePlotContainer <|-- OverlayPlotContainer
 BasePlotFactory <|-- StdXYPlotFactory
 StdXYPlotFactory o--> OverlayPlotContainer
 OverlayPlotContainer : * Chaco Plot container that stretches all its components
@@ -61,7 +60,7 @@ class BaseXYPlotStyle {
     AxisStyle y_axis_style
     AxisStyle second_y_axis_style
     ..Job Description..
-    * Used to control and view styling for entire chaco plots.
+    * Contols styling for entire chaco plots.
     * Provides the views for manipulating the plot style.
 }
 BaseXYPlotStyle o--> RendererStyleManager
@@ -94,15 +93,15 @@ BaseXYRendererStyle <|-- HeatmapRendererStyle
 
 
 class PlotDescriptor {
-    BasePlotContainer plot
+    OverlayPlotContainer plot
     BasePlotConfigurator plot_config
     BasePlotFactory plot_factory
     ..Job Description..
     * Exposes properties from the plot_config for a TableEditor.
     * Allows user to set frozen/visible status of a plot.
-    * Controls events that signify users intent to edit styles.
+    * Handles events that signify users' intent to edit a single plot.
 }
-PlotDescriptor o--> BasePlotContainer
+PlotDescriptor o--> OverlayPlotContainer
 PlotDescriptor o--> BasePlotConfigurator
 PlotDescriptor o--> BasePlotFactory
 
@@ -113,7 +112,7 @@ class BasePlotConfigurator {
     BaseXYPlotStyle plot_style
     ..Job Description..
     * Contains and provides all the data required to serialize a plot.
-    * Provides the views used to specify plot options and data.
+    * Provides the views used to configure plot styles.
     * Updates the styles when data or options change.
     * Provides default plot styles.
 }
@@ -134,9 +133,6 @@ BarPlotConfigurator o--> BarPlotStyle
 
 class ScatterPlotConfigurator
 BasePlotConfigurator <|-- BaseSinglePlotConfigurator
-'BasePlotConfigurator <|-- BaseMultiPlotConfigurator
-'BaseSingleXYPlotConfigurator <|-- MultiLinePlotConfigurator
-'BaseMultiPlotConfigurator <|-- MultiLinePlotConfigurator
 BaseSinglePlotConfigurator <|-- BaseSingleXYPlotConfigurator
 BaseSingleXYPlotConfigurator <|-- BarPlotConfigurator
 BaseSingleXYPlotConfigurator <|-- ScatterPlotConfigurator
