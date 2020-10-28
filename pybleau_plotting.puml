@@ -50,6 +50,7 @@ class StdXYPlotFactory {
 }
 BasePlotFactory <|-- StdXYPlotFactory
 StdXYPlotFactory o--> OverlayPlotContainer
+BasePlotContainer <|-- OverlayPlotContainer
 OverlayPlotContainer : * Chaco Plot container that stretches all its components
 
 class BaseXYPlotStyle {
