@@ -1,10 +1,13 @@
 import os
 from sys import platform
 from unittest import TestCase, skipIf
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
+
+from pybleau.app.tools.filter_expression_editor import \
+    FilterExpressionEditorView
 
 try:
     import kiwisolver  # noqa
@@ -195,6 +198,28 @@ class TestDataFrameAnalyzerView(TestCase):
                   "`filter_auto_apply` is False."
             raise AssertionError(msg)
         view.apply_filter_button = True
+        assert_frame_equal(view.model.filtered_df, expected_df)
+
+    @patch.object(FilterExpressionEditorView, "edit_traits")
+    def test_edit_filter_button_recomputes_filtered_df_correctly(self, edit):
+        self.analyzer.filter_auto_apply = False
+        view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True)
+        view.model.filter_exp = "a != 3"
+        expected_df = DataFrame({"a": [1, 2, 4, 5], "b": [10, 15, 15, 10]},
+                                index=[0, 1, 3, 4])
+        ui = MagicMock(result=False)
+        edit.return_value = ui
+        view._pop_out_filter_button_fired()
+        try:
+            assert_frame_equal(view.model.filtered_df, expected_df)
+        except AssertionError:
+            pass
+        else:
+            msg = "The two dataframes should not be equal yet if " \
+                  "`filter_auto_apply` is False."
+            raise AssertionError(msg)
+        ui.result = True
+        view._pop_out_filter_button_fired()
         assert_frame_equal(view.model.filtered_df, expected_df)
 
 

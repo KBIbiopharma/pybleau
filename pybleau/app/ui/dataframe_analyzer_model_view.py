@@ -5,7 +5,7 @@ from copy import copy
 
 from pyface.api import warning
 from traits.api import Any, Bool, Button, cached_property, Dict, Either, Enum,\
-    Instance, Int, List, on_trait_change, Property, Set, Str
+    Instance, Int, List, on_trait_change, Property, Set, Str, ToolbarButton
 import traitsui
 from traitsui.api import ButtonEditor, CheckListEditor, HGroup, HSplit, \
     InstanceEditor, Item, Label, ModelView, OKButton, Spring, Tabbed, VGroup, \
@@ -18,6 +18,11 @@ from app_common.std_lib.filepath_utils import open_file
 from app_common.std_lib.logging_utils import ACTION_LEVEL
 
 from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
+from pybleau.app.tools.filter_expression_editor import \
+    FilterExpressionEditorView
+from pybleau.image_resources import pop_out_img, apply_img, manage_img, \
+    save_img, load_img
+
 try:
     from pybleau.app.ui.dataframe_plot_manager_view import \
         DataFramePlotManager, DataFramePlotManagerView
@@ -147,19 +152,22 @@ class DataFrameAnalyzerView(ModelView):
     show_all_button = Button("Show All")
 
     #: Apply button for the filter if model not in auto-apply mode
-    apply_filter_button = Button("Apply")
+    apply_filter_button = ToolbarButton(image=apply_img)
+
+    #: Edit the filter in a pop-out dialog
+    pop_out_filter_button = ToolbarButton(image=pop_out_img)
 
     #: Whether to support saving, and loading filters
     filter_manager = Bool
 
     #: Button to launch filter expression manager to load an existing filter
-    load_filter_button = Button("Load...")
+    load_filter_button = ToolbarButton(image=load_img)
 
     #: Button to save current filter expression
-    save_filter_button = Button("Save")
+    save_filter_button = ToolbarButton(image=save_img)
 
     #: Button to launch filter expression manager to modify saved filters
-    manage_filter_button = Button("Manage...")
+    manage_filter_button = ToolbarButton(image=manage_img)
 
     #: List of saved filtered expressions
     _known_expr = Property(Set, depends_on="model.known_filter_exps")
@@ -319,15 +327,21 @@ class DataFrameAnalyzerView(ModelView):
         filter_group = HGroup(
             Item("model.filter_exp", label="Filter",
                  width=self.filter_item_width),
+            Item("pop_out_filter_button", show_label=False, style="custom",
+                 tooltip="Open filter editor..."),
             Item("apply_filter_button", show_label=False,
-                 visible_when="not model.filter_auto_apply"),
+                 visible_when="not model.filter_auto_apply", style="custom",
+                 tooltip="Apply current filter"),
             Item("save_filter_button", show_label=False,
                  enabled_when="model.filter_exp not in _known_expr",
-                 visible_when="filter_manager"),
+                 visible_when="filter_manager", style="custom",
+                 tooltip="Save current filter"),
             Item("load_filter_button", show_label=False,
-                 visible_when="filter_manager"),
+                 visible_when="filter_manager", style="custom",
+                 tooltip="Load a filter..."),
             Item("manage_filter_button", show_label=False,
-                 visible_when="filter_manager"),
+                 visible_when="filter_manager", style="custom",
+                 tooltip="Manage filters..."),
         )
 
         truncated = ("len(model.displayed_df) < len(model.filtered_df) and "
@@ -518,6 +532,14 @@ class DataFrameAnalyzerView(ModelView):
         logger.log(ACTION_LEVEL, msg)
 
         self.model.recompute_filtered_df()
+
+    def _pop_out_filter_button_fired(self):
+        filter_editor = FilterExpressionEditorView(exp=self.model.filter_exp,
+                                                   view_klass=self.view_klass)
+        ui = filter_editor.edit_traits(kind="livemodal")
+        if ui.result:
+            self.model.filter_exp = filter_editor.exp
+            self._apply_filter_button_fired()
 
     def _manage_filter_button_fired(self):
         """ TODO: review if replacing the copy by a deepcopy or removing the
@@ -736,10 +758,11 @@ if __name__ == "__main__":
                    dtype=float)
     df.index.name = "BALH"
 
-    summarizer = DataFrameAnalyzer(source_df=df, num_displayed_rows=5)
+    summarizer = DataFrameAnalyzer(source_df=df, num_displayed_rows=5,
+                                   filter_auto_apply=False)
     print(summarizer.compute_summary())
 
     view = DataFrameAnalyzerView(model=summarizer, include_plotter=True,
-                                 display_precision=5,
-                                 plotter_layout="HSplit")
+                                 display_precision=5, filter_manager=True,
+                                 plotter_layout="HSplit", )
     view.configure_traits()
