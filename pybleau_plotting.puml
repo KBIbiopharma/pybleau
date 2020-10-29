@@ -1,22 +1,24 @@
 @startuml
 
-'class DataElement
-'DataElement <|-- DataFramePlotManager
-'DataElement <|-- DataFrameAnalyzer
+DataElement <|-- DataFramePlotManager
+DataElement <|-- DataFrameAnalyzer
 class DataFrameAnalyzer {
     DataFrame source_df
     DataFrame filtered_df
     DataFrame displayed_df
     DataFrame summary_df
     DataFrame summary_categorical_df
-    [DataFramePlotManager] plot_manager_list
+    DataFramePlotManager[] plot_manager_list
+    ..Job Description..
+    * Filters data from and builds a customizable summary of a DF
 }
 DataFrameAnalyzer o--> DataFrame
 DataFrameAnalyzer "0..*" o--> DataFramePlotManager
 
+
 class DataFramePlotManager {
     DataFrame data_source
-    [PlotDescriptor] contained_plots
+    PlotDescriptor[] contained_plots
     DataFrameAnalyzer source_analyzer
     IPlotTemplateInteractor template_interactor
     MultiCanvasManager canvas_manager
@@ -28,6 +30,23 @@ class DataFramePlotManager {
 DataFramePlotManager "0..*" o--> PlotDescriptor
 DataFramePlotManager o..> DataFrame
 DataFramePlotManager o--> DataFrameAnalyzer
+DataFramePlotManager o--> MultiCanvasManager
+
+
+class MultiCanvasManager {
+    ConstraintsPlotContainerManager[] container_managers
+    ..Job Description..
+    * Controls the layout of a DataFramePlotManager's plots
+}
+
+
+class DataFramePlotManagerView {
+    DataFramePlotManager model
+    ..Job Description..
+    * View for a DataFramePlotManager
+}
+DataFramePlotManagerView o--> DataFramePlotManager
+
 
 class BasePlotFactory {
     ArrayPlotData plot_data
@@ -39,6 +58,7 @@ class BasePlotFactory {
 }
 BasePlotFactory o--> BaseXYPlotStyle
 BasePlotFactory o--> PlotContextMenuManager
+
 
 class StdXYPlotFactory {
     OverlayPlotContainer plot
@@ -52,6 +72,7 @@ BasePlotFactory <|-- StdXYPlotFactory
 StdXYPlotFactory o--> OverlayPlotContainer
 BasePlotContainer <|-- OverlayPlotContainer
 OverlayPlotContainer : * Chaco Plot container that stretches all its components
+
 
 class BaseXYPlotStyle {
     RendererStyleManager renderer_style_manager
@@ -70,15 +91,18 @@ BaseXYPlotStyle o--> TitleStyle
 BaseXYPlotStyle <|-- BaseColorXYPlotStyle
 BaseColorXYPlotStyle <|-- BarPlotStyle
 
+
 TitleStyle : * Styling tool for a plot title.
 AxisStyle : * Styling tool for an axis title.
 
+
 class RendererStyleManager {
-    [BaseRendererStyle] renderer_styles
+    BaseRendererStyle[] renderer_styles
     ..Job Description..
     * Provides a scrollable view of the renderer style list.
 }
 RendererStyleManager "0..*" o--> BaseRendererStyle
+
 
 class BaseRendererStyle {
     Str renderer_name
@@ -94,7 +118,7 @@ BaseXYRendererStyle <|-- HeatmapRendererStyle
 
 
 class PlotDescriptor {
-    OverlayPlotContainer plot
+    BasePlotContainer plot
     BasePlotConfigurator plot_config
     BasePlotFactory plot_factory
     ..Job Description..
@@ -102,7 +126,7 @@ class PlotDescriptor {
     * Allows user to set frozen/visible status of a plot.
     * Handles events that signify users' intent to edit a single plot.
 }
-PlotDescriptor o--> OverlayPlotContainer
+PlotDescriptor o--> BasePlotContainer
 PlotDescriptor o--> BasePlotConfigurator
 PlotDescriptor o--> BasePlotFactory
 
@@ -120,10 +144,12 @@ class BasePlotConfigurator {
 BasePlotConfigurator o..> DataFrame
 BasePlotConfigurator o--> BaseXYPlotStyle
 
+
 class BaseSingleXYPlotConfigurator {
     BaseXYPlotStyle plot_style
 }
 BaseSingleXYPlotConfigurator o--> BaseXYPlotStyle
+
 
 class BarPlotConfigurator {
     BarPlotStyle plot_style
@@ -132,7 +158,7 @@ class BarPlotConfigurator {
 BarPlotConfigurator o..> DataFrame
 BarPlotConfigurator o--> BarPlotStyle
 
-class ScatterPlotConfigurator
+
 BasePlotConfigurator <|-- BaseSinglePlotConfigurator
 BaseSinglePlotConfigurator <|-- BaseSingleXYPlotConfigurator
 BaseSingleXYPlotConfigurator <|-- BarPlotConfigurator
