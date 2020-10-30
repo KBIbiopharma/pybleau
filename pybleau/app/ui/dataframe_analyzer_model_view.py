@@ -18,10 +18,10 @@ from app_common.std_lib.filepath_utils import open_file
 from app_common.std_lib.logging_utils import ACTION_LEVEL
 
 from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-from pybleau.app.tools.filter_expression_editor import \
+from pybleau.app.ui.filter_expression_editor import \
     FilterExpressionEditorView
-from pybleau.image_resources import pop_out_img, apply_img, manage_img, \
-    save_img, load_img
+from pybleau.app.image_resources import pop_out_img, apply_img, \
+    manage_img, save_img, load_img
 
 try:
     from pybleau.app.ui.dataframe_plot_manager_view import \
@@ -539,7 +539,7 @@ class DataFrameAnalyzerView(ModelView):
         ui = filter_editor.edit_traits(kind="livemodal")
         if ui.result:
             self.model.filter_exp = filter_editor.exp
-            self._apply_filter_button_fired()
+            self.apply_filter_button = True
 
     def _manage_filter_button_fired(self):
         """ TODO: review if replacing the copy by a deepcopy or removing the
@@ -764,5 +764,5 @@ if __name__ == "__main__":
 
     view = DataFrameAnalyzerView(model=summarizer, include_plotter=True,
                                  display_precision=5, filter_manager=True,
-                                 plotter_layout="HSplit", )
+                                 plotter_layout="HSplit")
     view.configure_traits()

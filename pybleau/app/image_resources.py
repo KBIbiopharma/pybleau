@@ -1,7 +1,5 @@
 from pyface.image_resource import ImageResource
 
-kbi_logo_img = ImageResource("KBILogo.png")
-
 pop_out_img = ImageResource("pop_out_image.png")
 
 manage_img = ImageResource("manage.png")

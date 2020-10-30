@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 
-from pybleau.app.tools.filter_expression_editor import \
+from pybleau.app.ui.filter_expression_editor import \
     FilterExpressionEditorView
 
 try:
@@ -19,7 +19,8 @@ BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
 if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from app_common.std_lib.sys_utils import IS_LINUX, IS_OSX
-    from app_common.apptools.testing_utils import temp_bringup_ui_for
+    from app_common.apptools.testing_utils import temp_bringup_ui_for, \
+        assert_obj_gui_works
     from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView, \
         DataFramePlotManager, DataFramePlotManagerView
 
@@ -189,14 +190,7 @@ class TestDataFrameAnalyzerView(TestCase):
         view.model.filter_exp = "a != 3"
         expected_df = DataFrame({"a": [1, 2, 4, 5], "b": [10, 15, 15, 10]},
                                 index=[0, 1, 3, 4])
-        try:
-            assert_frame_equal(view.model.filtered_df, expected_df)
-        except AssertionError:
-            pass
-        else:
-            msg = "The two dataframes should not be equal yet if " \
-                  "`filter_auto_apply` is False."
-            raise AssertionError(msg)
+        self.assert_frame_not_equal(view.model.filtered_df, expected_df)
         view.apply_filter_button = True
         assert_frame_equal(view.model.filtered_df, expected_df)
 
@@ -210,17 +204,23 @@ class TestDataFrameAnalyzerView(TestCase):
         ui = MagicMock(result=False)
         edit.return_value = ui
         view._pop_out_filter_button_fired()
-        try:
-            assert_frame_equal(view.model.filtered_df, expected_df)
-        except AssertionError:
-            pass
-        else:
-            msg = "The two dataframes should not be equal yet if " \
-                  "`filter_auto_apply` is False."
-            raise AssertionError(msg)
+        self.assert_frame_not_equal(view.model.filtered_df, expected_df)
         ui.result = True
         view._pop_out_filter_button_fired()
         assert_frame_equal(view.model.filtered_df, expected_df)
+
+    def test_bring_up_plot_manager_view(self):
+        view = FilterExpressionEditorView(exp="a == 3")
+        assert_obj_gui_works(view)
+
+    def assert_frame_not_equal(self, actual_df, expected_df):
+        try:
+            assert_frame_equal(actual_df, expected_df)
+        except AssertionError:
+            pass
+        else:
+            msg = "The two dataframes should not be equal."
+            raise AssertionError(msg)
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
