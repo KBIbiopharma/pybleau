@@ -205,6 +205,9 @@ class DataFrameAnalyzerView(ModelView):
 
     hidden_selection_msg = Str
 
+    #: Column names (as a list) to include in filter editor assistant
+    filter_editor_cols = List
+
     # Implementation details --------------------------------------------------
 
     #: Evaluate number of columns to select panel or popup column control
@@ -534,8 +537,10 @@ class DataFrameAnalyzerView(ModelView):
         self.model.recompute_filtered_df()
 
     def _pop_out_filter_button_fired(self):
-        filter_editor = FilterExpressionEditorView(exp=self.model.filter_exp,
-                                                   view_klass=self.view_klass)
+        filter_editor = FilterExpressionEditorView(
+            exp=self.model.filter_exp, view_klass=self.view_klass,
+            source_df=self.model.source_df,
+            included_cols=self.filter_editor_cols)
         ui = filter_editor.edit_traits(kind="livemodal")
         if ui.result:
             self.model.filter_exp = filter_editor.exp
