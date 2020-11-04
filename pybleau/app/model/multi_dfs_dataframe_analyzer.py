@@ -101,7 +101,10 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         and the alignment will be done using it.
         """
         # Align in the index dimension:
-        if not (self.source_df.index == new_df.index).all():
+        idx_len = len(self.source_df.index)
+        idx_mismatch = len(new_df.index) != idx_len or \
+            not (self.source_df.index == new_df.index).all()
+        if idx_mismatch:
             new_df = pd.merge(self.source_df, new_df, left_index=True,
                               right_index=True, how="left")[new_df.columns]
         for col in new_df:
