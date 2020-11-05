@@ -1,0 +1,85 @@
+from unittest import TestCase
+
+from app_common.apptools.testing_utils import assert_obj_gui_works
+from pandas import DataFrame
+from traits.testing.unittest_tools import UnittestTools
+
+from pybleau.app.ui.filter_expression_editor import \
+    FilterExpressionEditorView, COPY_TO_CLIPBOARD
+
+
+class TestFilterExpressionEditor(TestCase, UnittestTools):
+    def setUp(self):
+        self.df = DataFrame(
+            {
+                "a": [1, 2, 4, 5],
+                "b": list("zxyh"),
+                "c_column": list("test"),
+                "d": ["1 alpha", "MM_TT_BB_03-92", "2zeta", "spacE Bar"],
+                "e_column": ["03_06 04_STANDARD.name",
+                             "about this", "._ a93", "d!@#.$% ^&*()_+d"]
+            },
+            index=[0, 1, 3, 4]
+        )
+
+    def test_bring_up_plot_manager_view(self):
+        view = FilterExpressionEditorView(expr="a == 4",
+                                          source_df=self.df)
+        assert_obj_gui_works(view)
+
+    def test_click_type_changed(self):
+        view = FilterExpressionEditorView(expr="a == 4",
+                                          source_df=self.df)
+        self.assertTrue(view.auto_append)
+        with self.assertTraitChanges(view, "auto_append"):
+            view.click_type = COPY_TO_CLIPBOARD
+        self.assertFalse(view.auto_append)
+
+    def test_edit_iniaialized_True(self):
+        view = FilterExpressionEditorView(expr="a == 4",
+                                          source_df=self.df)
+        self.assertTrue(view._edit_initialized)
+
+    def test_include_col_not_in_dataframe(self):
+        with self.assertRaises(KeyError):
+            FilterExpressionEditorView(expr="a == 4",
+                                       source_df=self.df,
+                                       included_cols=["NON-EXISTANT"])
+
+    def test_source_df_is_empty(self):
+        with self.assertRaises(KeyError):
+            FilterExpressionEditorView(expr="a == 4", source_df=DataFrame())
+
+    def test_empty_included_columns_still_makes_name_traits(self):
+        view = FilterExpressionEditorView(expr="a == 4",
+                                          source_df=self.df)
+        # still makes buttons for column names
+        expected_trait_names = [f"trait_{n}" for n in sorted(self.df)]
+        self.assertTrue(set(expected_trait_names).issubset(view.trait_names()))
+
+    def test_button_traits_made_for_specified_column_values(self):
+        view = FilterExpressionEditorView(source_df=self.df,
+                                          included_cols=["b", "c_column"])
+        expected_traits = [f"trait_{n}" for n in sorted(self.df)]
+        column_values = self.df["b"].unique().tolist() + self.df[
+            "c_column"].unique().tolist()
+        expected_value_traits = [f"trait_{n}" for n in column_values]
+        expected_traits += expected_value_traits
+        self.assertTrue(set(expected_traits).issubset(view.trait_names()))
+
+    def test_filter_button_clicked_with_append(self):
+        view = FilterExpressionEditorView(expr="a != 4", source_df=self.df,
+                                          included_cols=["d", "c_column"])
+        view.trait_2zeta = True
+        self.assertEqual(view.expr, 'a != 4"2zeta"')
+        view.trait_c_column = True
+        self.assertEqual(view.expr, 'a != 4"2zeta"c_column')
+
+    def test_filter_button_clicked_without_append(self):
+        view = FilterExpressionEditorView(expr="a != 4", source_df=self.df,
+                                          included_cols=["d", "c_column"])
+        view.click_type = COPY_TO_CLIPBOARD
+        view.trait_2zeta = True
+        self.assertEqual(view.expr, "a != 4")
+        view.trait_c_column = True
+        self.assertEqual(view.expr, "a != 4")

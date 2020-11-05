@@ -538,12 +538,12 @@ class DataFrameAnalyzerView(ModelView):
 
     def _pop_out_filter_button_fired(self):
         filter_editor = FilterExpressionEditorView(
-            exp=self.model.filter_exp, view_klass=self.view_klass,
+            expr=self.model.filter_exp, view_klass=self.view_klass,
             source_df=self.model.source_df,
             included_cols=self.filter_editor_cols)
         ui = filter_editor.edit_traits(kind="livemodal")
         if ui.result:
-            self.model.filter_exp = filter_editor.exp
+            self.model.filter_exp = filter_editor.expr
             self.apply_filter_button = True
 
     def _manage_filter_button_fired(self):
