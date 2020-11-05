@@ -133,7 +133,7 @@ class FilterExpressionEditorView(HasStrictTraits):
             self._add_values_to_translators(column_values)
 
     def _add_values_to_translators(self, column_values: Iterable):
-        """ Add values from `column_values` to two tranlation dicts
+        """ Add values from `column_values` to two translation dicts
         """
         for name in column_values:
             # make a traited-version of the value
