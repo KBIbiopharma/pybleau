@@ -199,6 +199,11 @@ class DataFramePlotManagerExporter(HasStrictTraits):
             to_meth = getattr(self, METHOD_MAP[self.export_format])
             try:
                 to_meth()
+                if self.interactive:
+                    target = self.target_dir if self.export_format != \
+                                              PPT_FORMAT else self.target_file
+                    open_file(target)
+
             except Exception as e:
                 msg = f"Failed to export the plot list. Error was {e}."
                 logger.exception(msg)
@@ -248,9 +253,6 @@ class DataFramePlotManagerExporter(HasStrictTraits):
             save_plot_to_file(desc.plot, filepath=filepath, dpi=self.image_dpi,
                               **kwargs)
 
-        if self.interactive:
-            open_file(self.target_dir)
-
     def to_pptx(self, **kwargs):
         """ Export all plots as a PPTX presentation with a plot per slide.
         """
@@ -299,8 +301,6 @@ class DataFramePlotManagerExporter(HasStrictTraits):
             os.remove(img_path)
 
         presentation.save(self.target_file)
-        if self.interactive:
-            open_file(self.target_file)
 
     def to_vega(self):
         """ Export plot content to dict (option. file) in Vega-Lite format.
@@ -368,9 +368,6 @@ class DataFramePlotManagerExporter(HasStrictTraits):
 
             json.dump(content, open(self.target_file, "w"),
                       indent=self.json_index)
-
-            if self.interactive:
-                open_file(self.target_file)
 
         return content
 
