@@ -3,7 +3,6 @@
 | Linux, OSX  | [![Build Status](https://travis-ci.org/KBIbiopharma/pybleau.svg?branch=master)](https://travis-ci.org/KBIbiopharma/pybleau)|
 | ----------- | ----------- |
 | Windows     | [![Build status](https://ci.appveyor.com/api/projects/status/obwb8u205yn75pey/branch/master?svg=true)](https://ci.appveyor.com/project/jonathanrocher/pybleau/branch/master)|
-| Coverage    | [![Coverage](https://codecov.io/github/pandas-dev/pandas/coverage.svg?branch=master)](https://codecov.io/gh/pandas-dev/pandas)
 | Coverage    | [![Coverage](https://codecov.io/github/KBIbiopharma/pybleau/coverage.svg?branch=master)](https://codecov.io/gh/KBIbiopharma/pybleau)
 
 ## Project stage
