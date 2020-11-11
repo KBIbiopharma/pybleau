@@ -36,5 +36,5 @@ test_script:
 on_success:
   # Add upload of coverage file to coverage service
   - echo "uploading coverage"
-  - echo "bash <(curl -s https://codecov.io/bash) -Z -c -f test_coverage.xml"
-  -       bash <(curl -s https://codecov.io/bash) -Z -c -f test_coverage.xml
+  - dir
+  - bash <(curl -s https://codecov.io/bash) -Z -c -f test_coverage.xml
