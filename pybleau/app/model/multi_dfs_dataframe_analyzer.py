@@ -105,8 +105,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         idx_mismatch = len(new_df.index) != idx_len or \
             not (self.source_df.index == new_df.index).all()
         if idx_mismatch:
-            new_df = pd.merge(self.source_df, new_df, left_index=True,
-                              right_index=True, how="left")[new_df.columns]
+            new_df = new_df.reindex(self.source_df.index)
+
         for col in new_df:
             self.set_source_df_col(col, new_df[col], **kwargs)
 
