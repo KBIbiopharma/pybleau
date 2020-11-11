@@ -39,3 +39,4 @@ script:
 after_success:
   - edm run -- python etstool.py flake8
   # Add upload of coverage file to coverage service
+  - bash <(curl -s https://codecov.io/bash) -Z -c -f test_coverage.xml
