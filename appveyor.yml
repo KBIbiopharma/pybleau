@@ -33,8 +33,3 @@ install:
 test_script:
   - appveyor-run.cmd test %runtime% %toolkits%
   - appveyor-run.cmd flake8 %runtime% %toolkits%
-on_success:
-  # Add upload of coverage file to coverage service
-  - echo "uploading coverage"
-  - dir
-  - bash <(curl -s https://codecov.io/bash) -Z -c -f test_coverage.xml
