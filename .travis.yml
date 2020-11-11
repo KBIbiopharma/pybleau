@@ -38,5 +38,6 @@ script:
   - for toolkit in ${TOOLKITS}; do edm run -- python etstool.py test --runtime=${RUNTIME} --toolkit=${toolkit} || exit; done
 after_success:
   - edm run -- python etstool.py flake8
+  - ls
   # Add upload of coverage file to coverage service
   - bash <(curl -s https://codecov.io/bash) -Z -c -f test_coverage.xml
