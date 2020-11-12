@@ -13,6 +13,7 @@ from traits.api import Any, Bool, cached_property, Constant, Dict, \
 from traitsui.api import CheckListEditor, EnumEditor, HGroup, InstanceEditor, \
     Item, Label, ListStrEditor, OKCancelButtons, Spring, Tabbed, VGroup, View
 
+from pybleau.app.model.dataframe_analyzer import CATEGORICAL_COL_TYPES
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
 from pybleau.app.plotting.heatmap_plot_style import HeatmapPlotStyle
 from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
@@ -57,6 +58,9 @@ class BasePlotConfigurator(HasStrictTraits):
 
     # List of columns in the data source DF columns
     _available_columns = Property(depends_on="data_source")
+
+    # DF columns in the data source that are non-categorical
+    _numerical_columns = Property(depends_on="data_source")
 
     # Traits methods ----------------------------------------------------------
 
@@ -146,6 +150,14 @@ class BasePlotConfigurator(HasStrictTraits):
         if index_name is None:
             index_name = "index"
         return list(self.data_source.columns) + [index_name]
+
+    def _get__numerical_columns(self):
+        cat_types = CATEGORICAL_COL_TYPES
+        num_cols = self.data_source.select_dtypes(exclude=cat_types).columns
+        index_name = self.data_source.index.name
+        if index_name is None:
+            index_name = "index"
+        return list(num_cols) + [index_name]
 
 
 class BaseSinglePlotConfigurator(BasePlotConfigurator):
@@ -350,46 +362,6 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     def _get_z_arr(self):
         return None
 
-    # Traits private interface ------------------------------------------------
-
-    def _data_selection_items(self):
-        """ Build the default list of items to select data to plot in XY plots.
-        """
-        enum_data_columns = EnumEditor(values=self._available_columns)
-        col_list_empty_option = [""] + self._available_columns
-        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
-
-        items = [
-            HGroup(
-                Item("x_col_name", editor=enum_data_columns,
-                     label=X_COL_NAME_LABEL),
-                Item("x_axis_title")
-            ),
-            HGroup(
-                Item("y_col_name", editor=enum_data_columns,
-                     label=Y_COL_NAME_LABEL),
-                Item("y_axis_title")
-            ),
-            VGroup(
-                HGroup(
-                    Item("z_col_name", editor=optional_enum_data_columns,
-                         label="Color column"),
-                    Item("z_axis_title", label="Legend title",
-                         visible_when="z_col_name"),
-                    Item("force_discrete_colors",
-                         tooltip="Treat floats as unrelated discrete "
-                                 "values?",
-                         visible_when="z_col_name")
-                ),
-                Item("_available_columns", label="Display on hover",
-                     editor=ListStrEditor(selected="hover_col_names",
-                                          multi_select=True),
-                     visible_when="_support_hover"),
-                show_border=True, label="Optional Data Selection"
-            )
-        ]
-        return items
-
     # Traits initialization methods -------------------------------------------
 
     def __dict_keys_default(self):
@@ -455,10 +427,7 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
     def _data_selection_items(self):
         """ Add a melted mode to the default list of items.
         """
-        default_items = super(BarPlotConfigurator, self)._data_selection_items()  # noqa
-        # Since hover isn't supported in Bar plots, remove the view element to
-        # avoid the window being too large (making it invisible isn't enough):
-        default_items[-1].content.pop(-1)
+        default_items = self._base_data_selection_items()
         num_cols = 1 + len(self._available_columns) // self.column_len
         column_select_editor = CheckListEditor(values=self._available_columns,
                                                cols=num_cols)
@@ -491,6 +460,41 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
             )
         ]
         return items
+
+    def _base_data_selection_items(self):
+        """ Build the default list of items to select data to plot in XY plots.
+        """
+        enum_data_columns = EnumEditor(values=self._available_columns)
+        col_list_empty_option = [""] + self._available_columns
+        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
+
+        items = [
+            HGroup(
+                Item("x_col_name", editor=enum_data_columns,
+                     label=X_COL_NAME_LABEL),
+                Item("x_axis_title")
+            ),
+            HGroup(
+                Item("y_col_name", editor=enum_data_columns,
+                     label=Y_COL_NAME_LABEL),
+                Item("y_axis_title")
+            ),
+            VGroup(
+                HGroup(
+                    Item("z_col_name", editor=optional_enum_data_columns,
+                         label="Color column"),
+                    Item("z_axis_title", label="Legend title",
+                         visible_when="z_col_name"),
+                    Item("force_discrete_colors",
+                         tooltip="Treat floats as unrelated discrete "
+                                 "values?",
+                         visible_when="z_col_name")
+                ),
+                show_border=True, label="Optional Data Selection"
+            )
+        ]
+        return items
+
 
     def _get_x_arr(self):
         if self.transformed_data is not self.data_source:
@@ -576,6 +580,46 @@ class LinePlotConfigurator(BaseSingleXYPlotConfigurator):
 
     renderer_style_klass = LineRendererStyle
 
+    # Traits private interface ------------------------------------------------
+
+    def _data_selection_items(self):
+        """ Build the default list of items to select data to plot in XY plots.
+        """
+        num_only_columns = EnumEditor(values=self._numerical_columns)
+        col_list_empty_option = [""] + self._available_columns
+        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
+
+        items = [
+            HGroup(
+                Item("x_col_name", editor=num_only_columns,
+                     label=X_COL_NAME_LABEL),
+                Item("x_axis_title")
+            ),
+            HGroup(
+                Item("y_col_name", editor=num_only_columns,
+                     label=Y_COL_NAME_LABEL),
+                Item("y_axis_title")
+            ),
+            VGroup(
+                HGroup(
+                    Item("z_col_name", editor=optional_enum_data_columns,
+                         label="Color column"),
+                    Item("z_axis_title", label="Legend title",
+                         visible_when="z_col_name"),
+                    Item("force_discrete_colors",
+                         tooltip="Treat floats as unrelated discrete "
+                                 "values?",
+                         visible_when="z_col_name")
+                ),
+                Item("_available_columns", label="Display on hover",
+                     editor=ListStrEditor(selected="hover_col_names",
+                                          multi_select=True),
+                     visible_when="_support_hover"),
+                show_border=True, label="Optional Data Selection"
+            )
+        ]
+        return items
+
 
 class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     """ Configuration object for building scatter plot (std or color-mapped).
@@ -645,6 +689,46 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
             style.container_style.include_colorbar = True
         return style
 
+    # Traits private interface ------------------------------------------------
+
+    def _data_selection_items(self):
+        """ Build the default list of items to select data to plot in XY plots.
+        """
+        num_only_columns = EnumEditor(values=self._numerical_columns)
+        col_list_empty_option = [""] + self._available_columns
+        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
+
+        items = [
+            HGroup(
+                Item("x_col_name", editor=num_only_columns,
+                     label=X_COL_NAME_LABEL),
+                Item("x_axis_title")
+            ),
+            HGroup(
+                Item("y_col_name", editor=num_only_columns,
+                     label=Y_COL_NAME_LABEL),
+                Item("y_axis_title")
+            ),
+            VGroup(
+                HGroup(
+                    Item("z_col_name", editor=optional_enum_data_columns,
+                         label="Color column"),
+                    Item("z_axis_title", label="Legend title",
+                         visible_when="z_col_name"),
+                    Item("force_discrete_colors",
+                         tooltip="Treat floats as unrelated discrete "
+                                 "values?",
+                         visible_when="z_col_name")
+                ),
+                Item("_available_columns", label="Display on hover",
+                     editor=ListStrEditor(selected="hover_col_names",
+                                          multi_select=True),
+                     visible_when="_support_hover"),
+                show_border=True, label="Optional Data Selection"
+            )
+        ]
+        return items
+
 
 class HistogramPlotConfigurator(BaseSingleXYPlotConfigurator):
     """ Configurator to compute histogram of single column (shown as bar plot).
@@ -696,6 +780,7 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
 
     def traits_view(self):
         enum_data_columns = EnumEditor(values=self._available_columns)
+        num_only_columns = EnumEditor(values=self._numerical_columns)
         view = self.view_klass(
             VGroup(
                 HGroup(
@@ -705,12 +790,12 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
                 ),
                 Item("plot_title"),
                 HGroup(
-                    Item("x_col_name", editor=enum_data_columns,
+                    Item("x_col_name", editor=num_only_columns,
                          label="Column to plot along X"),
                     Item("x_axis_title")
                 ),
                 HGroup(
-                    Item("y_col_name", editor=enum_data_columns,
+                    Item("y_col_name", editor=num_only_columns,
                          label="Column to plot along Y"),
                     Item("y_axis_title")
                 ),
