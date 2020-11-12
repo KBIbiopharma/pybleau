@@ -495,7 +495,6 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
         ]
         return items
 
-
     def _get_x_arr(self):
         if self.transformed_data is not self.data_source:
             self.x_col_name = "variable"
