@@ -140,6 +140,24 @@ class TestAnalyzer(Analyzer, TestCase):
                              np.nan, 5])
         assert_array_equal(analyzer.source_df["NEW_COL2"].values, expected)
 
+    def test_concat_to_source_df(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        initial_a_values = self.df["a"].values
+        new_df = pd.DataFrame({"NEW_COL": range(0, 22, 2),
+                               "a": range(11)}, index=self.df.index)
+        analyzer.concat_to_source_df(new_df, target_df="a")
+        for df in [analyzer._source_dfs["a"], analyzer.source_df,
+                   analyzer.filtered_df]:
+            # New column is added:
+            self.assertIn("NEW_COL", df.columns)
+            # New a column is appended a suffix and added:
+            self.assertIn("a_y", df.columns)
+            assert_array_equal(df["a_y"].values, np.arange(11))
+            # Existing a column is unchanged:
+            self.assertIn("a", df.columns)
+            assert_array_equal(df["a"].values, initial_a_values)
+
 
 @skipIf(not BACKEND_AVAILABLE, msg)
 class TestFilterDataFrameAnalyzer(FilterDataFrameAnalyzer, TestCase):
