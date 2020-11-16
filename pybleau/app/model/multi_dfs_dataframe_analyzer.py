@@ -9,7 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 class MultiDataFrameAnalyzer(DataFrameAnalyzer):
-    """ DataFrameAnalyzer where the source_df is a proxy for a list of DFs.
+    """ DataFrameAnalyzer where the source_df is a proxy for multiple DFs.
+
+    The soure_df is here built from a dictionary of dataframes, mapping names
+    to sub-dataframes, and gets recomputed by concatenating all values from the
+    _source_dfs dict.
+
+    To control how the columns are split, create the analyzer providing the
+    _source_dfs map rather than the source_df.
     """
 
     # Data storage attributes -------------------------------------------------
@@ -98,7 +105,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         """ Concatenate potentially unaligned dataframe to the source_df.
 
         The index of the input DF must be a subset of the source_df's index,
-        and the alignment will be done using it.
+        and the alignment will be done using it. Note that this method assumes
+        that the new_df contains only new columns.
         """
         # Align in the index dimension:
         idx_len = len(self.source_df.index)
@@ -174,8 +182,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
     def _set_source_df(self, df):
         """ Set the source_df proxy to a new value.
 
-        If no source_dfs stored, set this 1 for key 0. If there are source_dfs,
-        update them.
+        If no source_dfs stored, set this one for key 0. If there are
+        source_dfs, update them.
         """
         if not self._source_dfs:
             self._source_dfs[0] = df
