@@ -117,9 +117,11 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         for col in new_df:
             if col in self._column_loc:
                 # Add a prefix to avoid collision with an existing column
-                col += "_y"
+                target_col = col + "_y"
+            else:
+                target_col = col
 
-            self.set_source_df_col(col, new_df[col], **kwargs)
+            self.set_source_df_col(target_col, new_df[col], **kwargs)
 
         self._source_dfs_changed = True
 

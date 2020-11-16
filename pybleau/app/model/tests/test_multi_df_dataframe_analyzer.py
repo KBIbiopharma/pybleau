@@ -140,7 +140,7 @@ class TestAnalyzer(Analyzer, TestCase):
                              np.nan, 5])
         assert_array_equal(analyzer.source_df["NEW_COL2"].values, expected)
 
-    def test_concat_to_source_df(self):
+    def test_concat_to_source_df_overlapping_col(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})
         initial_a_values = self.df["a"].values
