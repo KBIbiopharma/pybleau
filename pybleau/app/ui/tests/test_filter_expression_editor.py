@@ -55,31 +55,33 @@ class TestFilterExpressionEditor(TestCase, UnittestTools):
                                           source_df=self.df)
         # still makes buttons for column names
         expected_trait_names = [f"trait_{n}" for n in sorted(self.df)]
-        self.assertTrue(set(expected_trait_names).issubset(view.trait_names()))
+        col_name_traits = view._scrollable_column_names.trait_names()
+        self.assertTrue(set(expected_trait_names).issubset(col_name_traits))
 
-    def test_button_traits_made_for_specified_column_values(self):
+    def test_scroll_traits_made_for_included_cols(self):
         view = FilterExpressionEditorView(source_df=self.df,
                                           included_cols=["b", "c_column"])
-        expected_traits = [f"trait_{n}" for n in sorted(self.df)]
-        column_values = self.df["b"].unique().tolist() + self.df[
-            "c_column"].unique().tolist()
-        expected_value_traits = [f"trait_{n}" for n in column_values]
-        expected_traits += expected_value_traits
-        self.assertTrue(set(expected_traits).issubset(view.trait_names()))
+        expected_scrolls = [f"{view.traited_names[col]}_col_scroll_list"
+                            for col in view.included_cols]
+        self.assertTrue(set(expected_scrolls).issubset(view.trait_names()))
 
     def test_filter_button_clicked_with_append(self):
         view = FilterExpressionEditorView(expr="a != 4", source_df=self.df,
                                           included_cols=["d", "c_column"])
-        view.trait_2zeta = True
+        # these trait names are dynamically created by the view, so they do
+        # not exist in the normal sense in the list of attributes.
+        view.trait_d_col_scroll_list.trait_2zeta = True
         self.assertEqual(view.expr, 'a != 4"2zeta"')
-        view.trait_c_column = True
+        view._scrollable_column_names.trait_c_column = True
         self.assertEqual(view.expr, 'a != 4"2zeta"c_column')
 
     def test_filter_button_clicked_without_append(self):
         view = FilterExpressionEditorView(expr="a != 4", source_df=self.df,
                                           included_cols=["d", "c_column"])
         view.click_type = COPY_TO_CLIPBOARD
-        view.trait_2zeta = True
+        # these trait names are dynamically created by the view, so they do
+        # not exist in the normal sense in the list of attributes.
+        view.trait_d_col_scroll_list.trait_2zeta = True
         self.assertEqual(view.expr, "a != 4")
-        view.trait_c_column = True
+        view._scrollable_column_names.trait_c_column = True
         self.assertEqual(view.expr, "a != 4")

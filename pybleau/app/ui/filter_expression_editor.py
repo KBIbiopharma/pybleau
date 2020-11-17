@@ -41,16 +41,25 @@ class ScrollableButtonListView(HasStrictTraits):
     #: Name for the VGroup
     group_label = Str
 
-    def traits_view(self):
-        trait_names = []
+    #: Internal list of trait names
+    _trait_names = List
 
+    def __init__(self, traits_and_names, handler, group_label="", **traits):
+        super(ScrollableButtonListView, self).__init__(**traits)
+        self.traits_and_names = traits_and_names
+        self.handler = handler
+        self.group_label = group_label
+        self._make_trait_names()
+
+    def _make_trait_names(self):
         # add the trait names to this object, and connect the handler function
         for trait_name, label in self.traits_and_names.items():
-            trait_names.append(trait_name)
+            self._trait_names.append(trait_name)
             self.add_trait(trait_name, Button(label))
             self.observe(self.handler, trait_name)
-        # create an Item for each added Button trait
-        items = [Item(n, show_label=False) for n in trait_names]
+
+    def traits_view(self):
+        items = [Item(n, show_label=False) for n in self._trait_names]
 
         return self.view_klass(
             VGroup(*items, label=self.group_label),
@@ -104,6 +113,9 @@ class FilterExpressionEditorView(HasStrictTraits):
     #: Provider of a scrollable view for the column name buttons
     _scrollable_column_names = Instance(ScrollableButtonListView)
 
+    #: List of scroll list views for each column in included_cols
+    _included_col_scroll_list = List
+
     def __init__(self, source_df: DataFrame, **traits):
         super(FilterExpressionEditorView, self).__init__(**traits)
         if not any(sorted(source_df)):
@@ -122,34 +134,11 @@ class FilterExpressionEditorView(HasStrictTraits):
                 raise KeyError(msg)
             self.included_cols = traits["included_cols"]
         self._create_trait_translators()
+        self._create_col_name_scrollable_view()
+        self._create_included_col_scroll_list()
         self._edit_initialized = True
 
     def traits_view(self):
-        # create a scrollable list of col name buttons
-        col_names = sorted(self.source_df)
-        # create a {trait_name:name} dict for the ScrollableButtonListView
-        col_dict = {self.traited_names[name]: name for name in col_names}
-        self._scrollable_column_names = ScrollableButtonListView(
-            traits_and_names=col_dict, handler=self.filter_button_clicked
-        )
-
-        included_scroll_list = []
-        # create scrollable lists for column value buttons
-        for column in self.included_col_values.keys():
-            uniques = self.included_col_values[column]
-            # create a {trait_name:name} dict for the ScrollableButtonListView
-            col_dict = {self.traited_names[name]: name for name in uniques}
-            scroll_view = ScrollableButtonListView(
-                traits_and_names=col_dict, handler=self.filter_button_clicked
-            )
-            # make a trait for this ScrollableButtonListView
-            scroll_trait = f"{self.traited_names[column]}_col_scroll_list"
-            self.add_trait(scroll_trait, scroll_view)
-            # make an Item for the new scroll_trait
-            new_item = Item(scroll_trait, style="custom", show_label=False,
-                            editor=InstanceEditor(), label=column)
-            included_scroll_list.append(new_item)
-
         # make the view
         view = self.view_klass(
             HSplit(
@@ -158,7 +147,7 @@ class FilterExpressionEditorView(HasStrictTraits):
                         Item("_scrollable_column_names", style="custom",
                              editor=InstanceEditor(), show_label=False,
                              label="Column Names"),
-                        *included_scroll_list
+                        *self._included_col_scroll_list
                     ),
                     HGroup(
                         Item('click_type', style='custom', show_label=False),
@@ -201,6 +190,34 @@ class FilterExpressionEditorView(HasStrictTraits):
             # track the original name with a traited name key
             self.original_names[trait_name] = name
 
+    def _create_col_name_scrollable_view(self):
+        # create a scrollable list of col name buttons
+        col_names = sorted(self.source_df)
+        # create a {trait_name:name} dict for the ScrollableButtonListView
+        col_dict = {self.traited_names[name]: name for name in col_names}
+        self._scrollable_column_names = ScrollableButtonListView(
+            traits_and_names=col_dict, handler=self.filter_button_clicked
+        )
+
+    def _create_included_col_scroll_list(self):
+        included_scroll_list = []
+        # create scrollable lists for column value buttons
+        for column in self.included_col_values.keys():
+            uniques = self.included_col_values[column]
+            # create a {trait_name:name} dict for the ScrollableButtonListView
+            col_dict = {self.traited_names[name]: name for name in uniques}
+            scroll_view = ScrollableButtonListView(
+                traits_and_names=col_dict, handler=self.filter_button_clicked
+            )
+            # make a trait for this ScrollableButtonListView
+            scroll_trait = f"{self.traited_names[column]}_col_scroll_list"
+            self.add_trait(scroll_trait, scroll_view)
+            # make an Item for the new scroll_trait
+            new_item = Item(scroll_trait, style="custom", show_label=False,
+                            editor=InstanceEditor(), label=column)
+            included_scroll_list.append(new_item)
+        self._included_col_scroll_list = included_scroll_list
+
     def filter_button_clicked(self, event):
         """ Appends the clicked value to the filter or copies to the clipboard
         """
@@ -234,29 +251,29 @@ if __name__ == "__main__":
     test_df = DataFrame(
         {
             "a": [1, 2, 4, 5],
-            "b": list("zxyh"),
-            "c": list("zxyh"),
-            "d": list("zxyh"),
-            "e": list("zxyh"),
-            "f": list("zxyh"),
-            "g": list("zxyh"),
-            "h": list("zxyh"),
-            "i": list("zxyh"),
-            "j": list("zxyh"),
-            "k": list("zxyh"),
-            "l": list("zxyh"),
-            "m": list("zxyh"),
-            "n": list("zxyh"),
-            "o": list("zxyh"),
-            "p": list("zxyh"),
-            "q": list("zxyh"),
-            "r": list("zxyh"),
-            "s": list("zxyh"),
-            "t": list("zxyh"),
-            "u": list("zxyh"),
-            "v": list("zxyh"),
-            "w": list("zxyh"),
-            "x": list("test"),
+            "b": list("1234"),
+            "c": list("1234"),
+            "d": list("1234"),
+            "e": list("1234"),
+            "f": list("1234"),
+            "g": list("1234"),
+            "h": list("1234"),
+            "i": list("1234"),
+            "j": list("1234"),
+            "k": list("1234"),
+            "l": list("1234"),
+            "m": list("1234"),
+            "n": list("1234"),
+            "o": list("1234"),
+            "p": list("1234"),
+            "q": list("1234"),
+            "r": list("1234"),
+            "s": list("1234"),
+            "t": list("1234"),
+            "u": list("1234"),
+            "v": list("1234"),
+            "w": list("1234"),
+            "x": list("1234"),
             "y": ["1 alpha", "MM_TT_BB_03-92", "2zeta", "kAPPa pappa"],
             "e_column": ["03_06 04_STANDARD.name",
                          "about this", "._ a93", "d!@#.$% ^&*()_+d"]
