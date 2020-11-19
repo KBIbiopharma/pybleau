@@ -145,7 +145,7 @@ class TestAnalyzer(Analyzer, TestCase):
                                                     "b": self.df3})
         initial_a_values = self.df["a"].values
         new_df = pd.DataFrame({"NEW_COL": range(0, 22, 2),
-                               "a": range(11)}, index=self.df.index)
+                               "a": list("sjdfkshfkah")}, index=self.df.index)
         analyzer.concat_to_source_df(new_df, target_df="a")
         for df in [analyzer._source_dfs["a"], analyzer.source_df,
                    analyzer.filtered_df]:
@@ -153,7 +153,7 @@ class TestAnalyzer(Analyzer, TestCase):
             self.assertIn("NEW_COL", df.columns)
             # New a column is appended a suffix and added:
             self.assertIn("a_y", df.columns)
-            assert_array_equal(df["a_y"].values, np.arange(11))
+            self.assertEqual(list(df["a_y"]), list("sjdfkshfkah"))
             # Existing a column is unchanged:
             self.assertIn("a", df.columns)
             assert_array_equal(df["a"].values, initial_a_values)
