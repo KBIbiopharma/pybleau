@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 
-from traits.api import Dict, Instance, Property
+from traits.api import Dict, Event, Instance, Property
 
 from .dataframe_analyzer import copy_and_sanitize, DataFrameAnalyzer
 
@@ -9,13 +9,21 @@ logger = logging.getLogger(__name__)
 
 
 class MultiDataFrameAnalyzer(DataFrameAnalyzer):
-    """ DataFrameAnalyzer where the source_df is a proxy for a list of DFs.
+    """ DataFrameAnalyzer where the source_df is a proxy for multiple DFs.
+
+    The soure_df is here built from a dictionary of dataframes, mapping names
+    to sub-dataframes, and gets recomputed by concatenating all values from the
+    _source_dfs dict.
+
+    To control how the columns are split, create the analyzer providing the
+    _source_dfs map rather than the source_df.
     """
 
     # Data storage attributes -------------------------------------------------
 
     #: Resulting proxy dataframe built from the dataframe parts
-    source_df = Property(Instance(pd.DataFrame), depends_on="_source_dfs[]")
+    source_df = Property(Instance(pd.DataFrame),
+                         depends_on="_source_dfs[], _source_dfs_changed")
 
     #: Maps dataframe name to dataframe
     _source_dfs = Dict
@@ -25,6 +33,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
     #: Maps a column name to the dataframe it is located in
     _column_loc = Dict
+
+    _source_dfs_changed = Event
 
     def __init__(self, convert_source_dtypes=False, data_sorted=True,
                  **traits):
@@ -91,8 +101,36 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
     # Public interface --------------------------------------------------------
 
+    def concat_to_source_df(self, new_df, **kwargs):
+        """ Concatenate potentially unaligned dataframe to the source_df.
+
+        The index of the input DF must be a subset of the source_df's index,
+        and the alignment will be done using it.
+        """
+        # Align in the index dimension:
+        idx_len = len(self.source_df.index)
+        idx_mismatch = len(new_df.index) != idx_len or \
+            not (self.source_df.index == new_df.index).all()
+        if idx_mismatch:
+            new_df = new_df.reindex(self.source_df.index)
+
+        for col in new_df:
+            if col in self._column_loc:
+                # Add a prefix to avoid collision with an existing column
+                target_col = col + "_y"
+            else:
+                target_col = col
+
+            self.set_source_df_col(target_col, new_df[col], **kwargs)
+
+        self._source_dfs_changed = True
+
     def set_source_df_col(self, col, value, target_df=None):
         """ Set a DF column to a value or add a new column to one of the DFs.
+
+        Note: if a new column is created, this method doesn't issue any
+        notification for the source_df to be re-cololected, so afterwards,
+        it should be issued explicitely, using the `_source_dfs_changed` event.
 
         Parameters
         ----------
@@ -115,6 +153,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
                 raise ValueError(msg)
 
             target_df = self._source_dfs[target_df]
+            self._column_loc[col] = target_df
 
         target_df[col] = value
 
@@ -148,8 +187,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
     def _set_source_df(self, df):
         """ Set the source_df proxy to a new value.
 
-        If no source_dfs stored, set this 1 for key 0. If there are source_dfs,
-        update them.
+        If no source_dfs stored, set this one for key 0. If there are
+        source_dfs, update them.
         """
         if not self._source_dfs:
             self._source_dfs[0] = df

@@ -1,6 +1,8 @@
 from unittest import skipIf, TestCase
 import os
 import pandas as pd
+import numpy as np
+from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 from .base_dataframe_analyzer import Analyzer, DisplayingDataFrameAnalyzer, \
@@ -91,6 +93,70 @@ class TestAnalyzer(Analyzer, TestCase):
         # Now, this is supposed to work:
         analyzer.set_source_df_col("NEW_COL", "xyz", target_df="b")
         self.assertIn("NEW_COL", analyzer.source_df.columns)
+
+    def test_concat_to_source_df(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        new_df = pd.DataFrame({"NEW_COL": range(0, 22, 2),
+                               "NEW_COL2": range(11)}, index=self.df.index)
+        with self.assertRaises(ValueError):
+            # This has to fail because a new column is supposed to be created
+            # but no target DF is specified:
+            analyzer.concat_to_source_df(new_df)
+
+        # Now, this is supposed to work:
+        analyzer.concat_to_source_df(new_df, target_df="a")
+        self.assertIn("NEW_COL", analyzer._source_dfs["a"].columns)
+        self.assertIn("NEW_COL2", analyzer._source_dfs["a"].columns)
+        self.assertIn("NEW_COL", analyzer.source_df.columns)
+        self.assertIn("NEW_COL2", analyzer.source_df.columns)
+        self.assertIn("NEW_COL", analyzer.filtered_df.columns)
+        self.assertIn("NEW_COL2", analyzer.filtered_df.columns)
+
+    def test_concat_to_source_df_misaligned(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        new_df = pd.DataFrame({"NEW_COL": range(0, 22, 4),
+                               "NEW_COL2": range(6)}, index=self.df.index[::2])
+        with self.assertRaises(ValueError):
+            # This has to fail because a new column is supposed to be created
+            # but no target DF is specified:
+            analyzer.concat_to_source_df(new_df)
+
+        # Now, this is supposed to work:
+        analyzer.concat_to_source_df(new_df, target_df="a")
+        self.assertIn("NEW_COL", analyzer._source_dfs["a"].columns)
+        self.assertIn("NEW_COL2", analyzer._source_dfs["a"].columns)
+        self.assertIn("NEW_COL", analyzer.source_df.columns)
+        self.assertIn("NEW_COL2", analyzer.source_df.columns)
+        self.assertIn("NEW_COL", analyzer.filtered_df.columns)
+        self.assertIn("NEW_COL2", analyzer.filtered_df.columns)
+
+        # Alignment was done:
+        expected = np.array([0, np.nan,  4, np.nan,  8, np.nan, 12, np.nan, 16,
+                             np.nan, 20])
+        assert_array_equal(analyzer.source_df["NEW_COL"].values, expected)
+        expected = np.array([0, np.nan, 1, np.nan, 2, np.nan, 3, np.nan, 4,
+                             np.nan, 5])
+        assert_array_equal(analyzer.source_df["NEW_COL2"].values, expected)
+
+    def test_concat_to_source_df_overlapping_col(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        initial_a_values = self.df["a"].values
+        new_df = pd.DataFrame({"NEW_COL": range(0, 22, 2),
+                               "a": list("sjdfkshfkah")}, index=self.df.index)
+        analyzer.concat_to_source_df(new_df, target_df="a")
+        for df in [analyzer._source_dfs["a"], analyzer.source_df,
+                   analyzer.filtered_df]:
+            # New column is added:
+            self.assertIn("NEW_COL", df.columns)
+            # New a column is appended a suffix and added:
+            self.assertIn("a_y", df.columns)
+            self.assertEqual(list(df["a_y"]), list("sjdfkshfkah"))
+            # Existing a column is unchanged:
+            self.assertIn("a", df.columns)
+            assert_array_equal(df["a"].values, initial_a_values)
 
 
 @skipIf(not BACKEND_AVAILABLE, msg)
