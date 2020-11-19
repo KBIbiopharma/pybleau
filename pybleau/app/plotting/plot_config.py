@@ -257,6 +257,9 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
                                  depends_on="transformed_data, z_col_name, "
                                             "force_discrete_colors")
 
+    #: Flag setting whether to use only numerical columns in x/y selections
+    _numerical_only = Bool
+
     @cached_property
     def _get_colorize_by_float(self):
         if not self.z_col_name:
@@ -362,6 +365,48 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
     def _get_z_arr(self):
         return None
 
+    # Traits private interface ------------------------------------------------
+
+    def _data_selection_items(self):
+        """ Build the default list of items to select data to plot in XY plots.
+        """
+        columns = self._numerical_columns if self._numerical_only else \
+            self._available_solumns
+        enum_data_columns = EnumEditor(values=columns)
+        col_list_empty_option = [""] + columns
+        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
+
+        items = [
+            HGroup(
+                Item("x_col_name", editor=enum_data_columns,
+                     label=X_COL_NAME_LABEL),
+                Item("x_axis_title")
+            ),
+            HGroup(
+                Item("y_col_name", editor=enum_data_columns,
+                     label=Y_COL_NAME_LABEL),
+                Item("y_axis_title")
+            ),
+            VGroup(
+                HGroup(
+                    Item("z_col_name", editor=optional_enum_data_columns,
+                         label="Color column"),
+                    Item("z_axis_title", label="Legend title",
+                         visible_when="z_col_name"),
+                    Item("force_discrete_colors",
+                         tooltip="Treat floats as unrelated discrete "
+                                 "values?",
+                         visible_when="z_col_name")
+                ),
+                Item("_available_columns", label="Display on hover",
+                     editor=ListStrEditor(selected="hover_col_names",
+                                          multi_select=True),
+                     visible_when="_support_hover"),
+                show_border=True, label="Optional Data Selection"
+            )
+        ]
+        return items
+
     # Traits initialization methods -------------------------------------------
 
     def __dict_keys_default(self):
@@ -427,7 +472,10 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
     def _data_selection_items(self):
         """ Add a melted mode to the default list of items.
         """
-        default_items = self._base_data_selection_items()
+        default_items = super(BarPlotConfigurator, self)._data_selection_items()  # noqa
+        # Since hover isn't supported in Bar plots, remove the view element to
+        # avoid the window being too large (making it invisible isn't enough):
+        default_items[-1].content.pop(-1)
         num_cols = 1 + len(self._available_columns) // self.column_len
         column_select_editor = CheckListEditor(values=self._available_columns,
                                                cols=num_cols)
@@ -457,40 +505,6 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
                     visible_when="not melt_source_data"
                 ),
                 show_border=True
-            )
-        ]
-        return items
-
-    def _base_data_selection_items(self):
-        """ Build the default list of items to select data to plot in XY plots.
-        """
-        enum_data_columns = EnumEditor(values=self._available_columns)
-        col_list_empty_option = [""] + self._available_columns
-        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
-
-        items = [
-            HGroup(
-                Item("x_col_name", editor=enum_data_columns,
-                     label=X_COL_NAME_LABEL),
-                Item("x_axis_title")
-            ),
-            HGroup(
-                Item("y_col_name", editor=enum_data_columns,
-                     label=Y_COL_NAME_LABEL),
-                Item("y_axis_title")
-            ),
-            VGroup(
-                HGroup(
-                    Item("z_col_name", editor=optional_enum_data_columns,
-                         label="Color column"),
-                    Item("z_axis_title", label="Legend title",
-                         visible_when="z_col_name"),
-                    Item("force_discrete_colors",
-                         tooltip="Treat floats as unrelated discrete "
-                                 "values?",
-                         visible_when="z_col_name")
-                ),
-                show_border=True, label="Optional Data Selection"
             )
         ]
         return items
@@ -579,45 +593,9 @@ class LinePlotConfigurator(BaseSingleXYPlotConfigurator):
 
     renderer_style_klass = LineRendererStyle
 
+    _numerical_only = Bool(True)
+
     # Traits private interface ------------------------------------------------
-
-    def _data_selection_items(self):
-        """ Build the default list of items to select data to plot in XY plots.
-        """
-        num_only_columns = EnumEditor(values=self._numerical_columns)
-        col_list_empty_option = [""] + self._available_columns
-        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
-
-        items = [
-            HGroup(
-                Item("x_col_name", editor=num_only_columns,
-                     label=X_COL_NAME_LABEL),
-                Item("x_axis_title")
-            ),
-            HGroup(
-                Item("y_col_name", editor=num_only_columns,
-                     label=Y_COL_NAME_LABEL),
-                Item("y_axis_title")
-            ),
-            VGroup(
-                HGroup(
-                    Item("z_col_name", editor=optional_enum_data_columns,
-                         label="Color column"),
-                    Item("z_axis_title", label="Legend title",
-                         visible_when="z_col_name"),
-                    Item("force_discrete_colors",
-                         tooltip="Treat floats as unrelated discrete "
-                                 "values?",
-                         visible_when="z_col_name")
-                ),
-                Item("_available_columns", label="Display on hover",
-                     editor=ListStrEditor(selected="hover_col_names",
-                                          multi_select=True),
-                     visible_when="_support_hover"),
-                show_border=True, label="Optional Data Selection"
-            )
-        ]
-        return items
 
 
 class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
@@ -628,6 +606,8 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     _support_hover = Bool(True)
 
     renderer_style_klass = Property(Any, depends_on="plot_type")
+
+    _numerical_only = Bool(True)
 
     # Traits property getters/setters -----------------------------------------
 
@@ -689,44 +669,6 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         return style
 
     # Traits private interface ------------------------------------------------
-
-    def _data_selection_items(self):
-        """ Build the default list of items to select data to plot in XY plots.
-        """
-        num_only_columns = EnumEditor(values=self._numerical_columns)
-        col_list_empty_option = [""] + self._available_columns
-        optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
-
-        items = [
-            HGroup(
-                Item("x_col_name", editor=num_only_columns,
-                     label=X_COL_NAME_LABEL),
-                Item("x_axis_title")
-            ),
-            HGroup(
-                Item("y_col_name", editor=num_only_columns,
-                     label=Y_COL_NAME_LABEL),
-                Item("y_axis_title")
-            ),
-            VGroup(
-                HGroup(
-                    Item("z_col_name", editor=optional_enum_data_columns,
-                         label="Color column"),
-                    Item("z_axis_title", label="Legend title",
-                         visible_when="z_col_name"),
-                    Item("force_discrete_colors",
-                         tooltip="Treat floats as unrelated discrete "
-                                 "values?",
-                         visible_when="z_col_name")
-                ),
-                Item("_available_columns", label="Display on hover",
-                     editor=ListStrEditor(selected="hover_col_names",
-                                          multi_select=True),
-                     visible_when="_support_hover"),
-                show_border=True, label="Optional Data Selection"
-            )
-        ]
-        return items
 
 
 class HistogramPlotConfigurator(BaseSingleXYPlotConfigurator):
