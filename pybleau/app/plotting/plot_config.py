@@ -371,7 +371,7 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
         """ Build the default list of items to select data to plot in XY plots.
         """
         columns = self._numerical_columns if self._numerical_only else \
-            self._available_solumns
+            self._available_columns
         enum_data_columns = EnumEditor(values=columns)
         col_list_empty_option = [""] + columns
         optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
