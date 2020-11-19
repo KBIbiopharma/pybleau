@@ -105,18 +105,23 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         """ Concatenate potentially unaligned dataframe to the source_df.
 
         The index of the input DF must be a subset of the source_df's index,
-        and the alignment will be done using it. Note that this method assumes
-        that the new_df contains only new columns.
+        and the alignment will be done using it.
         """
         # Align in the index dimension:
         idx_len = len(self.source_df.index)
         idx_mismatch = len(new_df.index) != idx_len or \
             not (self.source_df.index == new_df.index).all()
         if idx_mismatch:
-            new_df = pd.merge(self.source_df, new_df, left_index=True,
-                              right_index=True, how="left")[new_df.columns]
+            new_df = new_df.reindex(self.source_df.index)
+
         for col in new_df:
-            self.set_source_df_col(col, new_df[col], **kwargs)
+            if col in self._column_loc:
+                # Add a prefix to avoid collision with an existing column
+                target_col = col + "_y"
+            else:
+                target_col = col
+
+            self.set_source_df_col(target_col, new_df[col], **kwargs)
 
         self._source_dfs_changed = True
 
