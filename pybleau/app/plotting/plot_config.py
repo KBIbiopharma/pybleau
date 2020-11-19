@@ -595,8 +595,6 @@ class LinePlotConfigurator(BaseSingleXYPlotConfigurator):
 
     _numerical_only = Bool(True)
 
-    # Traits private interface ------------------------------------------------
-
 
 class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
     """ Configuration object for building scatter plot (std or color-mapped).
@@ -667,8 +665,6 @@ class ScatterPlotConfigurator(BaseSingleXYPlotConfigurator):
         if self.colorize_by_float:
             style.container_style.include_colorbar = True
         return style
-
-    # Traits private interface ------------------------------------------------
 
 
 class HistogramPlotConfigurator(BaseSingleXYPlotConfigurator):
