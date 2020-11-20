@@ -681,12 +681,12 @@ class HistogramPlotConfigurator(BaseSingleXYPlotConfigurator):
         computed.
         """
         enum_data_columns = EnumEditor(values=self._numerical_columns)
-        items =[
-                HGroup(
-                    Item("x_col_name", editor=enum_data_columns,
-                         label="Column to plot along X"),
-                    Item("x_axis_title")
-                )
+        items = [
+            HGroup(
+                Item("x_col_name", editor=enum_data_columns,
+                     label="Column to plot along X"),
+                Item("x_axis_title")
+            )
         ]
         return items
 
