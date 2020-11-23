@@ -60,14 +60,14 @@ class MultiLinePlotConfigurator(BaseSingleXYPlotConfigurator,
     def _data_selection_items(self):
         """ Build the default list of items to select data to plot in XY plots.
         """
-        enum_data_columns = EnumEditor(values=self._available_columns)
-        num_cols = 1 + len(self._available_columns) // 10
-        data_columns_selector = CheckListEditor(values=self._available_columns,
+        num_only_columns = EnumEditor(values=self._numerical_columns)
+        num_cols = 1 + len(self._numerical_columns) // 10
+        data_columns_selector = CheckListEditor(values=self._numerical_columns,
                                                 cols=num_cols)
 
         items = [
             HGroup(
-                Item("x_col_name", editor=enum_data_columns,
+                Item("x_col_name", editor=num_only_columns,
                      label=X_COL_NAME_LABEL),
                 Item("x_axis_title")
             ),
