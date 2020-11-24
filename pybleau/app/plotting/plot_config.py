@@ -152,7 +152,7 @@ class BasePlotConfigurator(HasStrictTraits):
         return list(self.data_source.columns) + [index_name]
 
     def _get__numerical_columns(self):
-        cat_types = CATEGORICAL_COL_TYPES + [bool]
+        cat_types = CATEGORICAL_COL_TYPES
         num_cols = self.data_source.select_dtypes(exclude=cat_types).columns
         index_name = self.data_source.index.name
         if index_name is None:
