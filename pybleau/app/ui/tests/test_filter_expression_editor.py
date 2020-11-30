@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+import pandas as pd
 from app_common.apptools.testing_utils import assert_obj_gui_works
 from pandas import DataFrame
 from traits.testing.unittest_tools import UnittestTools
@@ -17,7 +18,9 @@ class TestFilterExpressionEditor(TestCase, UnittestTools):
                 "c_column": list("test"),
                 "d": ["1 alpha", "MM_TT_BB_03-92", "2zeta", "spacE Bar"],
                 "e_column": ["03_06 04_STANDARD.name",
-                             "about this", "._ a93", "d!@#.$% ^&*()_+d"]
+                             "about this", "._ a93", "d!@#.$% ^&*()_+d"],
+                "bool_col": [True, False, True, True],
+                "datetime_col": pd.date_range('1/1/2011', periods=4, freq='H')
             },
             index=[0, 1, 3, 4]
         )
@@ -41,13 +44,13 @@ class TestFilterExpressionEditor(TestCase, UnittestTools):
         self.assertTrue(view.is_initialized)
 
     def test_include_col_not_in_dataframe(self):
-        with self.assertRaises(KeyError):
+        with self.assertRaises(AttributeError):
             FilterExpressionEditorView(expr="a == 4",
                                        source_df=self.df,
                                        included_cols=["NON-EXISTANT"])
 
     def test_source_df_is_empty(self):
-        with self.assertRaises(KeyError):
+        with self.assertRaises(AttributeError):
             FilterExpressionEditorView(expr="a == 4", source_df=DataFrame())
 
     def test_empty_included_columns_still_makes_name_traits(self):
@@ -57,6 +60,10 @@ class TestFilterExpressionEditor(TestCase, UnittestTools):
         expected_trait_names = [f"trait_{n}" for n in sorted(self.df)]
         col_name_traits = view._scrollable_column_names.trait_names()
         self.assertTrue(set(expected_trait_names).issubset(col_name_traits))
+
+    def test_empty_included_columns_makes_categorical_value_name_traits(self):
+        view = FilterExpressionEditorView(source_df=self.df)
+        print(view.included_cols)
 
     def test_scroll_traits_made_for_included_cols(self):
         view = FilterExpressionEditorView(source_df=self.df,

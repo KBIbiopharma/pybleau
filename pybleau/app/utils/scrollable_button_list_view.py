@@ -38,7 +38,7 @@ class ScrollableButtonListView(HasStrictTraits):
         # add the trait names to this object, and connect the handler function
         for trait_name, label in self.traits_and_names.items():
             self._trait_names.append(trait_name)
-            self.add_trait(trait_name, Button(label))
+            self.add_trait(trait_name, Button(str(label)))
             self.observe(self.handler, trait_name)
 
     def traits_view(self):

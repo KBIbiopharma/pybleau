@@ -71,10 +71,10 @@ class FilterExpressionEditorView(HasStrictTraits):
 
     def __init__(self, source_df: DataFrame, **traits):
         super(FilterExpressionEditorView, self).__init__(**traits)
-        if not source_df.columns:
+        if not any(source_df.columns):
             msg = "The source_df contains no columns"
             logger.exception(msg)
-            raise KeyError(msg)
+            raise AttributeError(msg)
         self.source_df = source_df
         if "included_cols" in traits:
             # if any of the specified columns have value dtypes that are
@@ -86,6 +86,7 @@ class FilterExpressionEditorView(HasStrictTraits):
                 logger.exception(msg)
                 raise AttributeError(msg)
             self.included_cols = traits["included_cols"]
+
         self._create_trait_translators()
         self._create_col_name_scrollable_view()
         self._create_included_col_scroll_list()
@@ -136,13 +137,13 @@ class FilterExpressionEditorView(HasStrictTraits):
         """
         for name in column_values:
             # make a traited-version of the value
-            trait_name = f"trait_{sanitize_string(name)}"
+            trait_name = f"trait_{sanitize_string(str(name))}"
             self.traited_names[name] = trait_name
             self.original_names[trait_name] = name
 
     def _create_col_name_scrollable_view(self):
         # create a scrollable list of col name buttons
-        col_names = sorted(self.source_df)
+        col_names = sorted(self.source_df.columns)
         # create a {trait_name:name} dict for the ScrollableButtonListView
         col_dict = {self.traited_names[name]: name for name in col_names}
         self._scrollable_column_names = ScrollableButtonListView(
@@ -175,7 +176,7 @@ class FilterExpressionEditorView(HasStrictTraits):
             return
         selected_value = self.original_names[event.name]
         # if the selected value is not in the list of column names, add quotes
-        if selected_value not in self.source_df.columns.tolist():
+        if selected_value not in list(self.source_df.columns):
             selected_value = f'"{selected_value}"'
         if self.auto_append:
             self.expr = f"{self.expr}{selected_value}"
@@ -198,6 +199,8 @@ class FilterExpressionEditorView(HasStrictTraits):
 
 
 if __name__ == "__main__":
+    import pandas as pd
+
     test_df = DataFrame(
         {
             "a": [1, 2, 4, 5],
@@ -222,14 +225,13 @@ if __name__ == "__main__":
             "t": list("1234"),
             "u": list("1234"),
             "v": list("1234"),
-            "w": list("1234"),
-            "x": list("1234"),
+            "bool_col": [True, False, True, True],
+            "datetime_col": pd.date_range('1/1/2011', periods=4, freq='H'),
             "y": ["1 alpha", "MM_TT_BB_03-92", "2zeta", "kAPPa pappa"],
             "e_column": ["03_06 04_STANDARD.name",
                          "about this", "._ a93", "d!@#.$% ^&*()_+d"]
         },
         index=[0, 1, 3, 4]
     )
-    test = FilterExpressionEditorView(expr="a == 4", source_df=test_df,
-                                      included_cols=["y", "e_column", "w"])
+    test = FilterExpressionEditorView(expr="a == 4", source_df=test_df)
     test.configure_traits()
