@@ -22,7 +22,7 @@ class TestFilterExpressionEditor(TestCase, UnittestTools):
             index=[0, 1, 3, 4]
         )
 
-    def test_bring_up_plot_manager_view(self):
+    def test_bring_up_filter_expression(self):
         view = FilterExpressionEditorView(expr="a == 4",
                                           source_df=self.df)
         assert_obj_gui_works(view)
@@ -38,7 +38,7 @@ class TestFilterExpressionEditor(TestCase, UnittestTools):
     def test_edit_iniaialized_True(self):
         view = FilterExpressionEditorView(expr="a == 4",
                                           source_df=self.df)
-        self.assertTrue(view._edit_initialized)
+        self.assertTrue(view.is_initialized)
 
     def test_include_col_not_in_dataframe(self):
         with self.assertRaises(KeyError):

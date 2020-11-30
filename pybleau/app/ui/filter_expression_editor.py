@@ -6,65 +6,18 @@ from pandas import DataFrame
 from pyface.action.api import StatusBarManager
 from pyface.api import Clipboard
 from traits.api import Enum
-from traits.api import HasStrictTraits, Instance, List, Button, Bool, Str, \
-    Any, Dict
-from traits.trait_types import Callable
+from traits.api import HasStrictTraits, Instance, List, Bool, Str, Any, Dict
 from traitsui.api import VGroup, Item, OKCancelButtons, View, Tabbed, \
     HSplit, StatusItem, HGroup, Spring
 from traitsui.editors import InstanceEditor
+
+from pybleau.app.utils.scrollable_button_list_view import \
+    ScrollableButtonListView
 
 COPY_TO_CLIPBOARD = "copy to clipboard"
 APPEND_TO_FILTER = "append to filter"
 
 logger = logging.getLogger(__name__)
-
-
-class ScrollableButtonListView(HasStrictTraits):
-    """ Provides a view for a dict of str:str conversions to Buttons
-
-    Give this class a `dict`, and it will turn those `key:value` pairs
-    into a view full of `Buttons`. Clicking any `Button` calls the
-    `handler` with the key as the `event.name`.
-    The keys must be strings that are usable as trait names; the values can
-    be any string.
-    """
-
-    #: Dict of trait-valid name strings as keys and any string as values
-    traits_and_names = Dict
-
-    #: Function to call when any of the resulting `Button` objects are clicked
-    handler = Callable
-
-    #: Class to use to create TraitsUI window to open controls
-    view_klass = Any(default_value=View)
-
-    #: Name for the VGroup
-    group_label = Str
-
-    #: Internal list of trait names
-    _trait_names = List
-
-    def __init__(self, traits_and_names, handler, group_label="", **traits):
-        super(ScrollableButtonListView, self).__init__(**traits)
-        self.traits_and_names = traits_and_names
-        self.handler = handler
-        self.group_label = group_label
-        self._make_trait_names()
-
-    def _make_trait_names(self):
-        # add the trait names to this object, and connect the handler function
-        for trait_name, label in self.traits_and_names.items():
-            self._trait_names.append(trait_name)
-            self.add_trait(trait_name, Button(label))
-            self.observe(self.handler, trait_name)
-
-    def traits_view(self):
-        items = [Item(n, show_label=False) for n in self._trait_names]
-
-        return self.view_klass(
-            VGroup(*items, label=self.group_label),
-            scrollable=True
-        )
 
 
 class FilterExpressionEditorView(HasStrictTraits):
@@ -105,7 +58,7 @@ class FilterExpressionEditorView(HasStrictTraits):
     click_type = Enum(values="_click_action_options")
 
     #: flag describing the initialization status of this instance
-    _edit_initialized = Bool(False)
+    is_initialized = Bool(False)
 
     #: List of actions that can occur when clicking a button
     _click_action_options = List([APPEND_TO_FILTER, COPY_TO_CLIPBOARD])
@@ -118,8 +71,8 @@ class FilterExpressionEditorView(HasStrictTraits):
 
     def __init__(self, source_df: DataFrame, **traits):
         super(FilterExpressionEditorView, self).__init__(**traits)
-        if not any(sorted(source_df)):
-            msg = f"The source_df contains no columns"
+        if not source_df.columns:
+            msg = "The source_df contains no columns"
             logger.exception(msg)
             raise KeyError(msg)
         self.source_df = source_df
@@ -127,19 +80,18 @@ class FilterExpressionEditorView(HasStrictTraits):
             # if any of the specified columns have value dtypes that are
             # numerical, then throw an error
             included = traits["included_cols"]
-            if not set(included).issubset(sorted(source_df)):
-                msg = f"The source_df does not contain all columns in the " \
-                      f"included_cols list."
+            if not set(included).issubset(source_df.columns):
+                msg = "The source_df does not contain all columns in the " \
+                      "included_cols list."
                 logger.exception(msg)
-                raise KeyError(msg)
+                raise AttributeError(msg)
             self.included_cols = traits["included_cols"]
         self._create_trait_translators()
         self._create_col_name_scrollable_view()
         self._create_included_col_scroll_list()
-        self._edit_initialized = True
+        self.is_initialized = True
 
     def traits_view(self):
-        # make the view
         view = self.view_klass(
             HSplit(
                 VGroup(
@@ -185,9 +137,7 @@ class FilterExpressionEditorView(HasStrictTraits):
         for name in column_values:
             # make a traited-version of the value
             trait_name = f"trait_{sanitize_string(name)}"
-            # track the traited name with the original name key
             self.traited_names[name] = trait_name
-            # track the original name with a traited name key
             self.original_names[trait_name] = name
 
     def _create_col_name_scrollable_view(self):
@@ -221,7 +171,7 @@ class FilterExpressionEditorView(HasStrictTraits):
     def filter_button_clicked(self, event):
         """ Appends the clicked value to the filter or copies to the clipboard
         """
-        if not self._edit_initialized:
+        if not self.is_initialized:
             return
         selected_value = self.original_names[event.name]
         # if the selected value is not in the list of column names, add quotes

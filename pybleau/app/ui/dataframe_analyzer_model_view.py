@@ -17,7 +17,8 @@ from app_common.pyface.ui.extra_file_dialogs import request_csv_file
 from app_common.std_lib.filepath_utils import open_file
 from app_common.std_lib.logging_utils import ACTION_LEVEL
 
-from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
+from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer, \
+    CATEGORICAL_COL_TYPES
 from pybleau.app.ui.filter_expression_editor import \
     FilterExpressionEditorView
 from pybleau.app.image_resources import pop_out_img, apply_img, \
@@ -206,7 +207,7 @@ class DataFrameAnalyzerView(ModelView):
     hidden_selection_msg = Str
 
     #: Column names (as a list) to include in filter editor assistant
-    filter_editor_cols = List
+    filter_editor_cols = List(CATEGORICAL_COL_TYPES)
 
     # Implementation details --------------------------------------------------
 
