@@ -28,7 +28,7 @@ REVERSED_SUFFIX = " (REVERSED)"
 
 NO_SORTING_ENTRY = ""
 
-CATEGORICAL_COL_TYPES = ['O', 'category', 'datetime64']
+CATEGORICAL_COL_TYPES = ['O', 'category', 'datetime64', bool]
 
 
 class InvalidQuery(ValueError):

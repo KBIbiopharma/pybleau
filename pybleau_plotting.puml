@@ -163,5 +163,8 @@ BasePlotConfigurator <|-- BaseSinglePlotConfigurator
 BaseSinglePlotConfigurator <|-- BaseSingleXYPlotConfigurator
 BaseSingleXYPlotConfigurator <|-- BarPlotConfigurator
 BaseSingleXYPlotConfigurator <|-- ScatterPlotConfigurator
+BaseSingleXYPlotConfigurator <|-- HeatmapPlotConfigurator
+BaseSingleXYPlotConfigurator <|-- HistogramPlotConfigurator
+BaseSingleXYPlotConfigurator <|-- LinePlotConfigurator
 
 @enduml
