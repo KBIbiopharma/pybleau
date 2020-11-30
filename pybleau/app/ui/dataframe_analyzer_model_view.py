@@ -1,27 +1,28 @@
 import logging
-import numpy as np
-import pandas as pd
 from copy import copy
 
-from pyface.api import warning
-from traits.api import Any, Bool, Button, cached_property, Dict, Either, Enum,\
-    Instance, Int, List, on_trait_change, Property, Set, Str, ToolbarButton
+import numpy as np
+import pandas as pd
 import traitsui
+from app_common.pyface.ui.extra_file_dialogs import request_csv_file
+from app_common.std_lib.filepath_utils import open_file
+from app_common.std_lib.logging_utils import ACTION_LEVEL
+from app_common.traitsui.common_traitsui_groups import make_window_title_group
+from pyface.api import warning
+from traits.api import Any, Bool, Button, cached_property, Dict, Either, \
+    Enum, Instance, Int, List, on_trait_change, Property, Set, Str, \
+    ToolbarButton
 from traitsui.api import ButtonEditor, CheckListEditor, HGroup, HSplit, \
     InstanceEditor, Item, Label, ModelView, OKButton, Spring, Tabbed, VGroup, \
     View, VSplit
 from traitsui.ui_editors.data_frame_editor import DataFrameEditor
 
-from app_common.traitsui.common_traitsui_groups import make_window_title_group
-from app_common.pyface.ui.extra_file_dialogs import request_csv_file
-from app_common.std_lib.filepath_utils import open_file
-from app_common.std_lib.logging_utils import ACTION_LEVEL
-
-from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
-from pybleau.app.ui.filter_expression_editor import \
-    FilterExpressionEditorView
 from pybleau.app.image_resources import pop_out_img, apply_img, \
     manage_img, save_img, load_img
+from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer, \
+    CATEGORICAL_COL_TYPES
+from pybleau.app.ui.filter_expression_editor import \
+    FilterExpressionEditorView
 
 try:
     from pybleau.app.ui.dataframe_plot_manager_view import \
@@ -204,6 +205,9 @@ class DataFrameAnalyzerView(ModelView):
     warn_if_sel_hidden = Bool(True)
 
     hidden_selection_msg = Str
+
+    #: Column names (as a list) to include in filter editor assistant
+    filter_editor_cols = List
 
     # Implementation details --------------------------------------------------
 
@@ -534,11 +538,18 @@ class DataFrameAnalyzerView(ModelView):
         self.model.recompute_filtered_df()
 
     def _pop_out_filter_button_fired(self):
-        filter_editor = FilterExpressionEditorView(exp=self.model.filter_exp,
-                                                   view_klass=self.view_klass)
+        if not self.filter_editor_cols:
+            # if there are no included columns, then use all categorical cols
+            df = self.model.source_df
+            cat_df = df.select_dtypes(include=CATEGORICAL_COL_TYPES)
+            self.filter_editor_cols = list(cat_df.columns)
+        filter_editor = FilterExpressionEditorView(
+            expr=self.model.filter_exp, view_klass=self.view_klass,
+            source_df=self.model.source_df,
+            included_cols=self.filter_editor_cols)
         ui = filter_editor.edit_traits(kind="livemodal")
         if ui.result:
-            self.model.filter_exp = filter_editor.exp
+            self.model.filter_exp = filter_editor.expr
             self.apply_filter_button = True
 
     def _manage_filter_button_fired(self):

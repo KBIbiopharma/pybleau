@@ -19,8 +19,7 @@ BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
 if KIWI_AVAILABLE and BACKEND_AVAILABLE:
     from app_common.std_lib.sys_utils import IS_LINUX, IS_OSX
-    from app_common.apptools.testing_utils import temp_bringup_ui_for, \
-        assert_obj_gui_works
+    from app_common.apptools.testing_utils import temp_bringup_ui_for
     from pybleau.app.api import DataFrameAnalyzer, DataFrameAnalyzerView, \
         DataFramePlotManager, DataFramePlotManagerView
 
@@ -208,10 +207,6 @@ class TestDataFrameAnalyzerView(TestCase):
         ui.result = True
         view._pop_out_filter_button_fired()
         assert_frame_equal(view.model.filtered_df, expected_df)
-
-    def test_bring_up_plot_manager_view(self):
-        view = FilterExpressionEditorView(exp="a == 3")
-        assert_obj_gui_works(view)
 
     def assert_frame_not_equal(self, actual_df, expected_df):
         try:
