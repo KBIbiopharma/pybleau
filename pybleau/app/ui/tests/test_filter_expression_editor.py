@@ -61,10 +61,6 @@ class TestFilterExpressionEditor(TestCase, UnittestTools):
         col_name_traits = view._scrollable_column_names.trait_names()
         self.assertTrue(set(expected_trait_names).issubset(col_name_traits))
 
-    def test_empty_included_columns_makes_categorical_value_name_traits(self):
-        view = FilterExpressionEditorView(source_df=self.df)
-        print(view.included_cols)
-
     def test_scroll_traits_made_for_included_cols(self):
         view = FilterExpressionEditorView(source_df=self.df,
                                           included_cols=["b", "c_column"])
