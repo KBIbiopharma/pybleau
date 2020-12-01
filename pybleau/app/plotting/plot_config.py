@@ -367,13 +367,19 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
 
     # Traits private interface ------------------------------------------------
 
+    def _data_selection_columns(self):
+        return self._numerical_columns if self._numerical_only else \
+            self._available_columns
+
+    def _color_selection_columns(self):
+        return [""] + self._available_columns
+
     def _data_selection_items(self):
         """ Build the default list of items to select data to plot in XY plots.
         """
-        columns = self._numerical_columns if self._numerical_only else \
-            self._available_columns
+        columns = self._data_selection_columns()
         enum_data_columns = EnumEditor(values=columns)
-        col_list_empty_option = [""] + columns
+        col_list_empty_option = self._color_selection_columns()
         optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
 
         items = [
