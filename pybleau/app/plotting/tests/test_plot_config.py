@@ -178,6 +178,20 @@ class TestScatterPlotConfig(TestCase, BaseXYPlotConfig):
         config.z_col_name = "e"
         self.assertTrue(config.plot_style.colorize_by_float)
 
+    def test_scatter_data_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._data_selection_columns()
+        expected = config._numerical_columns
+        self.assertCountEqual(columns, expected)
+
+    def test_scatter_color_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._color_selection_columns()
+        expected = [""] + config._available_columns
+        self.assertCountEqual(columns, expected)
+
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestLinePlotConfig(TestCase, BaseXYPlotConfig):
@@ -185,6 +199,20 @@ class TestLinePlotConfig(TestCase, BaseXYPlotConfig):
         self.configurator = LinePlotConfigurator
         self.basic_type = LINE_PLOT_TYPE
         self.numerical_cols_only = True
+
+    def test_line_data_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._data_selection_columns()
+        expected = config._numerical_columns
+        self.assertCountEqual(columns, expected)
+
+    def test_line_color_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._color_selection_columns()
+        expected = [""] + config._available_columns
+        self.assertCountEqual(columns, expected)
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
