@@ -373,7 +373,7 @@ class BaseSingleXYPlotConfigurator(BaseSinglePlotConfigurator):
         columns = self._numerical_columns if self._numerical_only else \
             self._available_columns
         enum_data_columns = EnumEditor(values=columns)
-        col_list_empty_option = [""] + columns
+        col_list_empty_option = [""] + self._available_columns
         optional_enum_data_columns = EnumEditor(values=col_list_empty_option)
 
         items = [
