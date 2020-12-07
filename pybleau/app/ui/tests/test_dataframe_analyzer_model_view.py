@@ -149,13 +149,13 @@ class TestDataFrameAnalyzerView(TestCase):
 
     def test_change_source_column_list(self):
         view = DataFrameAnalyzerView(model=self.analyzer)
-        init_len = len(view.visible_columns)
         with temp_bringup_ui_for(view):
             self.assertEqual(view.visible_columns, self.analyzer.column_list)
             new_col_name = "NEW COL"
             self.analyzer.source_df[new_col_name] = 2
             self.analyzer.col_list_changed = True
-            self.assertNotEqual(view.visible_columns, self.analyzer.column_list)
+            self.assertNotEqual(view.visible_columns,
+                                self.analyzer.column_list)
 
             # Make the new column visible:
             view.visible_columns.append(new_col_name)
