@@ -51,6 +51,12 @@ class DataFrameAnalyzer(DataElement):
     #: **Copy** of the data to analyze, where column names have been sanitized
     source_df = Instance(DataFrame)
 
+    #: Complete list of data columns to display and analyze
+    column_list = Property(List(Str), depends_on="source_df, col_list_changed")
+
+    #: Event to manually trigger a reassessment of the list of columns
+    col_list_changed = Event
+
     #: Custom metadata describing the columns of the source_df
     column_metadata = Dict
 
@@ -96,7 +102,7 @@ class DataFrameAnalyzer(DataElement):
     sort_by_col = Enum(values='sort_by_col_list')
 
     #: List of possible values for the sort_by_col
-    sort_by_col_list = Property(List, depends_on="source_df")
+    sort_by_col_list = Property(List, depends_on="column_list")
 
     #: Whether the source data's index is sorted
     data_sorted = Bool
@@ -520,7 +526,7 @@ class DataFrameAnalyzer(DataElement):
         cols = [NO_SORTING_ENTRY, self.index_name,
                 self.index_name + REVERSED_SUFFIX]
 
-        for col in self.source_df.columns:
+        for col in self.column_list:
             cols.append(col)
             cols.append(col + REVERSED_SUFFIX)
         return cols
@@ -534,6 +540,10 @@ class DataFrameAnalyzer(DataElement):
         if index_col is None:
             index_col = "index"
         return index_col
+
+    @cached_property
+    def _get_column_list(self):
+        return self.source_df.columns.tolist()
 
     # Traits initialization methods -------------------------------------------
 
