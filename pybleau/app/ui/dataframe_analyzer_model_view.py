@@ -57,9 +57,6 @@ class DataFrameAnalyzerView(ModelView):
     #: Selected list of data columns to display and analyze
     visible_columns = List(Str)
 
-    #: Complete list of data columns to display and analyze
-    all_data_columns = List(Str)
-
     #: Check box to hide/show what stats are included in the summary DF
     show_summary_controls = Bool
 
@@ -212,7 +209,7 @@ class DataFrameAnalyzerView(ModelView):
     # Implementation details --------------------------------------------------
 
     #: Evaluate number of columns to select panel or popup column control
-    _many_columns = Property(Bool, depends_on="all_data_columns")
+    _many_columns = Property(Bool, depends_on="model.column_list")
 
     #: Popped-up UI to control the visible columns
     _control_popup = Any
@@ -400,13 +397,13 @@ class DataFrameAnalyzerView(ModelView):
             Controls visibility of the created group. Don't force for the group
             embedded in the global view, but force it when opened as a popup.
         """
-        num_cols = 1 + len(self.all_data_columns) // self.max_names_per_column
+        num_cols = 1 + len(self.model.column_list) // self.max_names_per_column
 
         column_controls_group = VGroup(
             make_window_title_group(self.column_list_section_title,
                                     title_size=3, include_blank_spaces=False),
             Item("visible_columns", show_label=False,
-                 editor=CheckListEditor(values=self.all_data_columns,
+                 editor=CheckListEditor(values=self.model.column_list,
                                         cols=num_cols),
                  # The custom style allows to control a list of options rather
                  # than having a checklist editor for a single value:
@@ -696,7 +693,8 @@ class DataFrameAnalyzerView(ModelView):
 
     @cached_property
     def _get__many_columns(self):
-        return len(self.all_data_columns) > 2 * self.max_names_per_column
+        # Many columns means more than 2 columns:
+        return len(self.model.column_list) > 2 * self.max_names_per_column
 
     # Traits initialization methods -------------------------------------------
 
@@ -738,10 +736,7 @@ class DataFrameAnalyzerView(ModelView):
             return formats
 
     def _visible_columns_default(self):
-        return self.all_data_columns
-
-    def _all_data_columns_default(self):
-        return self.model.source_df.columns.tolist()
+        return self.model.column_list
 
     def _hidden_selection_msg_default(self):
         msg = "The displayed data is truncated and some of the selected " \

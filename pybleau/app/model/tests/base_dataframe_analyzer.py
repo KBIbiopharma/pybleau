@@ -376,6 +376,17 @@ class Analyzer(UnittestTools):
         analyzer.column_metadata["a"] = "Cool column!"
         self.assertEqual(set(analyzer.column_metadata.keys()), {"a"})
 
+    def test_update_col_list(self):
+        analyzer = self.analyzer_klass(source_df=self.df)
+        self.assert_col_list_synchronized(analyzer, list("abc"))
+        return analyzer
+
+    def assert_col_list_synchronized(self, analyzer, expected_col_list):
+        self.assertEqual(analyzer.column_list, expected_col_list)
+        for col in build_sort_option_list(expected_col_list):
+            self.assertIn(col, analyzer.sort_by_col_list)
+            self.assertIn(col, analyzer.sort_by_col_list)
+
 
 class SortingDataFrameAnalyzer(UnittestTools):
     """ Tests around sorting a DFAnalyzer.
@@ -402,8 +413,7 @@ class SortingDataFrameAnalyzer(UnittestTools):
         # Initially, data unchanged/unsorted
         self.assertEqual(analyzer.sort_by_col, "index")
         assert_frame_equal(analyzer.filtered_df, df)
-        expected = [NO_SORTING_ENTRY, "index", "index" + REVERSED_SUFFIX, "a",
-                    "a" + REVERSED_SUFFIX, "b", "b" + REVERSED_SUFFIX]
+        expected = build_sort_option_list("ab")
         self.assertEqual(analyzer.sort_by_col_list, expected)
 
     def test_sorting_options_with_index_name(self):
@@ -803,3 +813,12 @@ class DisplayingDataFrameAnalyzer(UnittestTools):
         self.assertEqual(analyzer.displayed_df.index.tolist(), [1, 2, 5, 6, 3])
         self.assertEqual(analyzer.displayed_df.a.tolist(), [0, 1, 2, 3, 4])
         self.assertEqual(analyzer.displayed_df.b.tolist(), [0, 10, 20, 30, 40])
+
+
+def build_sort_option_list(col_list):
+    options = [NO_SORTING_ENTRY, "index", "index" + REVERSED_SUFFIX]
+    for col in col_list:
+        options.append(col)
+        options.append(col + REVERSED_SUFFIX)
+
+    return options

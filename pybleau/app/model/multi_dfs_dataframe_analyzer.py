@@ -144,11 +144,12 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         target_df : str
             Name of the dataframe to add the column to.
         """
+        new_col_created = col not in self.column_list
         if col in self._column_loc:
             target_df = self._column_loc[col]
         else:
             if target_df is None:
-                msg = "Column {} not found, yet no target df was provided."
+                msg = f"Column {col} not found, yet no target df was provided."
                 logger.exception(msg)
                 raise ValueError(msg)
 
@@ -156,6 +157,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
             self._column_loc[col] = target_df
 
         target_df[col] = value
+        if new_col_created:
+            self.col_list_changed = True
 
     def set_source_df_val(self, index, col, value):
         """ Set a DF element to a value.

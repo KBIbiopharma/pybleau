@@ -158,6 +158,25 @@ class TestAnalyzer(Analyzer, TestCase):
             self.assertIn("a", df.columns)
             assert_array_equal(df["a"].values, initial_a_values)
 
+    def test_update_col_list(self):
+        # Single DF:
+        super(TestAnalyzer, self).test_update_col_list()
+
+        # multiple DFs:
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        self.assert_col_list_synchronized(analyzer, list("abcxy"))
+
+        # Modify DFs:
+        with self.assertTraitChanges(analyzer, "column_list"):
+            analyzer.set_source_df_col("d", "new val", target_df="a")
+        self.assert_col_list_synchronized(analyzer, list("abcdxy"))
+
+        with self.assertTraitChanges(analyzer, "column_list"):
+            analyzer.concat_to_source_df(pd.DataFrame({"z": range(11)}),
+                                         target_df="b")
+        self.assert_col_list_synchronized(analyzer, list("abcdxyz"))
+
 
 @skipIf(not BACKEND_AVAILABLE, msg)
 class TestFilterDataFrameAnalyzer(FilterDataFrameAnalyzer, TestCase):
