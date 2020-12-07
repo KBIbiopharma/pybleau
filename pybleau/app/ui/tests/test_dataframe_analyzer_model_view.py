@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
+from app_common.apptools.assertion_utils import assert_frame_not_equal
 
 from pybleau.app.ui.filter_expression_editor import \
     FilterExpressionEditorView
@@ -189,7 +190,7 @@ class TestDataFrameAnalyzerView(TestCase):
         view.model.filter_exp = "a != 3"
         expected_df = DataFrame({"a": [1, 2, 4, 5], "b": [10, 15, 15, 10]},
                                 index=[0, 1, 3, 4])
-        self.assert_frame_not_equal(view.model.filtered_df, expected_df)
+        assert_frame_not_equal(view.model.filtered_df, expected_df)
         view.apply_filter_button = True
         assert_frame_equal(view.model.filtered_df, expected_df)
 
@@ -203,19 +204,10 @@ class TestDataFrameAnalyzerView(TestCase):
         ui = MagicMock(result=False)
         edit.return_value = ui
         view._pop_out_filter_button_fired()
-        self.assert_frame_not_equal(view.model.filtered_df, expected_df)
+        assert_frame_not_equal(view.model.filtered_df, expected_df)
         ui.result = True
         view._pop_out_filter_button_fired()
         assert_frame_equal(view.model.filtered_df, expected_df)
-
-    def assert_frame_not_equal(self, actual_df, expected_df):
-        try:
-            assert_frame_equal(actual_df, expected_df)
-        except AssertionError:
-            pass
-        else:
-            msg = "The two dataframes should not be equal."
-            raise AssertionError(msg)
 
 
 @skipIf(not BACKEND_AVAILABLE or not KIWI_AVAILABLE, msg)
