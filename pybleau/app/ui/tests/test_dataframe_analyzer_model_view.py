@@ -126,10 +126,11 @@ class TestDataFrameAnalyzerView(TestCase):
         with temp_bringup_ui_for(view):
             self.assertFalse(mock.called)
 
-    def test_change_column_list(self):
+    def test_change_visible_column_list(self):
         view = DataFrameAnalyzerView(model=self.analyzer)
         init_len = len(view.visible_columns)
         with temp_bringup_ui_for(view):
+            # Change the list of visible columns:
             view.visible_columns = view.visible_columns[:1]
             self.assertNotEqual(len(view.visible_columns), init_len)
 
@@ -145,6 +146,29 @@ class TestDataFrameAnalyzerView(TestCase):
             self.assertEqual(len(view.model.summary_df.columns), init_len)
             self.assertEqual(len(view.model.filtered_df.columns), init_len)
             self.assertEqual(len(view.model.source_df.columns), init_len)
+
+    def test_change_source_column_list(self):
+        view = DataFrameAnalyzerView(model=self.analyzer)
+        init_len = len(view.visible_columns)
+        with temp_bringup_ui_for(view):
+            self.assertEqual(view.visible_columns, self.analyzer.column_list)
+            new_col_name = "NEW COL"
+            self.analyzer.source_df[new_col_name] = 2
+            self.analyzer.col_list_changed = True
+            self.assertNotEqual(view.visible_columns, self.analyzer.column_list)
+
+            # Make the new column visible:
+            view.visible_columns.append(new_col_name)
+
+            # Both DFEditor's adapters are modified, now containing only 2
+            # columns: the one requested and the index:
+            editor = view.info.displayed_df
+            # 4 for the 3 columns and the index:
+            self.assertEqual(len(editor.adapter.columns), 4)
+            self.assertIn((new_col_name, new_col_name), editor.adapter.columns)
+            editor = view.info.summary_df
+            self.assertEqual(len(editor.adapter.columns), 4)
+            self.assertIn((new_col_name, new_col_name), editor.adapter.columns)
 
     def test_truncate(self):
         self.analyzer.num_displayed_rows = 3
