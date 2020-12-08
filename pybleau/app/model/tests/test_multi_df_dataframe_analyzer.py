@@ -94,6 +94,13 @@ class TestAnalyzer(Analyzer, TestCase):
         analyzer.set_source_df_col("NEW_COL", "xyz", target_df="b")
         self.assertIn("NEW_COL", analyzer.source_df.columns)
 
+    def test_adding_col_to_source_df_raises_change_event(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        with self.assertTraitChanges(analyzer, "_source_dfs_changed"):
+            with self.assertTraitChanges(analyzer, "column_list"):
+                analyzer.set_source_df_col("NEW_COL", "xyz", target_df="b")
+
     def test_concat_to_source_df(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})

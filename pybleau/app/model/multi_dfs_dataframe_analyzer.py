@@ -158,7 +158,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
         target_df[col] = value
         if new_col_created:
-            self.col_list_changed = True
+            self._source_dfs_changed = True
 
     def set_source_df_val(self, index, col, value):
         """ Set a DF element to a value.
