@@ -1,5 +1,6 @@
-
+from glob import glob
 from os.path import abspath, dirname, join
+
 from setuptools import setup, find_packages
 
 HERE = dirname(abspath(__file__))
@@ -16,6 +17,10 @@ def read(fname):
     return open(join(HERE, fname)).read()
 
 
+# Application image files -----------------------------------------------------
+ui_app_images_files = glob(join(PKG_NAME, "app", "images", "*.png"))
+
+
 setup(
     name=PKG_NAME,
     version=info["__version__"],
@@ -30,6 +35,9 @@ setup(
     install_requires=[],
     requires=[],
     # Additional data files
+    data_files=[
+        (join(PKG_NAME, "app", "images"), ui_app_images_files),
+    ],
     package_data={
         "": ["README.md", "LICENSE"],
         PKG_NAME: ["reporting/tests/*.png",
