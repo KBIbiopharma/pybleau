@@ -157,7 +157,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
             self._column_loc[col] = target_df
 
         target_df[col] = value
-        if not new_col_created:
+        if new_col_created:
             self._source_dfs_changed = True
 
     def set_source_df_val(self, index, col, value):
