@@ -38,13 +38,8 @@ class ButtonListView(HasStrictTraits):
     #: List of tooltips (in the same order as `traits_and_names`) for buttons
     tooltips = List
 
-    def __init__(self, traits_and_names, handler, group_label="",
-                 tooltips=[], **traits):
+    def __init__(self, **traits):
         super(ButtonListView, self).__init__(**traits)
-        self.traits_and_names = traits_and_names
-        self.handler = handler
-        self.group_label = group_label
-        self.tooltips = tooltips
         self._make_trait_names()
 
     def _make_trait_names(self):
