@@ -1,8 +1,10 @@
 from traits.api import HasStrictTraits, Dict, Callable, Any, Str, List, Button
-from traitsui.api import VGroup, Item, View
+from traits.trait_types import Bool
+from traitsui.api import Group, Item, View
+from traitsui.ui_traits import Orientation
 
 
-class ScrollableButtonListView(HasStrictTraits):
+class ButtonListView(HasStrictTraits):
     """ Provides a view for a dict of str:str conversions to Buttons
 
     Give this class a `dict`, and it will turn those `key:value` pairs
@@ -21,17 +23,23 @@ class ScrollableButtonListView(HasStrictTraits):
     #: Class to use to create TraitsUI window to open controls
     view_klass = Any(default_value=View)
 
-    #: Name for the VGroup
+    #: Option setting the orientation of the buttons (default: "vertical")
+    orientation = Orientation
+
+    #: Name for the List Group
     group_label = Str
+
+    #: Flag to set whether to allow scrolling
+    scrollable = Bool(False)
 
     #: Internal list of trait names
     _trait_names = List
 
-    def __init__(self, traits_and_names, handler, group_label="", **traits):
-        super(ScrollableButtonListView, self).__init__(**traits)
-        self.traits_and_names = traits_and_names
-        self.handler = handler
-        self.group_label = group_label
+    #: List of tooltips (in the same order as `traits_and_names`) for buttons
+    tooltips = List
+
+    def __init__(self, **traits):
+        super(ButtonListView, self).__init__(**traits)
         self._make_trait_names()
 
     def _make_trait_names(self):
@@ -44,7 +52,14 @@ class ScrollableButtonListView(HasStrictTraits):
     def traits_view(self):
         items = [Item(n, show_label=False) for n in self._trait_names]
 
+        for i, tip in enumerate(self.tooltips):
+            items[i].tooltip = tip
+
         return self.view_klass(
-            VGroup(*items, label=self.group_label),
-            scrollable=True
+            Group(*items, label=self.group_label,
+                  orientation=self.orientation), scrollable=self.scrollable
         )
+
+
+class ScrollableButtonListView(ButtonListView):
+    scrollable = Bool(True)
