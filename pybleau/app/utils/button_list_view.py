@@ -62,4 +62,4 @@ class ButtonListView(HasStrictTraits):
 
 
 class ScrollableButtonListView(ButtonListView):
-    scrollable = True
+    scrollable = Bool(True)
