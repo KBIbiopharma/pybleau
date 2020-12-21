@@ -100,7 +100,8 @@ class TestAnalyzer(Analyzer, TestCase):
         with self.assertTraitChanges(analyzer, "source_df", 1):
             with self.assertTraitChanges(analyzer, "column_list", 1):
                 with self.assertTraitChanges(analyzer, "filtered_df", 1):
-                    analyzer.set_source_df_col("NEW_COL", "xyz", target_df_name="b")
+                    analyzer.set_source_df_col("NEW_COL", "xyz",
+                                               target_df_name="b")
 
         self.assertIn("NEW_COL", analyzer._source_df_columns["b"])
 
