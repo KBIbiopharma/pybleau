@@ -101,6 +101,12 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
     # Public interface --------------------------------------------------------
 
+    def get_source_df_part(self, part_name):
+        return self._source_dfs[part_name]
+
+    def get_source_df_part_columns(self, part_name):
+        return self._source_df_columns[part_name]
+
     def concat_to_source_df(self, new_df, **kwargs):
         """ Concatenate potentially unaligned dataframe to the source_df.
 
