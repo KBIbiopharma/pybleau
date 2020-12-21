@@ -11,8 +11,7 @@ from traitsui.api import VGroup, Item, OKCancelButtons, View, Tabbed, \
     HSplit, StatusItem, HGroup, Spring
 from traitsui.editors import InstanceEditor
 
-from pybleau.app.utils.scrollable_button_list_view import \
-    ScrollableButtonListView
+from pybleau.app.utils.button_list_view import ScrollableButtonListView
 
 COPY_TO_CLIPBOARD = "copy to clipboard"
 APPEND_TO_FILTER = "append to filter"
