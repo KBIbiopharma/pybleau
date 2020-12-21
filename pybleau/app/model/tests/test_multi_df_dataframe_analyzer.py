@@ -87,6 +87,17 @@ class TestAnalyzer(Analyzer, TestCase):
         with self.assertRaises(ValueError):
             self.analyzer_klass(_source_dfs={"a": self.df, "b": self.df2})
 
+    def test_set_source_df_part(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        analyzer2 = self.analyzer_klass(_source_dfs={"a": self.df})
+        analyzer2.set_source_df_part("b", self.df3)
+        assert_frame_equal(analyzer.source_df, analyzer2.source_df)
+        self.assertEqual(analyzer._source_df_columns,
+                         analyzer2._source_df_columns)
+        self.assertEqual(analyzer._column_loc.keys(),
+                         analyzer2._column_loc.keys())
+
     def test_modify_source_df_value(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})
