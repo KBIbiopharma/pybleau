@@ -91,7 +91,7 @@ class TestAnalyzer(Analyzer, TestCase):
             analyzer.set_source_df_col("NEW_COL", "xyz")
 
         # Now, this is supposed to work:
-        analyzer.set_source_df_col("NEW_COL", "xyz", target_df="b")
+        analyzer.set_source_df_col("NEW_COL", "xyz", target_df_name="b")
         self.assertIn("NEW_COL", analyzer.source_df.columns)
 
     def test_adding_col_to_source_df_raises_change_event(self):
@@ -100,7 +100,9 @@ class TestAnalyzer(Analyzer, TestCase):
         with self.assertTraitChanges(analyzer, "source_df", 1):
             with self.assertTraitChanges(analyzer, "column_list", 1):
                 with self.assertTraitChanges(analyzer, "filtered_df", 1):
-                    analyzer.set_source_df_col("NEW_COL", "xyz", target_df="b")
+                    analyzer.set_source_df_col("NEW_COL", "xyz", target_df_name="b")
+
+        self.assertIn("NEW_COL", analyzer._source_df_columns["b"])
 
     def test_concat_to_source_df(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
@@ -113,9 +115,14 @@ class TestAnalyzer(Analyzer, TestCase):
             analyzer.concat_to_source_df(new_df)
 
         # Now, this is supposed to work:
-        analyzer.concat_to_source_df(new_df, target_df="a")
+        analyzer.concat_to_source_df(new_df, target_df_name="a")
+        # Proper source df is updated:
         self.assertIn("NEW_COL", analyzer._source_dfs["a"].columns)
         self.assertIn("NEW_COL2", analyzer._source_dfs["a"].columns)
+        # List of DF columns updated:
+        self.assertIn("NEW_COL", analyzer._source_df_columns["a"])
+        self.assertIn("NEW_COL2", analyzer._source_df_columns["a"])
+        # Downstream dfs updated:
         self.assertIn("NEW_COL", analyzer.source_df.columns)
         self.assertIn("NEW_COL2", analyzer.source_df.columns)
         self.assertIn("NEW_COL", analyzer.filtered_df.columns)
@@ -132,9 +139,14 @@ class TestAnalyzer(Analyzer, TestCase):
             analyzer.concat_to_source_df(new_df)
 
         # Now, this is supposed to work:
-        analyzer.concat_to_source_df(new_df, target_df="a")
+        analyzer.concat_to_source_df(new_df, target_df_name="a")
+        # Proper source df is updated:
         self.assertIn("NEW_COL", analyzer._source_dfs["a"].columns)
         self.assertIn("NEW_COL2", analyzer._source_dfs["a"].columns)
+        # List of DF columns updated:
+        self.assertIn("NEW_COL", analyzer._source_df_columns["a"])
+        self.assertIn("NEW_COL2", analyzer._source_df_columns["a"])
+        # Downstream dfs updated:
         self.assertIn("NEW_COL", analyzer.source_df.columns)
         self.assertIn("NEW_COL2", analyzer.source_df.columns)
         self.assertIn("NEW_COL", analyzer.filtered_df.columns)
@@ -154,13 +166,15 @@ class TestAnalyzer(Analyzer, TestCase):
         initial_a_values = self.df["a"].values
         new_df = pd.DataFrame({"NEW_COL": range(0, 22, 2),
                                "a": list("sjdfkshfkah")}, index=self.df.index)
-        analyzer.concat_to_source_df(new_df, target_df="a")
+        analyzer.concat_to_source_df(new_df, target_df_name="a")
         for df in [analyzer._source_dfs["a"], analyzer.source_df,
                    analyzer.filtered_df]:
             # New column is added:
             self.assertIn("NEW_COL", df.columns)
             # New a column is appended a suffix and added:
             self.assertIn("a_y", df.columns)
+            self.assertIn("a_y", analyzer._source_df_columns["a"])
+            self.assertIn("a_y", analyzer._column_loc)
             self.assertEqual(list(df["a_y"]), list("sjdfkshfkah"))
             # Existing a column is unchanged:
             self.assertIn("a", df.columns)
@@ -177,12 +191,12 @@ class TestAnalyzer(Analyzer, TestCase):
 
         # Modify DFs:
         with self.assertTraitChanges(analyzer, "column_list"):
-            analyzer.set_source_df_col("d", "new val", target_df="a")
+            analyzer.set_source_df_col("d", "new val", target_df_name="a")
         self.assert_col_list_synchronized(analyzer, list("abcdxy"))
 
         with self.assertTraitChanges(analyzer, "column_list"):
             analyzer.concat_to_source_df(pd.DataFrame({"z": range(11)}),
-                                         target_df="b")
+                                         target_df_name="b")
         self.assert_col_list_synchronized(analyzer, list("abcdxyz"))
 
 
