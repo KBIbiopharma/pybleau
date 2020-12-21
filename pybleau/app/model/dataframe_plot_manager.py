@@ -891,14 +891,3 @@ def embed_plot_in_desc(plot):
         raise ValueError(msg)
 
     return desc
-
-
-def plot_from_config(config, factory_map=DEFAULT_FACTORIES):
-    """ Build plot factory capable of building a plot described by config.
-    """
-    plot_type = config.plot_type
-    plot_factory_klass = factory_map[plot_type]
-    factory = plot_factory_klass(**config.to_dict())
-    desc = factory.generate_plot()
-    plot = desc["plot"]
-    return plot, factory, desc

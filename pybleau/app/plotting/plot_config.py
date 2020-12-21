@@ -432,7 +432,7 @@ class BarPlotConfigurator(BaseSingleXYPlotConfigurator):
     values.
 
     Finally, x data may be encoded in the column names. For example, consider
-    this "pivoted" table:
+    this "pivoted" table of weights:
         male  female
     1    181    124
     2    183    114
