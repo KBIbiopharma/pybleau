@@ -50,6 +50,32 @@ class TestAnalyzer(Analyzer, TestCase):
         assert_frame_equal(analyzer.source_df,
                            pd.concat([self.df, self.df3], axis=1))
 
+    def test_get_source_df_part(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        self.assertIs(analyzer.get_source_df_part("a"), self.df)
+        self.assertIs(analyzer.get_source_df_part("b"), self.df3)
+
+    def test_get_non_existent_source_df_part(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        with self.assertRaises(KeyError):
+            analyzer.get_source_df_part("NON-EXISTENT")
+
+    def test_get_source_df_part_cols(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        self.assertEqual(analyzer.get_source_df_part_columns("a"),
+                         self.df.columns)
+        self.assertEqual(analyzer.get_source_df_part_columns("b"),
+                         self.df3.columns)
+
+    def test_get_non_existent_source_df_part_cols(self):
+        analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
+                                                    "b": self.df3})
+        with self.assertRaises(KeyError):
+            analyzer.get_source_df_part_columns("NON-EXISTENT")
+
     def test_create_from_source_dfs_as_list(self):
         analyzer = self.analyzer_klass(_source_dfs=[self.df, self.df3])
         assert_frame_equal(analyzer.source_df,
