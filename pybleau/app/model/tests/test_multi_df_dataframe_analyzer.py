@@ -53,8 +53,8 @@ class TestAnalyzer(Analyzer, TestCase):
     def test_get_source_df_part(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})
-        self.assertIs(analyzer.get_source_df_part("a"), self.df)
-        self.assertIs(analyzer.get_source_df_part("b"), self.df3)
+        assert_frame_equal(analyzer.get_source_df_part("a"), self.df)
+        assert_frame_equal(analyzer.get_source_df_part("b"), self.df3)
 
     def test_get_non_existent_source_df_part(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
@@ -66,9 +66,9 @@ class TestAnalyzer(Analyzer, TestCase):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})
         self.assertEqual(analyzer.get_source_df_part_columns("a"),
-                         self.df.columns)
+                         self.df.columns.tolist())
         self.assertEqual(analyzer.get_source_df_part_columns("b"),
-                         self.df3.columns)
+                         self.df3.columns.tolist())
 
     def test_get_non_existent_source_df_part_cols(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
