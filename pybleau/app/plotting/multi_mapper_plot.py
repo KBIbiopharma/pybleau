@@ -1,7 +1,7 @@
 """ New Chaco plot container class to support OverlayPlotContainer objects that
 keep handles on plot elements and support secondary y-axis.
 """
-from traits.api import Bool, Int
+from traits.api import Bool, Instance, Int
 
 from chaco.api import ArrayPlotData, Legend, OverlayPlotContainer, PlotAxis, \
     PlotLabel
