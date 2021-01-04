@@ -14,8 +14,8 @@ class MultiMapperPlot(OverlayPlotContainer):
     OverlayPlotContainer that keeps a handle on axes and other plot elements.
     But it supports containing renderers with different mappers, is capable of
     aligning them, and supports multiple y-axes. Its additional attribute names
-    are often inspired from chaco's Plot class since the goal is a more flexible
-    version of that end-user level class.
+    are often inspired from chaco's Plot class since the goal is a more
+    flexible version of that end-user level class.
     """
     # -------------------------------------------------------------------------
     # Axes
