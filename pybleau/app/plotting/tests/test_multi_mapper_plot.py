@@ -1,5 +1,5 @@
 from chaco.api import OverlayPlotContainer
-from  unittest import TestCase
+from unittest import TestCase
 
 from pybleau.app.plotting.multi_mapper_plot import MultiMapperPlot
 from pybleau.app.plotting.plot_container_style import PlotContainerStyle
