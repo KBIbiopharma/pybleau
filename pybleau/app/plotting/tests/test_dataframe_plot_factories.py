@@ -1119,7 +1119,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
 class BasePlotTools(object):
     def assert_no_tools(self, plot):
         self.assertEqual(plot.tools, [])
-        if hasattr(plot, "legend"):
+        if plot.legend is not None:
             self.assertFalse(plot.legend.tools, [])
             # Legend and title:
             self.assertEqual(len(plot.overlays), 2)

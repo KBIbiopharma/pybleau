@@ -457,7 +457,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         self.model._add_new_plot(self.config4)
         desc = self.model.contained_plots[0]
         rend_styles = desc.plot_config.plot_style.renderer_styles
-        self.assertFalse(hasattr(desc.plot, "second_y_axis"))
+        self.assertIsNone(desc.plot.second_y_axis)
         renderer = desc.plot.components[1]
         self.assert_renderer_aligned(renderer, desc.plot.y_axis, dim="value")
 
@@ -466,7 +466,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         desc.style_edited = True
         # Recollect the descriptor since it was replaced:
         desc = self.model.contained_plots[0]
-        self.assertTrue(hasattr(desc.plot, "second_y_axis"))
+        self.assertIsNotNone(desc.plot.second_y_axis)
         self.assert_renderer_aligned(renderer, desc.plot.second_y_axis,
                                      dim="value")
 
@@ -474,13 +474,13 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         self.model._add_new_plot(self.config4)
         desc = self.model.contained_plots[0]
         rend_styles = desc.plot_config.plot_style.renderer_styles
-        self.assertFalse(hasattr(desc.plot, "second_y_axis"))
+        self.assertIsNone(desc.plot.second_y_axis)
 
         style = rend_styles[1]
         style.orientation = "right"
         desc.style_edited = True
         desc = self.model.contained_plots[0]
-        self.assertTrue(hasattr(desc.plot, "second_y_axis"))
+        self.assertIsNotNone(desc.plot.second_y_axis)
 
         style.orientation = "left"
         desc.style_edited = True
@@ -488,7 +488,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         renderer = desc.plot.components[1]
         self.assert_renderer_aligned(renderer, desc.plot.y_axis,
                                      dim="value")
-        self.assertFalse(hasattr(desc.plot, "second_y_axis"))
+        self.assertIsNone(desc.plot.second_y_axis)
 
     def test_change_plot_title(self):
         """ Plot title updated in the table triggers an update of actual plot.
@@ -540,7 +540,7 @@ class TestPlotManagerUpdatePlots(BasePlotManagerTools, TestCase):
         # desc recreated so re-collect it:
         desc = self.model.contained_plots[0]
         plot = desc.plot
-        self.assertTrue(hasattr(plot, "second_y_axis"))
+        self.assertIsNotNone(desc.plot.second_y_axis)
         self.assertIn(plot.second_y_axis, plot.underlays)
 
         self.assertEqual(plot.second_y_axis.title, desc.secondary_y_axis_title)
