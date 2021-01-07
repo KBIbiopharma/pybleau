@@ -5,8 +5,8 @@ from app_common.apptools.testing_utils import assert_obj_gui_works
 
 from chaco.api import ArrayPlotData, Plot
 import pandas as pd
-from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager, \
-    plot_from_config
+from pybleau.app.model.dataframe_plot_manager import DataFramePlotManager
+from pybleau.app.plotting.api import plot_from_config
 from pybleau.app.plotting.plot_config import ScatterPlotConfigurator
 from pybleau.app.plotting.bar_plot_style import BarPlotStyle
 from pybleau.app.plotting.histogram_plot_style import HistogramPlotStyle
