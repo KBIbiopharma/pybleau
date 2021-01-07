@@ -104,29 +104,6 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
     def get_source_df_part(self, part_name):
         return self._source_dfs[part_name]
 
-    def set_source_df_part(self, part_name, df):
-        if part_name in self._source_dfs:
-            msg = f"Source df part name {part_name} already exists. Use " \
-                  f"set_source_df_col to modify existing columns"
-            logger.exception(msg)
-            return ValueError(msg)
-
-        df = copy_and_sanitize(df)
-        for col in df.columns:
-            if col in self._column_loc:
-                msg = f"Data column {col} already exists in the source_df. " \
-                      f"Use set_source_df_col to modify an existing column."
-                logger.exception(msg)
-                return ValueError(msg)
-
-        # Synchronize the list of columns:
-        self._source_dfs[part_name] = df
-        self._source_df_columns[part_name] = df.columns.tolist()
-        for col in df.columns:
-            self._column_loc[col] = df
-
-        self._source_dfs_changed = True
-
     def get_source_df_part_columns(self, part_name):
         return self._source_df_columns[part_name]
 
