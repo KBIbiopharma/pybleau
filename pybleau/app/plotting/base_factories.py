@@ -21,8 +21,7 @@ import logging
 
 from traits.api import Any, Dict, HasStrictTraits, Instance, List, Set, Str
 from chaco.api import ArrayPlotData, ColorBar, DataRange1D, HPlotContainer, \
-    LabelAxis, LinearMapper, LogMapper, OverlayPlotContainer, PlotAxis, \
-    PlotLabel
+    LabelAxis, LinearMapper, LogMapper, PlotAxis, PlotLabel
 
 from chaco.plot_factory import add_default_axes
 from chaco.tools.api import BroadcasterTool, LegendTool, PanTool, ZoomTool
@@ -34,10 +33,11 @@ from app_common.chaco.plot_factory import create_bar_plot, \
     create_cmap_scatter_plot, create_line_plot, create_scatter_plot
 from app_common.chaco.legend import Legend, LegendHighlighter
 
+from .axis_style import LOG_AXIS_STYLE
+from .multi_mapper_plot import MultiMapperPlot
 from .plot_context_menu_manager import PlotContextMenuManager
 from .plot_style import BaseXYPlotStyle
 from .renderer_style import STYLE_L_ORIENT, STYLE_R_ORIENT
-from .axis_style import LOG_AXIS_STYLE
 
 SELECTION_COLOR = "red"
 
@@ -119,8 +119,8 @@ class BasePlotFactory(HasStrictTraits):
 
         Parameters
         ----------
-        plot : chaco plot container
-            Instance of a chaco OverlayPlotContainer to set the axis and title
+        plot : MultiMapperPlot
+            Instance of a MultiMapperPlot to set the axis and title
             labels of.
         """
         self._set_x_axis_labels(plot)
@@ -182,7 +182,7 @@ class BasePlotFactory(HasStrictTraits):
     def _set_second_y_axis_labels(self, plot):
         """ Set the secondary y axis title and style.
         """
-        if not hasattr(plot, "second_y_axis"):
+        if plot.second_y_axis is None:
             return
 
         if self.second_y_axis_title == "auto":
@@ -204,7 +204,6 @@ class BasePlotFactory(HasStrictTraits):
         title_label = PlotLabel(self.plot_title, component=plot, font=font,
                                 overlay_position="top")
         plot.overlays.append(title_label)
-        # Emulate chaco.Plot-like behavior:
         plot.title = title_label
 
 
@@ -212,7 +211,7 @@ class StdXYPlotFactory(BasePlotFactory):
     """ Factory to create a 2D plot with one of more renderers of the same kind
     """
     #: Generated chaco plot containing all requested renderers
-    plot = Instance(OverlayPlotContainer)
+    plot = Instance(MultiMapperPlot)
 
     #: List of plot_data keys to plot in pairs, one pair per renderer
     renderer_desc = List(Dict)
@@ -341,7 +340,7 @@ class StdXYPlotFactory(BasePlotFactory):
     def generate_plot(self):
         """ Generate and return a dict containing a plot and its properties.
         """
-        plot = self.plot = OverlayPlotContainer(
+        plot = self.plot = MultiMapperPlot(
             **self.plot_style.container_style.to_traits()
         )
 
@@ -443,8 +442,8 @@ class StdXYPlotFactory(BasePlotFactory):
             renderer.underlays = []
             plot.underlays = [bottom_axis, left_axis]
         else:
-            if style.orientation == STYLE_R_ORIENT and not \
-                    hasattr(plot, "second_y_axis"):
+            if style.orientation == STYLE_R_ORIENT and \
+                    plot.second_y_axis is None:
                 is_log = self.plot_style.second_y_axis_style.scaling == \
                     LOG_AXIS_STYLE
                 if is_log:
@@ -458,7 +457,6 @@ class StdXYPlotFactory(BasePlotFactory):
                 second_y_axis = PlotAxis(component=renderer,
                                          orientation="right",
                                          mapper=mapper)
-                # Keep a handle on the axis object and display
                 plot.second_y_axis = second_y_axis
                 plot.underlays.append(second_y_axis)
 
@@ -476,7 +474,7 @@ class StdXYPlotFactory(BasePlotFactory):
 
         styles = self.plot_style.renderer_styles
         align_renderers(all_renderers, plot.x_axis, dim="index")
-        if hasattr(plot, "second_y_axis"):
+        if plot.second_y_axis is not None:
             l_renderers = [rend for rend, style in zip(all_renderers, styles)
                            if style.orientation == STYLE_L_ORIENT]
             r_renderers = [rend for rend, style in zip(all_renderers, styles)

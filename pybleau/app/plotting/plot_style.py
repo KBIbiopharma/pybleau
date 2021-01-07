@@ -302,7 +302,7 @@ class BaseXYPlotStyle(HasStrictTraits):
         missing_mapper_msg = "The plot is missing the attribute {}. Please " \
                              "provide the mapper explicitly"
         if x_mapper is None:
-            if hasattr(plot, "x_axis"):
+            if plot.x_axis:
                 x_mapper = plot.x_axis.mapper
             else:
                 msg = missing_mapper_msg.format("x_axis")
@@ -310,7 +310,7 @@ class BaseXYPlotStyle(HasStrictTraits):
                 raise ValueError(msg)
 
         if y_mapper is None:
-            if hasattr(plot, "y_axis"):
+            if plot.y_axis:
                 y_mapper = plot.y_axis.mapper
             else:
                 msg = missing_mapper_msg.format("y_axis")
@@ -318,7 +318,7 @@ class BaseXYPlotStyle(HasStrictTraits):
                 raise ValueError(msg)
 
         if second_y_mapper is None:
-            if hasattr(plot, "second_y_axis"):
+            if hasattr(plot, "second_y_axis") and plot.second_y_axis:
                 second_y_mapper = plot.second_y_axis.mapper
 
         return x_mapper, y_mapper, second_y_mapper
