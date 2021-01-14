@@ -1,10 +1,14 @@
 import os
 from sys import platform
 from unittest import TestCase, skipIf
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
+from app_common.apptools.assertion_utils import assert_frame_not_equal
+
+from pybleau.app.ui.filter_expression_editor import \
+    FilterExpressionEditorView
 
 try:
     import kiwisolver  # noqa
@@ -123,10 +127,11 @@ class TestDataFrameAnalyzerView(TestCase):
         with temp_bringup_ui_for(view):
             self.assertFalse(mock.called)
 
-    def test_change_column_list(self):
+    def test_change_visible_column_list(self):
         view = DataFrameAnalyzerView(model=self.analyzer)
         init_len = len(view.visible_columns)
         with temp_bringup_ui_for(view):
+            # Change the list of visible columns:
             view.visible_columns = view.visible_columns[:1]
             self.assertNotEqual(len(view.visible_columns), init_len)
 
@@ -142,6 +147,29 @@ class TestDataFrameAnalyzerView(TestCase):
             self.assertEqual(len(view.model.summary_df.columns), init_len)
             self.assertEqual(len(view.model.filtered_df.columns), init_len)
             self.assertEqual(len(view.model.source_df.columns), init_len)
+
+    def test_change_source_column_list(self):
+        view = DataFrameAnalyzerView(model=self.analyzer)
+        with temp_bringup_ui_for(view):
+            self.assertEqual(view.visible_columns, self.analyzer.column_list)
+            new_col_name = "NEW COL"
+            self.analyzer.source_df[new_col_name] = 2
+            self.analyzer.col_list_changed = True
+            self.assertNotEqual(view.visible_columns,
+                                self.analyzer.column_list)
+
+            # Make the new column visible:
+            view.visible_columns.append(new_col_name)
+
+            # Both DFEditor's adapters are modified, now containing only 2
+            # columns: the one requested and the index:
+            editor = view.info.displayed_df
+            # 4 for the 3 columns and the index:
+            self.assertEqual(len(editor.adapter.columns), 4)
+            self.assertIn((new_col_name, new_col_name), editor.adapter.columns)
+            editor = view.info.summary_df
+            self.assertEqual(len(editor.adapter.columns), 4)
+            self.assertIn((new_col_name, new_col_name), editor.adapter.columns)
 
     def test_truncate(self):
         self.analyzer.num_displayed_rows = 3
@@ -186,15 +214,23 @@ class TestDataFrameAnalyzerView(TestCase):
         view.model.filter_exp = "a != 3"
         expected_df = DataFrame({"a": [1, 2, 4, 5], "b": [10, 15, 15, 10]},
                                 index=[0, 1, 3, 4])
-        try:
-            assert_frame_equal(view.model.filtered_df, expected_df)
-        except AssertionError:
-            pass
-        else:
-            msg = "The two dataframes should not be equal yet if " \
-                  "`filter_auto_apply` is False."
-            raise AssertionError(msg)
+        assert_frame_not_equal(view.model.filtered_df, expected_df)
         view.apply_filter_button = True
+        assert_frame_equal(view.model.filtered_df, expected_df)
+
+    @patch.object(FilterExpressionEditorView, "edit_traits")
+    def test_edit_filter_button_recomputes_filtered_df_correctly(self, edit):
+        self.analyzer.filter_auto_apply = False
+        view = DataFrameAnalyzerView(model=self.analyzer, include_plotter=True)
+        view.model.filter_exp = "a != 3"
+        expected_df = DataFrame({"a": [1, 2, 4, 5], "b": [10, 15, 15, 10]},
+                                index=[0, 1, 3, 4])
+        ui = MagicMock(result=False)
+        edit.return_value = ui
+        view._pop_out_filter_button_fired()
+        assert_frame_not_equal(view.model.filtered_df, expected_df)
+        ui.result = True
+        view._pop_out_filter_button_fired()
         assert_frame_equal(view.model.filtered_df, expected_df)
 
 

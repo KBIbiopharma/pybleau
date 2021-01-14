@@ -1,23 +1,29 @@
 import logging
-import numpy as np
-import pandas as pd
 from copy import copy
 
-from pyface.api import warning
-from traits.api import Any, Bool, Button, cached_property, Dict, Either, Enum,\
-    Instance, Int, List, on_trait_change, Property, Set, Str
+import numpy as np
+import pandas as pd
 import traitsui
+from app_common.pyface.ui.extra_file_dialogs import request_csv_file
+from app_common.std_lib.filepath_utils import open_file
+from app_common.std_lib.logging_utils import ACTION_LEVEL
+from app_common.traitsui.common_traitsui_groups import make_window_title_group
+from pyface.api import warning
+from traits.api import Any, Bool, Button, cached_property, Dict, Either, \
+    Enum, Instance, Int, List, on_trait_change, Property, Set, Str, \
+    ToolbarButton
 from traitsui.api import ButtonEditor, CheckListEditor, HGroup, HSplit, \
     InstanceEditor, Item, Label, ModelView, OKButton, Spring, Tabbed, VGroup, \
     View, VSplit
 from traitsui.ui_editors.data_frame_editor import DataFrameEditor
 
-from app_common.traitsui.common_traitsui_groups import make_window_title_group
-from app_common.pyface.ui.extra_file_dialogs import request_csv_file
-from app_common.std_lib.filepath_utils import open_file
-from app_common.std_lib.logging_utils import ACTION_LEVEL
+from pybleau.app.image_resources import pop_out_img, apply_img, \
+    manage_img, save_img, load_img
+from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer, \
+    CATEGORICAL_COL_TYPES
+from pybleau.app.ui.filter_expression_editor import \
+    FilterExpressionEditorView
 
-from pybleau.app.model.dataframe_analyzer import DataFrameAnalyzer
 try:
     from pybleau.app.ui.dataframe_plot_manager_view import \
         DataFramePlotManager, DataFramePlotManagerView
@@ -50,9 +56,6 @@ class DataFrameAnalyzerView(ModelView):
 
     #: Selected list of data columns to display and analyze
     visible_columns = List(Str)
-
-    #: Complete list of data columns to display and analyze
-    all_data_columns = List(Str)
 
     #: Check box to hide/show what stats are included in the summary DF
     show_summary_controls = Bool
@@ -147,19 +150,22 @@ class DataFrameAnalyzerView(ModelView):
     show_all_button = Button("Show All")
 
     #: Apply button for the filter if model not in auto-apply mode
-    apply_filter_button = Button("Apply")
+    apply_filter_button = ToolbarButton(image=apply_img)
+
+    #: Edit the filter in a pop-out dialog
+    pop_out_filter_button = ToolbarButton(image=pop_out_img)
 
     #: Whether to support saving, and loading filters
     filter_manager = Bool
 
     #: Button to launch filter expression manager to load an existing filter
-    load_filter_button = Button("Load...")
+    load_filter_button = ToolbarButton(image=load_img)
 
     #: Button to save current filter expression
-    save_filter_button = Button("Save")
+    save_filter_button = ToolbarButton(image=save_img)
 
     #: Button to launch filter expression manager to modify saved filters
-    manage_filter_button = Button("Manage...")
+    manage_filter_button = ToolbarButton(image=manage_img)
 
     #: List of saved filtered expressions
     _known_expr = Property(Set, depends_on="model.known_filter_exps")
@@ -197,10 +203,13 @@ class DataFrameAnalyzerView(ModelView):
 
     hidden_selection_msg = Str
 
+    #: Column names (as a list) to include in filter editor assistant
+    filter_editor_cols = List
+
     # Implementation details --------------------------------------------------
 
     #: Evaluate number of columns to select panel or popup column control
-    _many_columns = Property(Bool, depends_on="all_data_columns")
+    _many_columns = Property(Bool, depends_on="model.column_list")
 
     #: Popped-up UI to control the visible columns
     _control_popup = Any
@@ -319,15 +328,21 @@ class DataFrameAnalyzerView(ModelView):
         filter_group = HGroup(
             Item("model.filter_exp", label="Filter",
                  width=self.filter_item_width),
+            Item("pop_out_filter_button", show_label=False, style="custom",
+                 tooltip="Open filter editor..."),
             Item("apply_filter_button", show_label=False,
-                 visible_when="not model.filter_auto_apply"),
+                 visible_when="not model.filter_auto_apply", style="custom",
+                 tooltip="Apply current filter"),
             Item("save_filter_button", show_label=False,
                  enabled_when="model.filter_exp not in _known_expr",
-                 visible_when="filter_manager"),
+                 visible_when="filter_manager", style="custom",
+                 tooltip="Save current filter"),
             Item("load_filter_button", show_label=False,
-                 visible_when="filter_manager"),
+                 visible_when="filter_manager", style="custom",
+                 tooltip="Load a filter..."),
             Item("manage_filter_button", show_label=False,
-                 visible_when="filter_manager"),
+                 visible_when="filter_manager", style="custom",
+                 tooltip="Manage filters..."),
         )
 
         truncated = ("len(model.displayed_df) < len(model.filtered_df) and "
@@ -382,13 +397,13 @@ class DataFrameAnalyzerView(ModelView):
             Controls visibility of the created group. Don't force for the group
             embedded in the global view, but force it when opened as a popup.
         """
-        num_cols = 1 + len(self.all_data_columns) // self.max_names_per_column
+        num_cols = 1 + len(self.model.column_list) // self.max_names_per_column
 
         column_controls_group = VGroup(
             make_window_title_group(self.column_list_section_title,
                                     title_size=3, include_blank_spaces=False),
             Item("visible_columns", show_label=False,
-                 editor=CheckListEditor(values=self.all_data_columns,
+                 editor=CheckListEditor(values=self.model.column_list,
                                         cols=num_cols),
                  # The custom style allows to control a list of options rather
                  # than having a checklist editor for a single value:
@@ -518,6 +533,21 @@ class DataFrameAnalyzerView(ModelView):
         logger.log(ACTION_LEVEL, msg)
 
         self.model.recompute_filtered_df()
+
+    def _pop_out_filter_button_fired(self):
+        if not self.filter_editor_cols:
+            # if there are no included columns, then use all categorical cols
+            df = self.model.source_df
+            cat_df = df.select_dtypes(include=CATEGORICAL_COL_TYPES)
+            self.filter_editor_cols = list(cat_df.columns)
+        filter_editor = FilterExpressionEditorView(
+            expr=self.model.filter_exp, view_klass=self.view_klass,
+            source_df=self.model.source_df,
+            included_cols=self.filter_editor_cols)
+        ui = filter_editor.edit_traits(kind="livemodal")
+        if ui.result:
+            self.model.filter_exp = filter_editor.expr
+            self.apply_filter_button = True
 
     def _manage_filter_button_fired(self):
         """ TODO: review if replacing the copy by a deepcopy or removing the
@@ -663,7 +693,8 @@ class DataFrameAnalyzerView(ModelView):
 
     @cached_property
     def _get__many_columns(self):
-        return len(self.all_data_columns) > 2 * self.max_names_per_column
+        # Many columns means more than 2 columns:
+        return len(self.model.column_list) > 2 * self.max_names_per_column
 
     # Traits initialization methods -------------------------------------------
 
@@ -705,10 +736,7 @@ class DataFrameAnalyzerView(ModelView):
             return formats
 
     def _visible_columns_default(self):
-        return self.all_data_columns
-
-    def _all_data_columns_default(self):
-        return self.model.source_df.columns.tolist()
+        return self.model.column_list
 
     def _hidden_selection_msg_default(self):
         msg = "The displayed data is truncated and some of the selected " \
@@ -736,10 +764,11 @@ if __name__ == "__main__":
                    dtype=float)
     df.index.name = "BALH"
 
-    summarizer = DataFrameAnalyzer(source_df=df, num_displayed_rows=5)
+    summarizer = DataFrameAnalyzer(source_df=df, num_displayed_rows=5,
+                                   filter_auto_apply=False)
     print(summarizer.compute_summary())
 
     view = DataFrameAnalyzerView(model=summarizer, include_plotter=True,
-                                 display_precision=5,
+                                 display_precision=5, filter_manager=True,
                                  plotter_layout="HSplit")
     view.configure_traits()

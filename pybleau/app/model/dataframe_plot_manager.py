@@ -62,7 +62,7 @@ class DataFramePlotManager(DataElement):
     in contained_plots.
 
     To enable plot template creation and usage, a template_interactor
-    attribute must be passed at creation. The template_interactormust provide
+    attribute must be passed at creation. The template_interactor must provide
     the IPlotTemplateInteractor interface, implementing how to save, load and
     delete Configurator objects/files.
 
@@ -716,7 +716,7 @@ class DataFramePlotManager(DataElement):
         container = self.canvas_manager.get_container_for_plot(plot_desc)
         plot = self._get_overlay_plot_cont_from_desc(plot_desc)
 
-        if not hasattr(plot, "second_y_axis"):
+        if plot.second_y_axis is None:
             return
 
         plot.second_y_axis.title = new_title
@@ -895,14 +895,3 @@ def embed_plot_in_desc(plot):
         raise ValueError(msg)
 
     return desc
-
-
-def plot_from_config(config, factory_map=DEFAULT_FACTORIES):
-    """ Build plot factory capable of building a plot described by config.
-    """
-    plot_type = config.plot_type
-    plot_factory_klass = factory_map[plot_type]
-    factory = plot_factory_klass(**config.to_dict())
-    desc = factory.generate_plot()
-    plot = desc["plot"]
-    return plot, factory, desc

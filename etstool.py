@@ -258,7 +258,7 @@ def install(runtime, toolkit, environment, edm_dir, editable):
 @click.option('--environment', default=None)
 @click.option('--cov', default=True, type=bool)
 @click.option('--test-pattern', default="")
-@click.option('--num-slowest', default="0")
+@click.option('--num-slowest', default="10")
 @click.option('--target', default=PKG_NAME)
 def test(runtime, toolkit, edm_dir, environment, test_pattern, num_slowest,
          target, cov):

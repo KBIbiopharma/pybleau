@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 
-from traits.api import Dict, Instance, Property
+from traits.api import Dict, Event, Instance, Property
 
 from .dataframe_analyzer import copy_and_sanitize, DataFrameAnalyzer
 
@@ -9,13 +9,21 @@ logger = logging.getLogger(__name__)
 
 
 class MultiDataFrameAnalyzer(DataFrameAnalyzer):
-    """ DataFrameAnalyzer where the source_df is a proxy for a list of DFs.
+    """ DataFrameAnalyzer where the source_df is a proxy for multiple DFs.
+
+    The soure_df is here built from a dictionary of dataframes, mapping names
+    to sub-dataframes, and gets recomputed by concatenating all values from the
+    _source_dfs dict.
+
+    To control how the columns are split, create the analyzer providing the
+    _source_dfs map rather than the source_df.
     """
 
     # Data storage attributes -------------------------------------------------
 
     #: Resulting proxy dataframe built from the dataframe parts
-    source_df = Property(Instance(pd.DataFrame), depends_on="_source_dfs[]")
+    source_df = Property(Instance(pd.DataFrame),
+                         depends_on="_source_dfs[], _source_dfs_changed")
 
     #: Maps dataframe name to dataframe
     _source_dfs = Dict
@@ -25,6 +33,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
     #: Maps a column name to the dataframe it is located in
     _column_loc = Dict
+
+    _source_dfs_changed = Event
 
     def __init__(self, convert_source_dtypes=False, data_sorted=True,
                  **traits):
@@ -37,6 +47,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
             dfs = traits["_source_dfs"]
             traits["_source_dfs"] = {i: df for i, df in enumerate(dfs)}
 
+        # Check that dataframes' columns don't overlap:
         if "_source_dfs" in traits:
             known_cols = set()
             for df in traits["_source_dfs"].values():
@@ -51,10 +62,9 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
                 known_cols = known_cols | new_cols
 
         if "_source_dfs" in traits and "_source_df_columns" not in traits:
-            traits["_source_df_columns"] = {
-                key: df.columns.tolist()
-                for key, df in traits["_source_dfs"].items()
-            }
+            traits["_source_df_columns"] = self._compute_source_df_columns(
+                traits["_source_dfs"]
+            )
         elif "_source_dfs" in traits and "_source_df_columns" in traits:
             df_map_keys = list(traits["_source_dfs"].keys())
             col_map_keys = list(traits["_source_df_columns"].keys())
@@ -91,8 +101,46 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
     # Public interface --------------------------------------------------------
 
-    def set_source_df_col(self, col, value, target_df=None):
+    def get_source_df_part(self, part_name):
+        return self._source_dfs[part_name]
+
+    def get_source_df_part_columns(self, part_name):
+        return self._source_df_columns[part_name]
+
+    def concat_to_source_df(self, new_df, **kwargs):
+        """ Concatenate potentially unaligned dataframe to the source_df.
+
+        The index of the input DF must be a subset of the source_df's index,
+        and the alignment will be done using it.
+
+        Parameters
+        ----------
+        new_df : pd.DataFrame
+            New dataframe to concatenate to the source_df.
+        """
+        # Align in the index dimension:
+        idx_len = len(self.source_df.index)
+        idx_mismatch = len(new_df.index) != idx_len or \
+            not (self.source_df.index == new_df.index).all()
+        if idx_mismatch:
+            new_df = new_df.reindex(self.source_df.index)
+
+        for col in new_df:
+            if col in self._column_loc:
+                # Add a prefix to avoid collision with an existing column
+                target_col = col + "_y"
+            else:
+                target_col = col
+
+            self.set_source_df_col(target_col, new_df[col], **kwargs)
+
+        self._source_dfs_changed = True
+
+    def set_source_df_col(self, col, value, target_df_name="",
+                          change_notify=True):
         """ Set a DF column to a value or add a new column to one of the DFs.
+
+        Note: triggers an update of the source_df, filtered_df and displayed_df
 
         Parameters
         ----------
@@ -103,20 +151,28 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         value : any
             The value the column should be set to.
 
-        target_df : str
+        target_df_name : str
             Name of the dataframe to add the column to.
+
+        change_notify : bool, optional
+            Whether to trigger an event to rebuild all downstream dataframes
+            (source, filtered, displayed).
         """
         if col in self._column_loc:
             target_df = self._column_loc[col]
         else:
-            if target_df is None:
-                msg = "Column {} not found, yet no target df was provided."
+            if not target_df_name:
+                msg = f"Column {col} not found, yet no target df was provided."
                 logger.exception(msg)
                 raise ValueError(msg)
 
-            target_df = self._source_dfs[target_df]
+            target_df = self._source_dfs[target_df_name]
+            self._column_loc[col] = target_df
+            self._source_df_columns[target_df_name].append(col)
 
         target_df[col] = value
+        if change_notify:
+            self._source_dfs_changed = True
 
     def set_source_df_val(self, index, col, value):
         """ Set a DF element to a value.
@@ -135,7 +191,17 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         value: object
             The value the column should be set to.
         """
-        self._column_loc[col].loc[index, col] = value
+        df = self._column_loc[col]
+        df.loc[index, col] = value
+
+    # Private interface -------------------------------------------------------
+
+    def _compute_source_df_columns(self, source_dfs=None):
+        if source_dfs is None:
+            source_dfs = self._source_dfs
+
+        return {key: df.columns.tolist()
+                for key, df in source_dfs.items()}
 
     # Property getters/setters ------------------------------------------------
 
@@ -148,8 +214,8 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
     def _set_source_df(self, df):
         """ Set the source_df proxy to a new value.
 
-        If no source_dfs stored, set this 1 for key 0. If there are source_dfs,
-        update them.
+        If no source_dfs stored, set this one for key 0. If there are
+        source_dfs, update them.
         """
         if not self._source_dfs:
             self._source_dfs[0] = df

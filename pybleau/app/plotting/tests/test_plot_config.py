@@ -9,7 +9,7 @@ from numpy.testing import assert_array_equal
 BACKEND_AVAILABLE = os.environ.get("ETS_TOOLKIT", "qt4") != "null"
 
 if BACKEND_AVAILABLE:
-    from app_common.apptools.testing_utils import temp_bringup_ui_for
+    from app_common.apptools.testing_utils import assert_obj_gui_works
     from pybleau.app.plotting.plot_config import HeatmapPlotConfigurator, \
         HEATMAP_PLOT_TYPE, HistogramPlotConfigurator, HIST_PLOT_TYPE, \
         LinePlotConfigurator, BarPlotConfigurator, ScatterPlotConfigurator, \
@@ -38,20 +38,22 @@ class BasePlotConfig(object):
 
     def test_bring_up(self):
         obj = self.configurator(data_source=TEST_DF)
-        with temp_bringup_ui_for(obj):
-            pass
+        assert_obj_gui_works(obj)
+
+    # Assertion utilities -----------------------------------------------------
+
+    def assert_editor_options(self, editor):
+        editor_options = editor.values
+        if self.numerical_cols_only:
+            for col in editor_options:
+                if col != "index":
+                    self.assertIn(TEST_DF[col].dtype, (np.int64, np.float64))
+        else:
+            self.assertEqual(set(editor_options),
+                             set(TEST_DF.columns) | {"index"})
 
 
 class BaseXYPlotConfig(BasePlotConfig):
-    def test_creation_fails_if_no_df(self):
-        with self.assertRaises(ValueError):
-            config = self.configurator()
-            config.to_dict()
-
-    def test_bring_up(self):
-        obj = self.configurator(data_source=TEST_DF)
-        with temp_bringup_ui_for(obj):
-            pass
 
     def test_plot_basic(self):
         config = self.configurator(data_source=TEST_DF, x_col_name="a",
@@ -64,6 +66,17 @@ class BaseXYPlotConfig(BasePlotConfig):
         assert_array_equal(config_dict["x_arr"], TEST_DF["a"].values)
         self.assertIn("y_arr", config_dict)
         assert_array_equal(config_dict["y_arr"], TEST_DF["b"].values)
+
+    def test_data_choices(self):
+        """ Make sure different configurators provide the right data choices.
+        """
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b")
+        view_items = config._data_selection_items()
+        x_editor = view_items[0].content[0].editor
+        self.assert_editor_options(x_editor)
+        y_editor = view_items[1].content[0].editor
+        self.assert_editor_options(y_editor)
 
     def test_plot_colored_by_str_col(self):
         # Color by a column filled with boolean values
@@ -124,6 +137,7 @@ class TestScatterPlotConfig(TestCase, BaseXYPlotConfig):
     def setUp(self):
         self.configurator = ScatterPlotConfigurator
         self.basic_type = SCATTER_PLOT_TYPE
+        self.numerical_cols_only = True
 
     def test_plot_scatter_colored_by_int_col(self):
         config = self.configurator(data_source=TEST_DF, x_col_name="a",
@@ -164,12 +178,41 @@ class TestScatterPlotConfig(TestCase, BaseXYPlotConfig):
         config.z_col_name = "e"
         self.assertTrue(config.plot_style.colorize_by_float)
 
+    def test_scatter_data_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._data_selection_columns()
+        expected = config._numerical_columns
+        self.assertCountEqual(columns, expected)
+
+    def test_scatter_color_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._color_selection_columns()
+        expected = [""] + config._available_columns
+        self.assertCountEqual(columns, expected)
+
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestLinePlotConfig(TestCase, BaseXYPlotConfig):
     def setUp(self):
         self.configurator = LinePlotConfigurator
         self.basic_type = LINE_PLOT_TYPE
+        self.numerical_cols_only = True
+
+    def test_line_data_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._data_selection_columns()
+        expected = config._numerical_columns
+        self.assertCountEqual(columns, expected)
+
+    def test_line_color_selection_columns(self):
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="d")
+        columns = config._color_selection_columns()
+        expected = [""] + config._available_columns
+        self.assertCountEqual(columns, expected)
 
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
@@ -177,6 +220,16 @@ class TestBarPlotConfig(TestCase, BaseXYPlotConfig):
     def setUp(self):
         self.configurator = BarPlotConfigurator
         self.basic_type = BAR_PLOT_TYPE
+        self.numerical_cols_only = False
+
+    def test_data_choices(self):
+        """ Make sure different configurators provide the right data choices.
+        """
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b")
+        view_items = config._data_selection_items()
+        x_editor = view_items[0].content[3].content[0].content[0].editor
+        self.assert_editor_options(x_editor)
 
     def test_melt_mode_no_effect(self):
         config = self.configurator(data_source=TEST_DF, melt_source_data=True)
@@ -279,6 +332,7 @@ class TestHistogramPlotConfig(BasePlotConfig, TestCase):
     def setUp(self):
         self.configurator = HistogramPlotConfigurator
         self.basic_type = HIST_PLOT_TYPE
+        self.numerical_cols_only = True
 
     # Tests -------------------------------------------------------------------
 
@@ -297,12 +351,21 @@ class TestHistogramPlotConfig(BasePlotConfig, TestCase):
         with self.assertRaises(KeyError):
             config.to_dict()
 
+    def test_data_choices(self):
+        """ Make sure different configurators provide the right data choices.
+        """
+        config = self.configurator(data_source=TEST_DF, x_col_name="a")
+        view_items = config._data_selection_items()
+        x_editor = view_items[0].content[0].editor
+        self.assert_editor_options(x_editor)
+
 
 @skipIf(not BACKEND_AVAILABLE, "No UI backend available")
 class TestHeatmapPlotConfig(BasePlotConfig, TestCase):
     def setUp(self):
         self.configurator = HeatmapPlotConfigurator
         self.basic_type = HEATMAP_PLOT_TYPE
+        self.numerical_cols_only = True
 
     # Tests -------------------------------------------------------------------
 
@@ -319,3 +382,16 @@ class TestHeatmapPlotConfig(BasePlotConfig, TestCase):
                                    y_col_name="b", z_col_name="NON-EXISTENT")
         with self.assertRaises(KeyError):
             config.to_dict()
+
+    def test_data_choices(self):
+        """ Make sure different configurators provide the right data choices.
+
+        Passing non-numerical
+        """
+        config = self.configurator(data_source=TEST_DF, x_col_name="a",
+                                   y_col_name="b", z_col_name="e")
+        view_items = config._data_selection_items()
+        x_editor = view_items[0].content[0].editor
+        self.assert_editor_options(x_editor)
+        y_editor = view_items[1].content[0].editor
+        self.assert_editor_options(y_editor)
