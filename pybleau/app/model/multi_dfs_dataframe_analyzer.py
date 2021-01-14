@@ -174,7 +174,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         if change_notify:
             self._source_dfs_changed = True
 
-    def set_source_df_val(self, index, col, value, source_change_notify=False):
+    def set_source_df_val(self, index, col, value, change_notify=True):
         """ Set a DF element to a value.
 
         WARNING: per the `.loc` implementation in pandas, if the index doesn't
@@ -191,13 +191,13 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
         value: object
             The value the column should be set to.
 
-        source_change_notify : bool, optional
-            Whether to trigger to recomputation of the filtered_df. False by
-            default so multiple values can be set before triggering an update.
+        change_notify : bool, optional
+            Whether to trigger an event to rebuild all downstream dataframes
+            (source, filtered, displayed).
         """
         df = self._column_loc[col]
         df.loc[index, col] = value
-        if source_change_notify:
+        if change_notify:
             self._source_dfs_changed = True
 
     # Private interface -------------------------------------------------------
