@@ -92,7 +92,7 @@ class TestAnalyzer(Analyzer, TestCase):
                                                     "b": self.df3})
 
         # With notification
-        analyzer.set_source_df_val(1, "a", "xyz", notify_change=True)
+        analyzer.set_source_df_val(1, "a", "xyz", source_change_notify=True)
         self.assertEqual(analyzer.source_df.loc[1, "a"], "xyz")
         self.assertEqual(analyzer.filtered_df.loc[1, "a"], "xyz")
 
