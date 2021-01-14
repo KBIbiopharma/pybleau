@@ -107,6 +107,7 @@ class TestAnalyzer(Analyzer, TestCase):
         analyzer.set_source_df_col("a", "xyz")
         expected = pd.Series(["xyz"]*len(analyzer.source_df), name="a")
         assert_series_equal(analyzer.source_df["a"], expected)
+        assert_series_equal(analyzer.filtered_df["a"], expected)
 
     def test_add_source_df_col(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
