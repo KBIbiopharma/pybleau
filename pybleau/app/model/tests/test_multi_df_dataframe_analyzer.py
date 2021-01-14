@@ -112,10 +112,22 @@ class TestAnalyzer(Analyzer, TestCase):
     def test_modify_existing_source_df_col(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})
+        # With notification
         analyzer.set_source_df_col("a", "xyz")
-        expected = pd.Series(["xyz"]*len(analyzer.source_df), name="a")
-        assert_series_equal(analyzer.source_df["a"], expected)
-        assert_series_equal(analyzer.filtered_df["a"], expected)
+        expected1 = pd.Series(["xyz"]*len(analyzer.source_df), name="a")
+        assert_series_equal(analyzer.source_df["a"], expected1)
+        assert_series_equal(analyzer.filtered_df["a"], expected1)
+        assert_series_equal(analyzer.displayed_df["a"], expected1)
+
+        # Without notification:
+        analyzer.set_source_df_col("a", "abc", change_notify=False)
+        expected2 = pd.Series(["abc"] * len(analyzer.source_df), name="a")
+        assert_series_equal(analyzer.source_df["a"], expected2)
+        assert_series_equal(analyzer.filtered_df["a"], expected1)
+        assert_series_equal(analyzer.displayed_df["a"], expected1)
+        analyzer._source_dfs_changed = True
+        assert_series_equal(analyzer.filtered_df["a"], expected2)
+        assert_series_equal(analyzer.displayed_df["a"], expected2)
 
     def test_add_source_df_col(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
