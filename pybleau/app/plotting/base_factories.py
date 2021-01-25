@@ -53,6 +53,8 @@ RENDERER_MAKER = {
     "cmap_scatter": create_cmap_scatter_plot
 }
 
+CATEGORICAL_TYPES = [object, bool]
+
 
 class BasePlotFactory(HasStrictTraits):
     """ Base Chaco plot factory.
@@ -74,6 +76,9 @@ class BasePlotFactory(HasStrictTraits):
 
     #: Ordered list of x values to use to build labels when strings/booleans
     x_labels = List
+
+    #: Ordered list of y values to use to build labels when strings/booleans
+    y_labels = List
 
     #: Name of the column to display along the y axis
     y_col_name = Str
@@ -152,11 +157,11 @@ class BasePlotFactory(HasStrictTraits):
                                     positions=np.arange(len(x_labels)),
                                     label_rotation=label_rotation,
                                     tick_generator=tick_generator)
-            # Replace in the underlay list...
+            # Store and replace in the underlay list...
             if plot.underlays:
                 plot.underlays.pop(0)
+
             plot.underlays.insert(0, bottom_axis)
-            # ... and add a handle from the plot object to emulate chaco.Plot
             plot.x_axis = bottom_axis
 
         plot.x_axis.title = self.x_axis_title
@@ -167,6 +172,34 @@ class BasePlotFactory(HasStrictTraits):
     def _set_y_axis_labels(self, plot):
         """ Set the y axis title and style.
         """
+        y_labels = self.y_labels
+        y_axis_style = self.plot_style.y_axis_style
+        if y_labels:
+            # if x_labels set, axis labels shouldn't be generated from the
+            # numerical values but by the values stored in x_labels (for e.g.
+            # when x_axis_col contains strings)
+            label_rotation = y_axis_style.label_rotation
+            if y_axis_style.show_all_labels:
+                label_positions = range(len(y_labels))
+                tick_generator = ShowAllTickGenerator(
+                    positions=label_positions
+                )
+            else:
+                tick_generator = DefaultTickGenerator()
+
+            first_renderer = plot.components[0]
+            left_axis = LabelAxis(first_renderer, orientation="left",
+                                  labels=[str(x) for x in y_labels],
+                                  positions=np.arange(len(y_labels)),
+                                  label_rotation=label_rotation,
+                                  tick_generator=tick_generator)
+            # Store and replace in the underlay list...
+            if plot.underlays:
+                plot.underlays.pop(1)
+
+            plot.underlays.insert(1, left_axis)
+            plot.y_axis = left_axis
+
         if self.y_axis_title == "auto":
             styles = self.plot_style.renderer_styles
             plot.y_axis.title = ", ".join(
@@ -242,9 +275,9 @@ class StdXYPlotFactory(BasePlotFactory):
             self.initialize_plot_data(x_arr=x_arr, y_arr=y_arr, z_arr=z_arr,
                                       **hover_data)
 
-        self.adjust_plot_style(x_arr=x_arr, y_arr=y_arr, z_arr=z_arr)
+        self.adjust_plot_style()
 
-    def adjust_plot_style(self, x_arr=None, y_arr=None, z_arr=None):
+    def adjust_plot_style(self):
         """ Translate general plotting style info into xy plot parameters.
         """
         pass

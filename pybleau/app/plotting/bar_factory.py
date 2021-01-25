@@ -12,7 +12,7 @@ from app_common.chaco.plot_factory import create_line_plot
 
 from .plot_config import BAR_PLOT_TYPE
 from .bar_plot_style import IGNORE_DATA_DUPLICATES
-from .base_factories import StdXYPlotFactory
+from .base_factories import CATEGORICAL_TYPES, StdXYPlotFactory
 
 BAR_SQUEEZE_FACTOR = 0.8
 
@@ -164,7 +164,7 @@ class BarPlotFactory(StdXYPlotFactory):
         compute y error bars.
         """
         # Collect all labels and reset x_arr as an int list
-        if x_arr.dtype in [object, bool]:
+        if x_arr.dtype in CATEGORICAL_TYPES:
             duplicates_present = len(set(x_arr)) != len(x_arr)
             data_duplicate = self.plot_style.data_duplicate
             handle_duplicates = data_duplicate != IGNORE_DATA_DUPLICATES
