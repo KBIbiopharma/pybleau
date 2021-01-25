@@ -1085,6 +1085,23 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc, with_contours=True)
 
+    def test_create_with_categorical_x_and_y_cols(self):
+
+        test_df = DataFrame(
+            {"a": ["a", "b", "c", "a", "b", "c", "a", "b", "c"],
+             "b": ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+             "c": [1, 2, 3, 2, 3, 4, 2, 1, 3]}
+        )
+
+        x_arr, y_arr, z_arr = pivot_data("a", "b", "c", df=test_df)
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b2", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
+        desc = factory.generate_plot()
+        plot = desc["plot"]
+        self.assert_valid_plot(plot, desc)
+
     # Helpers -----------------------------------------------------------------
 
     def assert_valid_plot(self, container, desc, with_contours=False):
@@ -1521,12 +1538,15 @@ class TestHeatmapPlotTools(BasePlotTools, TestCase):
         self.assert_context_menu_tool()
 
 
-def pivot_data(x_col_name, y_col_name, z_col_name):
+def pivot_data(x_col_name, y_col_name, z_col_name, df=None):
     """ Pivot data to make a heat map plot from TEST_DF
     """
-    x_arr = TEST_DF[x_col_name]
-    y_arr = TEST_DF[y_col_name]
-    z_arr = TEST_DF.pivot_table(index=y_col_name,
-                                columns=x_col_name,
-                                values=z_col_name).values
+    if df is None:
+        df = TEST_DF
+
+    x_arr = df[x_col_name]
+    y_arr = df[y_col_name]
+    z_arr = df.pivot_table(index=y_col_name,
+                           columns=x_col_name,
+                           values=z_col_name).values
     return x_arr, y_arr, z_arr
