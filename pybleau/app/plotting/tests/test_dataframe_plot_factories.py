@@ -75,6 +75,13 @@ TEST_DF = DataFrame({"a": [1, 2, 3, 4] * (LEN//4),
                      "n": random.randn(LEN),
                      })
 
+TEST_DF2 = DataFrame(
+    {"a": ["a", "b", "c", "a", "b", "c", "a", "b", "c"],
+     "b": ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+     "b2": [0, 0, 0, 1, 1, 1, 2, 2, 2],
+     "c": [1, 2, 3, 2, 3, 4, 2, 1, 3]}
+)
+
 msg = "No UI backend to paint into"
 
 
@@ -1086,16 +1093,29 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         self.assert_valid_plot(plot, desc, with_contours=True)
 
     def test_create_with_categorical_x_and_y_cols(self):
+        x_arr, y_arr, z_arr = pivot_data("a", "b", "c", df=TEST_DF2)
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
+        desc = factory.generate_plot()
+        plot = desc["plot"]
+        self.assert_valid_plot(plot, desc)
 
-        test_df = DataFrame(
-            {"a": ["a", "b", "c", "a", "b", "c", "a", "b", "c"],
-             "b": ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
-             "c": [1, 2, 3, 2, 3, 4, 2, 1, 3]}
-        )
-
-        x_arr, y_arr, z_arr = pivot_data("a", "b", "c", df=test_df)
+    def test_create_with_categorical_x_cols(self):
+        x_arr, y_arr, z_arr = pivot_data("a", "b2", "c", df=TEST_DF2)
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b2", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
+        desc = factory.generate_plot()
+        plot = desc["plot"]
+        self.assert_valid_plot(plot, desc)
+
+    def test_create_with_categorical_y_cols(self):
+        x_arr, y_arr, z_arr = pivot_data("b2", "a", "c", df=TEST_DF2)
+        factory = self.plot_factory_klass(x_col_name="b2", x_arr=x_arr,
+                                          y_col_name="a", y_arr=y_arr,
                                           z_col_name="c", z_arr=z_arr,
                                           **self.plot_kw)
         desc = factory.generate_plot()
