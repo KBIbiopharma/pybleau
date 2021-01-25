@@ -11,6 +11,13 @@ from .plot_container_style import PlotContainerStyle  # noqa
 
 def plot_from_config(config, factory_map=DEFAULT_FACTORIES):
     """ Build plot factory capable of building a plot described by config.
+
+    Returns
+    -------
+    tuple
+        Returns the chaco plot instance, the factory that made it and the
+        description dictionary that contains all information about the
+        generated plot.
     """
     plot_type = config.plot_type
     plot_factory_klass = factory_map[plot_type]
