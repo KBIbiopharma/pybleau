@@ -67,7 +67,7 @@ class HistogramPlotFactory(StdXYPlotFactory):
         traits["y_col_name"] = HISTOGRAM_Y_LABEL
         super(HistogramPlotFactory, self).__init__(x_arr=x_arr, **traits)
 
-    def adjust_plot_style(self, x_arr=None, y_arr=None, z_arr=None):
+    def adjust_plot_style(self):
         """ Translate general plotting style information into histogram params.
         """
         # Adjust the renderer bar widths:
