@@ -38,9 +38,6 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
 
             x_arr = np.array([self.x_labels.index(val)
                               for val in self.x_labels])
-            indices = x_arr.argsort()
-            x_arr = x_arr[indices]
-            self.x_labels = list(np.array(self.x_labels)[indices])
 
             # Collect all labels and reset x_arr as an int list
         if y_arr.dtype in CATEGORICAL_TYPES:
@@ -49,9 +46,6 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
 
             y_arr = np.array([self.y_labels.index(val)
                               for val in self.y_labels])
-            indices = y_arr.argsort()
-            y_arr = y_arr[indices]
-            self.y_labels = list(np.array(self.y_labels)[indices])
 
         renderer_data = {"x": self.x_col_name, "y": self.y_col_name,
                          "name": DEFAULT_RENDERER_NAME}
