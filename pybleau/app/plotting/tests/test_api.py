@@ -67,5 +67,3 @@ class TestAPI(TestCase):
         def_factories = DEFAULT_FACTORIES
         actual = factory_from_config(config, def_factories)
         self.assertIsInstance(actual, ScatterPlotFactory)
-
-
