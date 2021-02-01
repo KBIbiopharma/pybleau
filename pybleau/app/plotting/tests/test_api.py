@@ -12,8 +12,7 @@ from pybleau.app.plotting.plot_config import BarPlotConfigurator, \
     HeatmapPlotConfigurator, \
     HistogramPlotConfigurator, LinePlotConfigurator, ScatterPlotConfigurator
 from pybleau.app.plotting.plot_factories import DEFAULT_FACTORIES
-from pybleau.app.plotting.scatter_factories import CmapScatterPlotFactory, \
-    ScatterPlotFactory
+from pybleau.app.plotting.scatter_factories import ScatterPlotFactory
 
 TEST_DF = pd.DataFrame({"Col_1": [1, 2, 3, 4, 5, 6, 7, 8],
                         "Col_2": np.array([1, 2, 3, 4, 5, 6, 7, 8])[::-1],
