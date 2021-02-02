@@ -4,7 +4,6 @@
 from __future__ import print_function, division
 import logging
 import numpy as np
-from pandas import Series
 
 from traits.api import Constant
 from chaco.api import ImagePlot, PlotAxis
