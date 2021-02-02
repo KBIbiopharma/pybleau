@@ -724,7 +724,8 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
 
     @cached_property
     def _get_transformed_data(self):
-        if not self.x_col_name or not self.y_col_name or not self.z_col_name:
+        if self.data_source is None or not self.x_col_name or \
+                not self.y_col_name or not self.z_col_name:
             return
 
         return self.data_source.pivot_table(index=self.y_col_name,
