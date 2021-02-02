@@ -40,8 +40,8 @@ class BasePlotConfigurator(HasStrictTraits):
     data_source = Instance(pd.DataFrame)
 
     #: Transformed DataFrame if data transformation are needed before plotting
-    transformed_data = Property(depends_on="x_col_name, y_col_name, "
-                                           "z_col_name")
+    transformed_data = Property(depends_on="data_source, x_col_name, "
+                                           "y_col_name, z_col_name")
 
     #: Grouped plot style information
     plot_style = Instance(BaseXYPlotStyle)
