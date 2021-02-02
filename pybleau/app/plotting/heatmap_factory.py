@@ -36,16 +36,14 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
             if not self.x_labels:
                 self.x_labels = list(x_arr)
 
-            x_arr = np.array([self.x_labels.index(val)
-                              for val in self.x_labels])
+            x_arr = np.arange(len(self.x_labels))
 
         # Collect all labels and reset y_arr as an int list
         if y_arr.dtype in CATEGORICAL_TYPES:
             if not self.y_labels:
                 self.y_labels = list(y_arr)
 
-            y_arr = np.array([self.y_labels.index(val)
-                              for val in self.y_labels])
+            y_arr = np.arange(len(self.y_labels))
 
         renderer_data = {"x": self.x_col_name, "y": self.y_col_name,
                          "name": DEFAULT_RENDERER_NAME}
