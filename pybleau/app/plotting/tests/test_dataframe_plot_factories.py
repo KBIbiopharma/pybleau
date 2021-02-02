@@ -76,7 +76,7 @@ TEST_DF = DataFrame({"a": [1, 2, 3, 4] * (LEN//4),
                      })
 
 TEST_DF2 = DataFrame(
-    {"a": ["a", "b", "c", "a", "b", "c", "a", "b", "c"],
+    {"a": list("xyz") * 3,
      "b": ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
      "b2": [0, 0, 0, 1, 1, 1, 2, 2, 2],
      "c": [1, 2, 3, 2, 3, 4, 2, 1, 3]}
@@ -1101,6 +1101,12 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         desc = factory.generate_plot()
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
+        # Make sure the axes are made of the unique values in the x and y
+        # columns:
+        x_axis = plot.components[0].x_axis
+        y_axis = plot.components[0].y_axis
+        self.assertEqual(x_axis.labels, list("xyz"))
+        self.assertEqual(y_axis.labels, list("abc"))
 
     def test_create_with_categorical_x_cols(self):
         x_arr, y_arr, z_arr = pivot_data("a", "b2", "c", df=TEST_DF2)
@@ -1111,6 +1117,10 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         desc = factory.generate_plot()
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
+        # Make sure the axes are made of the unique values in the x and y
+        # columns:
+        x_axis = plot.components[0].x_axis
+        self.assertEqual(x_axis.labels, list("xyz"))
 
     def test_create_with_categorical_y_cols(self):
         x_arr, y_arr, z_arr = pivot_data("b2", "a", "c", df=TEST_DF2)
@@ -1121,6 +1131,10 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         desc = factory.generate_plot()
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc)
+        # Make sure the axes are made of the unique values in the x and y
+        # columns:
+        y_axis = plot.components[0].y_axis
+        self.assertEqual(y_axis.labels, list("xyz"))
 
     # Helpers -----------------------------------------------------------------
 
@@ -1559,14 +1573,15 @@ class TestHeatmapPlotTools(BasePlotTools, TestCase):
 
 
 def pivot_data(x_col_name, y_col_name, z_col_name, df=None):
-    """ Pivot data to make a heat map plot from TEST_DF
+    """ Pivot data to generate heatmap plot data without using a configurator.
     """
     if df is None:
         df = TEST_DF
 
-    x_arr = df[x_col_name]
-    y_arr = df[y_col_name]
-    z_arr = df.pivot_table(index=y_col_name,
-                           columns=x_col_name,
-                           values=z_col_name).values
+    pivoted = df.pivot_table(index=y_col_name,
+                             columns=x_col_name,
+                             values=z_col_name)
+    x_arr = pivoted.columns.values
+    y_arr = pivoted.index.values
+    z_arr = pivoted.values
     return x_arr, y_arr, z_arr
