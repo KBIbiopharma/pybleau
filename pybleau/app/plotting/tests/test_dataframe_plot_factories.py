@@ -82,6 +82,14 @@ TEST_DF2 = DataFrame(
      "c": [1, 2, 3, 2, 3, 4, 2, 1, 3]}
 )
 
+
+TEST_DF3 = DataFrame(
+    {"a": [True, True, False, False],
+     "b": [True, False, True, False],
+     "b2": list("ab")*2,
+     "c": [1, 2, 3, 2]}
+)
+
 msg = "No UI backend to paint into"
 
 
@@ -1092,7 +1100,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         plot = desc["plot"]
         self.assert_valid_plot(plot, desc, with_contours=True)
 
-    def test_create_with_categorical_x_and_y_cols(self):
+    def test_create_with_str_x_and_y_cols(self):
         x_arr, y_arr, z_arr = pivot_data("a", "b", "c", df=TEST_DF2)
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b", y_arr=y_arr,
@@ -1108,7 +1116,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         self.assertEqual(x_axis.labels, list("xyz"))
         self.assertEqual(y_axis.labels, list("abc"))
 
-    def test_create_with_categorical_x_cols(self):
+    def test_create_with_str_x_cols(self):
         x_arr, y_arr, z_arr = pivot_data("a", "b2", "c", df=TEST_DF2)
         factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
                                           y_col_name="b2", y_arr=y_arr,
@@ -1122,7 +1130,7 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         x_axis = plot.components[0].x_axis
         self.assertEqual(x_axis.labels, list("xyz"))
 
-    def test_create_with_categorical_y_cols(self):
+    def test_create_with_str_y_cols(self):
         x_arr, y_arr, z_arr = pivot_data("b2", "a", "c", df=TEST_DF2)
         factory = self.plot_factory_klass(x_col_name="b2", x_arr=x_arr,
                                           y_col_name="a", y_arr=y_arr,
@@ -1135,6 +1143,38 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         # columns:
         y_axis = plot.components[0].y_axis
         self.assertEqual(y_axis.labels, list("xyz"))
+
+    def test_create_with_bool_x_and_y_cols(self):
+        x_arr, y_arr, z_arr = pivot_data("a", "b", "c", df=TEST_DF3)
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
+        desc = factory.generate_plot()
+        plot = desc["plot"]
+        self.assert_valid_plot(plot, desc)
+        # Make sure the axes are made of the unique values in the x and y
+        # columns:
+        x_axis = plot.components[0].x_axis
+        y_axis = plot.components[0].y_axis
+        self.assertEqual(x_axis.labels, ["False", "True"])
+        self.assertEqual(y_axis.labels, ["False", "True"])
+
+    def test_create_with_bool_x_and_str_y_cols(self):
+        x_arr, y_arr, z_arr = pivot_data("a", "b2", "c", df=TEST_DF3)
+        factory = self.plot_factory_klass(x_col_name="a", x_arr=x_arr,
+                                          y_col_name="b2", y_arr=y_arr,
+                                          z_col_name="c", z_arr=z_arr,
+                                          **self.plot_kw)
+        desc = factory.generate_plot()
+        plot = desc["plot"]
+        self.assert_valid_plot(plot, desc)
+        # Make sure the axes are made of the unique values in the x and y
+        # columns:
+        x_axis = plot.components[0].x_axis
+        y_axis = plot.components[0].y_axis
+        self.assertEqual(x_axis.labels, ["False", "True"])
+        self.assertEqual(y_axis.labels, ["a", "b"])
 
     # Helpers -----------------------------------------------------------------
 
