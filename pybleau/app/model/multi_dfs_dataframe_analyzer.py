@@ -136,8 +136,11 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
         self._source_dfs_changed = True
 
-    def set_source_df_col(self, col, value, target_df_name=""):
+    def set_source_df_col(self, col, value, target_df_name="",
+                          change_notify=True):
         """ Set a DF column to a value or add a new column to one of the DFs.
+
+        Note: triggers an update of the source_df, filtered_df and displayed_df
 
         Parameters
         ----------
@@ -150,8 +153,11 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
 
         target_df_name : str
             Name of the dataframe to add the column to.
+
+        change_notify : bool, optional
+            Whether to trigger an event to rebuild all downstream dataframes
+            (source, filtered, displayed).
         """
-        new_col_created = col not in self.column_list
         if col in self._column_loc:
             target_df = self._column_loc[col]
         else:
@@ -165,7 +171,7 @@ class MultiDataFrameAnalyzer(DataFrameAnalyzer):
             self._source_df_columns[target_df_name].append(col)
 
         target_df[col] = value
-        if new_col_created:
+        if change_notify:
             self._source_dfs_changed = True
 
     def set_source_df_val(self, index, col, value):
