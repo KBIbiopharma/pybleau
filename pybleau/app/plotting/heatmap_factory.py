@@ -3,6 +3,7 @@
 
 from __future__ import print_function, division
 import logging
+import numpy as np
 
 from traits.api import Constant
 from chaco.api import ImagePlot, PlotAxis
@@ -10,8 +11,8 @@ from chaco.api import ImagePlot, PlotAxis
 from app_common.chaco.plot_factory import create_contour_plot, create_img_plot
 
 from .plot_config import HEATMAP_PLOT_TYPE
-from .base_factories import CmapedXYPlotFactoryMixin, DEFAULT_RENDERER_NAME, \
-    StdXYPlotFactory
+from .base_factories import CATEGORICAL_TYPES, CmapedXYPlotFactoryMixin, \
+    DEFAULT_RENDERER_NAME, StdXYPlotFactory
 
 TWO_D_DATA_NAME = "img_data"
 
@@ -29,13 +30,27 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
                                    **adtl_arrays):
         """ Build plot data when single renderer is present.
         """
-        data_map = {self.x_col_name: x_arr, self.y_col_name: y_arr}
-        data_map.update(adtl_arrays)
+        # Collect all labels and reset x_arr as an int list
+        if x_arr.dtype in CATEGORICAL_TYPES:
+            if not self.x_labels:
+                self.x_labels = list(x_arr)
+
+            x_arr = np.arange(len(self.x_labels))
+
+        # Collect all labels and reset y_arr as an int list
+        if y_arr.dtype in CATEGORICAL_TYPES:
+            if not self.y_labels:
+                self.y_labels = list(y_arr)
+
+            y_arr = np.arange(len(self.y_labels))
+
         renderer_data = {"x": self.x_col_name, "y": self.y_col_name,
                          "name": DEFAULT_RENDERER_NAME}
         self.renderer_desc = [renderer_data]
-        data_map = {TWO_D_DATA_NAME: z_arr, "x_arr": x_arr,
-                    "y_arr": y_arr}
+
+        data_map = {TWO_D_DATA_NAME: z_arr, self.x_col_name: x_arr,
+                    self.y_col_name: y_arr}
+        data_map.update(adtl_arrays)
         return data_map
 
     def _plot_data_multi_renderer(self, x_arr=None, y_arr=None, z_arr=None,
@@ -46,18 +61,21 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
         logger.exception(msg)
         raise ValueError(msg)
 
-    def adjust_plot_style(self, x_arr=None, y_arr=None, z_arr=None):
+    def adjust_plot_style(self):
         if len(self.plot_style.renderer_styles) > 1:
             msg = "Only 1 heatmap renderer supported at a time."
             logger.exception(msg)
             raise NotImplementedError(msg)
 
         renderer_style = self.plot_style.renderer_styles[0]
+        x_arr = self.plot_data.get_data(self.x_col_name)
+        y_arr = self.plot_data.get_data(self.y_col_name)
         renderer_style.auto_xbounds = (x_arr.min(), x_arr.max())
         renderer_style.auto_ybounds = (y_arr.min(), y_arr.max())
         renderer_style.reset_xbounds = True
         renderer_style.reset_ybounds = True
 
+        z_arr = self.plot_data.get_data(TWO_D_DATA_NAME)
         self.plot_style.colorbar_low = z_arr.min()
         self.plot_style.colorbar_high = z_arr.max()
 
