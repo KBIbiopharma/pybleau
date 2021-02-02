@@ -40,7 +40,8 @@ class BasePlotConfigurator(HasStrictTraits):
     data_source = Instance(pd.DataFrame)
 
     #: Transformed DataFrame if data transformation are needed before plotting
-    transformed_data = Property
+    transformed_data = Property(depends_on="x_col_name, y_col_name, "
+                                           "z_col_name")
 
     #: Grouped plot style information
     plot_style = Instance(BaseXYPlotStyle)
@@ -114,14 +115,9 @@ class BasePlotConfigurator(HasStrictTraits):
             raise ValueError(msg)
 
         out = {}
-        known_cols = self.transformed_data.columns
         for key in self._dict_keys:
             if isinstance(key, str):
-                val = out[key] = getattr(self, key)
-                if key.endswith("col_name") and val and val not in known_cols:
-                    msg = "Unknown column name requested: '{}'.".format(val)
-                    logger.exception(msg)
-                    raise KeyError(msg)
+                out[key] = getattr(self, key)
             else:
                 name, target_name = key
                 out[target_name] = getattr(self, name)
@@ -726,10 +722,23 @@ class HeatmapPlotConfigurator(BaseSingleXYPlotConfigurator):
         ]
         return items
 
-    def _get_z_arr(self):
+    @cached_property
+    def _get_transformed_data(self):
+        if not self.x_col_name or not self.y_col_name or not self.z_col_name:
+            return
+
         return self.data_source.pivot_table(index=self.y_col_name,
                                             columns=self.x_col_name,
-                                            values=self.z_col_name).values
+                                            values=self.z_col_name)
+
+    def _get_x_arr(self):
+        return self.transformed_data.columns.values
+
+    def _get_y_arr(self):
+        return self.transformed_data.index.values
+
+    def _get_z_arr(self):
+        return self.transformed_data.values
 
     def _plot_style_default(self):
         style = HeatmapPlotStyle()

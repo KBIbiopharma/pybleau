@@ -34,15 +34,15 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
         # Collect all labels and reset x_arr as an int list
         if x_arr.dtype in CATEGORICAL_TYPES:
             if not self.x_labels:
-                self.x_labels = Series(x_arr).unique().tolist()
+                self.x_labels = list(x_arr)
 
             x_arr = np.array([self.x_labels.index(val)
                               for val in self.x_labels])
 
-            # Collect all labels and reset x_arr as an int list
+        # Collect all labels and reset y_arr as an int list
         if y_arr.dtype in CATEGORICAL_TYPES:
             if not self.y_labels:
-                self.y_labels = Series(y_arr).unique().tolist()
+                self.y_labels = list(y_arr)
 
             y_arr = np.array([self.y_labels.index(val)
                               for val in self.y_labels])
