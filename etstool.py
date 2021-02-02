@@ -256,7 +256,7 @@ def install(runtime, toolkit, environment, edm_dir, editable):
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
 @click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-@click.option('--cov', default=True, type=bool)
+@click.option('--cov', default=False, type=bool)
 @click.option('--test-pattern', default="")
 @click.option('--num-slowest', default="10")
 @click.option('--target', default=PKG_NAME)
@@ -281,7 +281,7 @@ def test(runtime, toolkit, edm_dir, environment, test_pattern, num_slowest,
         build from the requested runtime and toolkit.
 
     cov : bool, optional
-        Whether to compute the test coverage. Defaults to True.
+        Whether to compute the test coverage. Defaults to False.
 
     test_pattern : str, optional
         Pattern of the tests to run. Passed as is to pytest's -m option.
@@ -533,7 +533,7 @@ def get_parameters(runtime, toolkit, environment, **adtl_params):
         raise RuntimeError(msg.format(**parameters))
 
     if environment is None:
-        env_pattern = PKG_NAME + '-test-{toolkit}-py{runtime}'
+        env_pattern = PKG_NAME + '-develop-{toolkit}-py{runtime}'
         parameters['environment'] = env_pattern.format(**parameters)
         parameters['environment'] = parameters['environment'].replace(".", "")
     return parameters
