@@ -175,7 +175,7 @@ class BasePlotFactory(HasStrictTraits):
         y_labels = self.y_labels
         y_axis_style = self.plot_style.y_axis_style
         if y_labels:
-            # if x_labels set, axis labels shouldn't be generated from the
+            # if y_labels set, axis labels shouldn't be generated from the
             # numerical values but by the values stored in x_labels (for e.g.
             # when x_axis_col contains strings)
             label_rotation = y_axis_style.label_rotation
