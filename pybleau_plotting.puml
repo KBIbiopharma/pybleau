@@ -1,7 +1,7 @@
+"0..*" means "contains zero to n" of that object
+
 @startuml
 
-DataElement <|-- DataFramePlotManager
-DataElement <|-- DataFrameAnalyzer
 class DataFrameAnalyzer {
     DataFrame source_df
     DataFrame filtered_df
