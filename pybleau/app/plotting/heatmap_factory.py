@@ -35,6 +35,7 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
             if not self.x_labels:
                 self.x_labels = list(x_arr)
 
+            # Storing for consistency but not in use:
             x_arr = np.arange(len(self.x_labels))
 
         # Collect all labels and reset y_arr as an int list
@@ -42,6 +43,7 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
             if not self.y_labels:
                 self.y_labels = list(y_arr)
 
+            # Storing for consistency but not in use:
             y_arr = np.arange(len(self.y_labels))
 
         renderer_data = {"x": self.x_col_name, "y": self.y_col_name,
@@ -52,6 +54,15 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
                     self.y_col_name: y_arr}
         data_map.update(adtl_arrays)
         return data_map
+
+    def compute_label_positions(self, labels):
+        """ Compute the location of the center of the image cells.
+        """
+        num_val = len(labels)
+        axis_high = num_val - 1
+        cell_starts = np.arange(num_val) * axis_high/num_val
+        # Cell centers:
+        return cell_starts + axis_high/(2*num_val)
 
     def _plot_data_multi_renderer(self, x_arr=None, y_arr=None, z_arr=None,
                                   **adtl_arrays):

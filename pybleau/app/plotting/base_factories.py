@@ -143,8 +143,8 @@ class BasePlotFactory(HasStrictTraits):
             # numerical values but by the values stored in x_labels (for e.g.
             # when x_axis_col contains strings)
             label_rotation = x_axis_style.label_rotation
+            label_positions = self.compute_label_positions(x_labels)
             if x_axis_style.show_all_labels:
-                label_positions = range(len(x_labels))
                 tick_generator = ShowAllTickGenerator(
                     positions=label_positions
                 )
@@ -154,7 +154,7 @@ class BasePlotFactory(HasStrictTraits):
             first_renderer = plot.components[0]
             bottom_axis = LabelAxis(first_renderer, orientation="bottom",
                                     labels=[str(x) for x in x_labels],
-                                    positions=np.arange(len(x_labels)),
+                                    positions=label_positions,
                                     label_rotation=label_rotation,
                                     tick_generator=tick_generator)
             # Store and replace in the underlay list...
@@ -176,11 +176,11 @@ class BasePlotFactory(HasStrictTraits):
         y_axis_style = self.plot_style.y_axis_style
         if y_labels:
             # if y_labels set, axis labels shouldn't be generated from the
-            # numerical values but by the values stored in x_labels (for e.g.
-            # when x_axis_col contains strings)
+            # numerical values but by the values stored in y_labels (for e.g.
+            # when y_axis column contains strings)
             label_rotation = y_axis_style.label_rotation
+            label_positions = self.compute_label_positions(y_labels)
             if y_axis_style.show_all_labels:
-                label_positions = range(len(y_labels))
                 tick_generator = ShowAllTickGenerator(
                     positions=label_positions
                 )
@@ -190,7 +190,7 @@ class BasePlotFactory(HasStrictTraits):
             first_renderer = plot.components[0]
             left_axis = LabelAxis(first_renderer, orientation="left",
                                   labels=[str(x) for x in y_labels],
-                                  positions=np.arange(len(y_labels)),
+                                  positions=label_positions,
                                   label_rotation=label_rotation,
                                   tick_generator=tick_generator)
             # Store and replace in the underlay list...
@@ -211,6 +211,9 @@ class BasePlotFactory(HasStrictTraits):
         font_size = self.plot_style.y_axis_style.title_style.font_size
         font_name = self.plot_style.y_axis_style.title_style.font_name
         plot.y_axis.title_font = '{} {}'.format(font_name, font_size)
+
+    def compute_label_positions(self, labels):
+        return range(len(labels))
 
     def _set_second_y_axis_labels(self, plot):
         """ Set the secondary y axis title and style.
