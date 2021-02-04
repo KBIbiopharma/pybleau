@@ -256,7 +256,7 @@ def install(runtime, toolkit, environment, edm_dir, editable):
 @click.option('--toolkit', default=DEFAULT_TOOLKIT)
 @click.option('--edm-dir', default="")
 @click.option('--environment', default=None)
-@click.option('--cov', default=False, type=bool)
+@click.option('--cov', default=True, type=bool)
 @click.option('--test-pattern', default="")
 @click.option('--num-slowest', default="10")
 @click.option('--target', default=PKG_NAME)
