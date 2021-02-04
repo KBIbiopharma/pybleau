@@ -61,8 +61,8 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
         num_val = len(labels)
         axis_high = num_val - 1
         cell_starts = np.arange(num_val) * axis_high/num_val
-        # Cell centers:
-        return cell_starts + axis_high/(2*num_val)
+        cell_centers = cell_starts + axis_high/(2*num_val)
+        return cell_centers
 
     def _plot_data_multi_renderer(self, x_arr=None, y_arr=None, z_arr=None,
                                   **adtl_arrays):

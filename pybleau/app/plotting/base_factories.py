@@ -213,7 +213,7 @@ class BasePlotFactory(HasStrictTraits):
         plot.y_axis.title_font = '{} {}'.format(font_name, font_size)
 
     def compute_label_positions(self, labels):
-        return range(len(labels))
+        return np.arange(len(labels))
 
     def _set_second_y_axis_labels(self, plot):
         """ Set the secondary y axis title and style.
