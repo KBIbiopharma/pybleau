@@ -533,7 +533,7 @@ def get_parameters(runtime, toolkit, environment, **adtl_params):
         raise RuntimeError(msg.format(**parameters))
 
     if environment is None:
-        env_pattern = PKG_NAME + '-test-{toolkit}-py{runtime}'
+        env_pattern = PKG_NAME + '-develop-{toolkit}-py{runtime}'
         parameters['environment'] = env_pattern.format(**parameters)
         parameters['environment'] = parameters['environment'].replace(".", "")
     return parameters
