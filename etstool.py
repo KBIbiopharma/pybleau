@@ -281,7 +281,7 @@ def test(runtime, toolkit, edm_dir, environment, test_pattern, num_slowest,
         build from the requested runtime and toolkit.
 
     cov : bool, optional
-        Whether to compute the test coverage. Defaults to False.
+        Whether to compute the test coverage. Defaults to True.
 
     test_pattern : str, optional
         Pattern of the tests to run. Passed as is to pytest's -m option.
