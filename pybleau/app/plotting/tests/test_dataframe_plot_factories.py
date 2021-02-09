@@ -1114,7 +1114,11 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         x_axis = plot.components[0].x_axis
         y_axis = plot.components[0].y_axis
         self.assertEqual(x_axis.labels, list("xyz"))
+        assert_array_almost_equal(x_axis.positions,
+                                  array([0.33333333, 1., 1.66666667]))
         self.assertEqual(y_axis.labels, list("abc"))
+        assert_array_almost_equal(y_axis.positions,
+                                  array([0.33333333, 1., 1.66666667]))
 
     def test_create_with_str_x_cols(self):
         x_arr, y_arr, z_arr = pivot_data("a", "b2", "c", df=TEST_DF2)
@@ -1129,6 +1133,8 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         # columns:
         x_axis = plot.components[0].x_axis
         self.assertEqual(x_axis.labels, list("xyz"))
+        assert_array_almost_equal(x_axis.positions,
+                                  array([0.33333333, 1., 1.66666667]))
 
     def test_create_with_str_y_cols(self):
         x_arr, y_arr, z_arr = pivot_data("b2", "a", "c", df=TEST_DF2)
@@ -1143,6 +1149,8 @@ class TestMakeHeatmapPlot(BaseTestMakePlot, TestCase):
         # columns:
         y_axis = plot.components[0].y_axis
         self.assertEqual(y_axis.labels, list("xyz"))
+        assert_array_almost_equal(y_axis.positions,
+                                  array([0.33333333, 1., 1.66666667]))
 
     def test_create_with_bool_x_and_y_cols(self):
         x_arr, y_arr, z_arr = pivot_data("a", "b", "c", df=TEST_DF3)
