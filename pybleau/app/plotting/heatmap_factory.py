@@ -58,6 +58,11 @@ class HeatmapPlotFactory(StdXYPlotFactory, CmapedXYPlotFactoryMixin):
     def compute_label_positions(self, labels):
         """ Compute the location of the center of the image cells.
         """
+        if not labels:
+            msg = "No labels provided: positioning impossible."
+            logger.exception(msg)
+            raise ValueError(msg)
+
         num_val = len(labels)
         axis_high = num_val - 1
         cell_starts = np.arange(num_val) * axis_high/num_val
