@@ -90,10 +90,21 @@ class TestAnalyzer(Analyzer, TestCase):
     def test_modify_source_df_value(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
                                                     "b": self.df3})
-        analyzer.set_source_df_val(1, "a", "xyz")
+
+        # With notification
+        analyzer.set_source_df_val(1, "a", "xyz", change_notify=True)
         self.assertEqual(analyzer.source_df.loc[1, "a"], "xyz")
-        analyzer.set_source_df_val(3, "x", 15)
+        self.assertEqual(analyzer.filtered_df.loc[1, "a"], "xyz")
+        self.assertEqual(analyzer.displayed_df.loc[1, "a"], "xyz")
+
+        # Without notification:
+        analyzer.set_source_df_val(3, "x", 15, change_notify=False)
         self.assertEqual(analyzer.source_df.loc[3, "x"], 15)
+        self.assertEqual(analyzer.filtered_df.loc[3, "x"], 4)
+        self.assertEqual(analyzer.displayed_df.loc[3, "x"], 4)
+        analyzer._source_dfs_changed = True
+        self.assertEqual(analyzer.filtered_df.loc[3, "x"], 15)
+        self.assertEqual(analyzer.displayed_df.loc[3, "x"], 15)
 
     def test_modify_source_df_value_bad_col(self):
         analyzer = self.analyzer_klass(_source_dfs={"a": self.df,
