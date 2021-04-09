@@ -112,6 +112,10 @@ class TestPlotlyScatter3D(TestCase, BaseFigureArguments):
         fig = plotly_scatter(x="b", y="c", z="d", data=self.data)
         self.assert_valid_plotly_figure(fig)
 
+    def test_just_y_and_z(self):
+        fig = plotly_scatter(y="c", z="d", data=self.data)
+        self.assert_valid_plotly_figure(fig)
+
     def test_create_x_y_z_hue(self):
         fig = plotly_scatter(x="b", y="c", z="d", data=self.data, hue="a")
         self.assert_valid_plotly_figure(fig, num_renderers=NUM_A_VALUES)
