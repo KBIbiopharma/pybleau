@@ -5,11 +5,10 @@ from app_common.std_lib.str_utils import sanitize_string
 from pandas import DataFrame
 from pyface.action.api import StatusBarManager
 from pyface.api import Clipboard
-from traits.api import Enum
-from traits.api import HasStrictTraits, Instance, List, Bool, Str, Any, Dict
-from traitsui.api import VGroup, Item, OKCancelButtons, View, Tabbed, \
-    HSplit, StatusItem, HGroup, Spring
-from traitsui.editors import InstanceEditor
+from traits.api import Any, Bool, Dict, Enum, HasStrictTraits, Instance, \
+    List, Str
+from traitsui.api import HGroup, HSplit, InstanceEditor, Item, \
+    OKCancelButtons, Spring, StatusItem, Tabbed, VGroup, View
 
 from pybleau.app.utils.button_list_view import ScrollableButtonListView
 
