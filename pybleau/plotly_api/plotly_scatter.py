@@ -33,11 +33,12 @@ def plotly_scatter(x="", y="", data=None, z=None, hue=None,
     data : pd.DataFrame
         Data container to plot.
 
-    x : str
-        Name of the column to plot along the x axis.
-
     y : str
         Name of the column to plot along the y axis.
+
+    x : str, optional
+        Name of the column to plot along the x axis. Leave blank to use a
+        simple arange.
 
     z : str, optional
         Name of the column to plot along the z axis. If set, result is a 3D
@@ -306,12 +307,19 @@ def plotly_scatter(x="", y="", data=None, z=None, hue=None,
         # Build the Scatter object --------------------------------------------
 
         marker_line = {"width": 0.5, "color": 'rgba(217, 217, 217, 0.14)'}
+
+        # Allow x to be empty:
+        if x:
+            x_data = subdf[x]
+        else:
+            x_data = np.arange(len(subdf))
+
         if z is None:
             klass = go.Scatter
-            args = dict(x=subdf[x], y=subdf[y])
+            args = dict(x=x_data, y=subdf[y])
         else:
             klass = go.Scatter3d
-            args = dict(x=subdf[x], y=subdf[y], z=subdf[z])
+            args = dict(x=x_data, y=subdf[y], z=subdf[z])
 
         scatter = klass(
             mode='markers',

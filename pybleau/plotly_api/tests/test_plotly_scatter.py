@@ -30,7 +30,14 @@ class TestPlotlyScatter(TestCase, BaseFigureArguments):
             plotly_scatter("b", "c")
 
     def test_x_y(self):
+        fig = plotly_scatter(x="b", y="c", data=self.data)
+        self.assert_valid_plotly_figure(fig)
+
         fig = plotly_scatter("b", "c", data=self.data)
+        self.assert_valid_plotly_figure(fig)
+
+    def test_just_y(self):
+        fig = plotly_scatter(y="c", data=self.data)
         self.assert_valid_plotly_figure(fig)
 
     def test_x_y_pick_color(self):
@@ -103,6 +110,10 @@ class TestPlotlyScatter3D(TestCase, BaseFigureArguments):
 
     def test_create_x_y_z(self):
         fig = plotly_scatter(x="b", y="c", z="d", data=self.data)
+        self.assert_valid_plotly_figure(fig)
+
+    def test_just_y_and_z(self):
+        fig = plotly_scatter(y="c", z="d", data=self.data)
         self.assert_valid_plotly_figure(fig)
 
     def test_create_x_y_z_hue(self):
