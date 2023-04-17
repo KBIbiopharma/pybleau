@@ -54,10 +54,10 @@ using::
 
     python etstool.py test_all
 
-Currently supported runtime values are ``3.5`` and ``3.6``, and currently
-supported toolkits are ``null``, ``pyqt``, ``pyqt5``, ``pyside`` and ``wx``.
-Not all combinations of toolkits and runtimes will work, but the tasks will
-fail with a clear error if that is the case.
+Currently supported runtime values are ``3.5``, ``3.6``, and ``3.8`` and
+currently supported toolkits are ``null``, ``pyqt``, ``pyqt5``, ``pyside`` and
+``wx``. Not all combinations of toolkits and runtimes will work, but the tasks
+will fail with a clear error if that is the case.
 
 Tests can still be run via the usual means in other environments if that suits
 a developer's purpose.
@@ -91,10 +91,11 @@ PKG_NAME = "pybleau"
 
 supported_combinations = {
     '3.6': {'pyqt5'},
+    '3.8': {'pyqt5'},
 }
 
 # Default Python version to use in the commands below if none is specified.
-DEFAULT_RUNTIME = '3.6'
+DEFAULT_RUNTIME = '3.8'
 
 # Default toolkit to use if none specified.
 DEFAULT_TOOLKIT = 'pyqt5'
@@ -168,7 +169,7 @@ def install(runtime, toolkit, environment, edm_dir, editable):
     Parameters
     ----------
     runtime : str, optional
-        Version of Python runtime, e.g. '3.6'.
+        Version of Python runtime, e.g. '3.8'.
 
     toolkit : str, optional
         Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
@@ -267,7 +268,7 @@ def test(runtime, toolkit, edm_dir, environment, test_pattern, num_slowest,
     Parameters
     ----------
     runtime : str, optional
-        Version of Python runtime, e.g. '3.6'.
+        Version of Python runtime, e.g. '3.8'.
 
     toolkit : str, optional
         Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
@@ -341,7 +342,7 @@ def flake8(runtime, toolkit, edm_dir, environment):
     Parameters
     ----------
     runtime : str, optional
-        Version of Python runtime, e.g. '3.6'.
+        Version of Python runtime, e.g. '3.8'.
 
     toolkit : str, optional
         Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
@@ -375,7 +376,7 @@ def cleanup(runtime, toolkit, edm_dir, environment):
     Parameters
     ----------
     runtime : str, optional
-        Version of Python runtime, e.g. '3.6'.
+        Version of Python runtime, e.g. '3.8'.
 
     toolkit : str, optional
         Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
@@ -406,7 +407,7 @@ def test_clean(runtime, toolkit):
     Parameters
     ----------
     runtime : str, optional
-        Version of Python runtime, e.g. '3.6'.
+        Version of Python runtime, e.g. '3.8'.
 
     toolkit : str, optional
         Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
@@ -430,7 +431,7 @@ def update(runtime, toolkit, edm_dir, environment):
     Parameters
     ----------
     runtime : str, optional
-        Version of Python runtime, e.g. '3.6'.
+        Version of Python runtime, e.g. '3.8'.
 
     toolkit : str, optional
         Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
@@ -462,7 +463,7 @@ def docs(runtime, toolkit, edm_dir, environment):
     Parameters
     ----------
     runtime : str, optional
-        Version of Python runtime, e.g. '3.6'.
+        Version of Python runtime, e.g. '3.8'.
 
     toolkit : str, optional
         Name of the GUI toolkit to run the tests for, e.g. 'pyqt5'.
